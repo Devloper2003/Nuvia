@@ -1,0 +1,567 @@
+     1→'use client'
+     2→
+     3→import dynamic from 'next/dynamic'
+     4→import { useAppStore, ActiveModule } from '@/lib/store'
+     5→import { cn } from '@/lib/utils'
+     6→import {
+     7→  LayoutDashboard,
+     8→  CalendarDays,
+     9→  Brain,
+    10→  HeartPulse,
+    11→  Flower2,
+    12→  Baby,
+    13→  Stethoscope,
+    14→  SunDim,
+    15→  MessageCircle,
+    16→  Salad,
+    17→  MapPin,
+    18→  Dumbbell,
+    19→  Users,
+    20→  FileBarChart,
+    21→  Settings,
+    22→  Menu,
+    23→  X,
+    24→  ChevronRight,
+    25→  Sparkles,
+    26→  Search,
+    27→  ShoppingBag,
+    28→  BrainCircuit,
+    29→  LogOut,
+    30→  Loader2,
+    31→  Crown,
+    32→  Gem,
+    33→  ShieldCheck,
+    34→  HelpCircle,
+    35→  Smartphone,
+    36→} from 'lucide-react'
+    37→import { Button } from '@/components/ui/button'
+    38→import { Badge } from '@/components/ui/badge'
+    39→import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+    40→import { Input } from '@/components/ui/input'
+    41→import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+    42→import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+    43→import { motion, AnimatePresence } from 'framer-motion'
+    44→import { useEffect, useState } from 'react'
+    45→import type { SessionUser } from '@/components/auth/auth-screen'
+    46→import NotificationPanel from '@/components/notifications/notification-panel'
+    47→import MobileTopbar from '@/components/mobile/mobile-topbar'
+    48→import MobileBottomNav from '@/components/mobile/mobile-bottom-nav'
+    49→import WelcomeTour, { getTourSeenKey } from '@/components/onboarding/welcome-tour'
+    50→import { useLanguage } from '@/components/language-provider'
+    51→import { LanguageSwitcher } from '@/components/language-switcher'
+    52→import type { TranslationKey } from '@/lib/i18n/translations'
+    53→
+    54→// ─── Lazy-load all feature modules ───────────────────────────────────────────
+    55→const DashboardModule = dynamic(() => import('@/components/modules/dashboard'), { loading: () => <ModuleSkeleton /> })
+    56→const PeriodModule = dynamic(() => import('@/components/modules/period-tracker'), { loading: () => <ModuleSkeleton /> })
+    57→const HormoneModule = dynamic(() => import('@/components/modules/hormone-intelligence'), { loading: () => <ModuleSkeleton /> })
+    58→const SymptomsModule = dynamic(() => import('@/components/modules/symptoms-tracker'), { loading: () => <ModuleSkeleton /> })
+    59→const PCOSModule = dynamic(() => import('@/components/modules/pcos-management'), { loading: () => <ModuleSkeleton /> })
+    60→const FertilityModule = dynamic(() => import('@/components/modules/fertility-planner'), { loading: () => <ModuleSkeleton /> })
+    61→const PregnancyModule = dynamic(() => import('@/components/modules/pregnancy-companion'), { loading: () => <ModuleSkeleton /> })
+    62→const MenopauseModule = dynamic(() => import('@/components/modules/menopause-assistant'), { loading: () => <ModuleSkeleton /> })
+    63→const CoachModule = dynamic(() => import('@/components/modules/ai-coach'), { loading: () => <ModuleSkeleton /> })
+    64→const DietAdvisorModule = dynamic(() => import('@/components/modules/diet-advisor'), { loading: () => <ModuleSkeleton /> })
+    65→const DoctorFinderModule = dynamic(() => import('@/components/modules/doctor-finder'), { loading: () => <ModuleSkeleton /> })
+    66→const MentalWellnessModule = dynamic(() => import('@/components/modules/mental-wellness'), { loading: () => <ModuleSkeleton /> })
+    67→const FitnessModule = dynamic(() => import('@/components/modules/fitness'), { loading: () => <ModuleSkeleton /> })
+    68→const MarketplaceModule = dynamic(() => import('@/components/modules/marketplace'), { loading: () => <ModuleSkeleton /> })
+    69→const CommunityModule = dynamic(() => import('@/components/modules/community'), { loading: () => <ModuleSkeleton /> })
+    70→const ReportsModule = dynamic(() => import('@/components/modules/report-center'), { loading: () => <ModuleSkeleton /> })
+    71→const SkinBeautyModule = dynamic(() => import('@/components/modules/skin-beauty'), { loading: () => <ModuleSkeleton /> })
+    72→const AIInsightsModule = dynamic(() => import('@/components/modules/ai-insights'), { loading: () => <ModuleSkeleton /> })
+    73→const PremiumModule = dynamic(() => import('@/components/modules/premium'), { loading: () => <ModuleSkeleton /> })
+    74→const SettingsModule = dynamic(() => import('@/components/modules/settings'), { loading: () => <ModuleSkeleton /> })
+    75→
+    76→function ModuleSkeleton() {
+    77→  return (
+    78→    <div className="flex items-center justify-center py-24 text-muted-foreground gap-3">
+    79→      <Loader2 className="h-5 w-5 animate-spin" />
+    80→      <span className="text-sm">Loading module…</span>
+    81→    </div>
+    82→  )
+    83→}
+    84→
+    85→const navItems: { id: ActiveModule; labelKey: TranslationKey; icon: React.ElementType; color: string; badge?: string }[] = [
+    86→  { id: 'dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, color: 'text-primary' },
+    87→  { id: 'period', labelKey: 'nav.period', icon: CalendarDays, color: 'text-rose-500' },
+    88→  { id: 'hormone', labelKey: 'nav.hormone', icon: Brain, color: 'text-purple-500' },
+    89→  { id: 'symptoms', labelKey: 'nav.symptoms', icon: HeartPulse, color: 'text-pink-500' },
+    90→  { id: 'pcos', labelKey: 'nav.pcos', icon: Flower2, color: 'text-amber-600' },
+    91→  { id: 'fertility', labelKey: 'nav.fertility', icon: Baby, color: 'text-orange-500' },
+    92→  { id: 'pregnancy', labelKey: 'nav.pregnancy', icon: Stethoscope, color: 'text-purple-600' },
+    93→  { id: 'menopause', labelKey: 'nav.menopause', icon: SunDim, color: 'text-red-400' },
+    94→  { id: 'coach', labelKey: 'nav.coach', icon: MessageCircle, color: 'text-emerald-500', badge: 'AI' },
+    95→  { id: 'diet', labelKey: 'nav.diet', icon: Salad, color: 'text-emerald-600', badge: 'AI' },
+    96→  { id: 'doctors', labelKey: 'nav.doctors', icon: MapPin, color: 'text-teal-600' },
+    97→  { id: 'mental', labelKey: 'nav.mental', icon: Sparkles, color: 'text-violet-500', badge: 'NEW' },
+    98→  { id: 'fitness', labelKey: 'nav.fitness', icon: Dumbbell, color: 'text-orange-500', badge: 'NEW' },
+    99→  { id: 'beauty', labelKey: 'nav.beauty', icon: Sparkles, color: 'text-fuchsia-500' },
+   100→  { id: 'marketplace', labelKey: 'nav.marketplace', icon: ShoppingBag, color: 'text-rose-500', badge: 'NEW' },
+   101→  { id: 'community', labelKey: 'nav.community', icon: Users, color: 'text-sky-500' },
+   102→  { id: 'reports', labelKey: 'nav.reports', icon: FileBarChart, color: 'text-teal-500' },
+   103→  { id: 'ai-insights', labelKey: 'nav.insights', icon: BrainCircuit, color: 'text-violet-500', badge: 'PRO' },
+   104→]
+   105→
+   106→interface AppShellProps {
+   107→  user: SessionUser
+   108→  onLogout: () => void
+   109→}
+   110→
+   111→export default function AppShell({ user, onLogout }: AppShellProps) {
+   112→  const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, setPremium, setUserProfile, isPremium } = useAppStore()
+   113→  const { t } = useLanguage()
+   114→  const [searchQuery, setSearchQuery] = useState('')
+   115→  const [currentTime, setCurrentTime] = useState('')
+   116→  const [tourOpen, setTourOpen] = useState(false)
+   117→  const [installable, setInstallable] = useState(false)
+   118→
+   119→  // Track PWA installability (prompt captured by <PwaRegister />)
+   120→  useEffect(() => {
+   121→    const onInstallable = (e: Event) => {
+   122→      const detail = (e as CustomEvent<{ available: boolean }>).detail
+   123→      setInstallable(Boolean(detail?.available))
+   124→    }
+   125→    const onInstalled = () => setInstallable(false)
+   126→    window.addEventListener('chandracycle-installable', onInstallable)
+   127→    window.addEventListener('chandracycle-installed', onInstalled)
+   128→    window.addEventListener('appinstalled', onInstalled)
+   129→    return () => {
+   130→      window.removeEventListener('chandracycle-installable', onInstallable)
+   131→      window.removeEventListener('chandracycle-installed', onInstalled)
+   132→      window.removeEventListener('appinstalled', onInstalled)
+   133→    }
+   134→  }, [])
+   135→
+   136→  // Sync auth user into the global store
+   137→  useEffect(() => {
+   138→    setUserProfile({
+   139→      id: user.id,
+   140→      name: user.name || user.email.split('@')[0],
+   141→      email: user.email,
+   142→      avatar: user.avatar || undefined,
+   143→      cycleLength: user.cycleLength,
+   144→      periodLength: user.periodLength,
+   145→      lastPeriodStart: user.lastPeriodStart ?? null,
+   146→      provider: user.provider as 'email' | 'google' | 'apple',
+   147→    })
+   148→  }, [user, setUserProfile])
+   149→
+   150→  // ── Restore premium status from the server (survives reloads) ────────────
+   151→  useEffect(() => {
+   152→    if (!user.id) return
+   153→    let cancelled = false
+   154→    fetch(`/api/subscription?userId=${encodeURIComponent(user.id)}`)
+   155→      .then((r) => (r.ok ? r.json() : null))
+   156→      .then((d) => {
+   157→        // Sync BOTH ways: restore premium after reload and drop it when the
+   158→        // subscription was cancelled/expired (e.g. from another device).
+   159→        if (!cancelled) setPremium(Boolean(d?.active))
+   160→      })
+   161→      .catch(() => {
+   162→        // best-effort — offline users keep their in-session state
+   163→      })
+   164→    return () => {
+   165→      cancelled = true
+   166→    }
+   167→  }, [user.id, setPremium])
+   168→
+   169→  // Clock
+   170→  useEffect(() => {
+   171→    const updateTime = () => {
+   172→      const now = new Date()
+   173→      setCurrentTime(now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+   174→    }
+   175→    updateTime()
+   176→    const interval = setInterval(updateTime, 60000)
+   177→    return () => clearInterval(interval)
+   178→  }, [])
+   179→
+   180→  // ── Auto-start first-time onboarding tour ────────────────────────────────
+   181→  // Fires once per USER (not per browser) — a brand-new signup always sees
+   182→  // the tour even if another account dismissed it on the same device.
+   183→  useEffect(() => {
+   184→    if (typeof window === 'undefined') return
+   185→    const tourKey = getTourSeenKey(user.id)
+   186→    let seen = false
+   187→    try {
+   188→      seen = localStorage.getItem(tourKey) === '1'
+   189→      // Also clear any stale legacy global flag so it can't shadow new users.
+   190→      if (localStorage.getItem('chandracycle_tour_seen') === '1' && !seen) {
+   191→        localStorage.removeItem('chandracycle_tour_seen')
+   192→      }
+   193→    } catch {
+   194→      // localStorage may be disabled (private mode) — skip auto-start.
+   195→      seen = true
+   196→    }
+   197→    if (seen) return
+   198→    // 2s delay so the dashboard + lazy module finish rendering and the
+   199→    // spotlight targets (data-tour="...") are present in the DOM.
+   200→    const timer = setTimeout(() => {
+   201→      setTourOpen(true)
+   202→    }, 2000)
+   203→    return () => clearTimeout(timer)
+   204→  }, [user.id])
+   205→
+   206→  const closeTour = () => {
+   207→    setTourOpen(false)
+   208→    try {
+   209→      localStorage.setItem(getTourSeenKey(user.id), '1')
+   210→    } catch {
+   211→      // ignore — best-effort persistence
+   212→    }
+   213→  }
+   214→
+   215→  const activeItem = navItems.find(item => item.id === activeModule)
+   216→
+   217→  const handleNavClick = (id: ActiveModule) => {
+   218→    setActiveModule(id)
+   219→  }
+   220→
+   221→  const renderModule = () => {
+   222→    switch (activeModule) {
+   223→      case 'dashboard': return <DashboardModule />
+   224→      case 'period': return <PeriodModule />
+   225→      case 'hormone': return <HormoneModule />
+   226→      case 'symptoms': return <SymptomsModule />
+   227→      case 'pcos': return <PCOSModule />
+   228→      case 'fertility': return <FertilityModule />
+   229→      case 'pregnancy': return <PregnancyModule />
+   230→      case 'menopause': return <MenopauseModule />
+   231→      case 'coach': return <CoachModule />
+   232→      case 'diet': return <DietAdvisorModule />
+   233→      case 'doctors': return <DoctorFinderModule />
+   234→      case 'mental': return <MentalWellnessModule />
+   235→      case 'fitness': return <FitnessModule />
+   236→      case 'beauty': return <SkinBeautyModule />
+   237→      case 'marketplace': return <MarketplaceModule />
+   238→      case 'community': return <CommunityModule />
+   239→      case 'reports': return <ReportsModule />
+   240→      case 'ai-insights': return <AIInsightsModule />
+   241→      case 'premium': return <PremiumModule onSubscribe={() => setPremium(true)} />
+   242→      case 'settings': return <SettingsModule />
+   243→      default: return <DashboardModule />
+   244→    }
+   245→  }
+   246→
+   247→  const getGreetingKey = (): TranslationKey => {
+   248→    const hour = new Date().getHours()
+   249→    if (hour < 12) return 'greeting.morning'
+   250→    if (hour < 17) return 'greeting.afternoon'
+   251→    return 'greeting.evening'
+   252→  }
+   253→
+   254→  const displayName = user.name || user.email.split('@')[0]
+   255→  const initials = displayName.charAt(0).toUpperCase()
+   256→  const firstName = displayName.split(' ')[0]
+   257→
+   258→  // Desktop: sidebar width + collapse. Mobile uses MobileTopbar + MobileBottomNav.
+   259→  const desktopMainMargin = sidebarOpen ? 'lg:ml-64' : 'lg:ml-[72px]'
+   260→
+   261→  return (
+   262→    <TooltipProvider delayDuration={200}>
+   263→      <div className="h-dvh flex bg-background overflow-hidden">
+   264→        {/* ─── Desktop Sidebar (lg+ only) ────────────────────────────────── */}
+   265→        <aside
+   266→          className={cn(
+   267→            'hidden lg:flex flex-col border-r border-border bg-card transition-all duration-300 ease-in-out shrink-0',
+   268→            sidebarOpen ? 'w-64' : 'w-[72px]'
+   269→          )}
+   270→        >
+   271→          {/* Logo Area — Luxury brand */}
+   272→          <div className="relative flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden h-[68px]">
+   273→            {/* Decorative gold shimmer */}
+   274→            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-rose-500/5 to-transparent pointer-events-none" />
+   275→            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-white font-bold text-lg shrink-0 shadow-lg shadow-rose-500/30">
+   276→              <span className="relative">C</span>
+   277→              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-300 ring-2 ring-card" />
+   278→            </div>
+   279→            <AnimatePresence>
+   280→              {sidebarOpen && (
+   281→                <motion.div
+   282→                  initial={{ opacity: 0, x: -10 }}
+   283→                  animate={{ opacity: 1, x: 0 }}
+   284→                  exit={{ opacity: 0, x: -10 }}
+   285→                  transition={{ duration: 0.2 }}
+   286→                  className="relative flex flex-col overflow-hidden"
+   287→                >
+   288→                  <span className="font-serif text-base tracking-tight bg-gradient-to-r from-amber-600 via-rose-600 to-fuchsia-600 bg-clip-text text-transparent font-bold leading-none">
+   289→                    ChandraCycle
+   290→                  </span>
+   291→                  <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80 leading-tight mt-0.5 font-medium">
+   292→                    AI Health Companion
+   293→                  </span>
+   294→                </motion.div>
+   295→              )}
+   296→            </AnimatePresence>
+   297→          </div>
+   298→
+   299→          {/* Navigation — native scroll with custom scrollbar */}
+   300→          <nav className="flex-1 overflow-y-auto chandracycle-scroll py-3 px-3 space-y-1">
+   301→            {navItems.map((item) => {
+   302→              const isActive = activeModule === item.id
+   303→              return (
+   304→                <Tooltip key={item.id}>
+   305→                  <TooltipTrigger asChild>
+   306→                    <button
+   307→                      onClick={() => handleNavClick(item.id)}
+   308→                      data-tour={
+   309→                        item.id === 'period'
+   310→                          ? 'period'
+   311→                          : item.id === 'coach'
+   312→                            ? 'coach'
+   313→                            : item.id === 'symptoms'
+   314→                              ? 'symptoms'
+   315→                              : undefined
+   316→                      }
+   317→                      className={cn(
+   318→                        'relative flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 group',
+   319→                        isActive
+   320→                          ? 'bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary shadow-sm'
+   321→                          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+   322→                      )}
+   323→                    >
+   324→                      <item.icon className={cn('h-5 w-5 shrink-0 transition-transform group-hover:scale-110', isActive ? item.color : '')} />
+   325→                      <AnimatePresence>
+   326→                        {sidebarOpen && (
+   327→                          <motion.span
+   328→                            initial={{ opacity: 0 }}
+   329→                            animate={{ opacity: 1 }}
+   330→                            exit={{ opacity: 0 }}
+   331→                            className="truncate"
+   332→                          >
+   333→                            {t(item.labelKey)}
+   334→                          </motion.span>
+   335→                        )}
+   336→                      </AnimatePresence>
+   337→                      {item.badge && sidebarOpen && (
+   338→                        <Badge variant="secondary" className="ml-auto text-[10px] px-1.5 py-0 h-5 bg-primary/10 text-primary">
+   339→                          {item.badge}
+   340→                        </Badge>
+   341→                      )}
+   342→                      {isActive && (
+   343→                        <motion.div
+   344→                          layoutId="activeIndicator"
+   345→                          className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full bg-gradient-to-b from-amber-500 to-rose-500"
+   346→                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+   347→                        />
+   348→                      )}
+   349→                    </button>
+   350→                  </TooltipTrigger>
+   351→                  {!sidebarOpen && (
+   352→                    <TooltipContent side="right" className="font-medium">
+   353→                      {t(item.labelKey)}
+   354→                    </TooltipContent>
+   355→                  )}
+   356→                </Tooltip>
+   357→              )
+   358→            })}
+   359→          </nav>
+   360→
+   361→          {/* Bottom section — install, tour, premium + settings */}
+   362→          <div className="border-t border-border p-3 space-y-1.5">
+   363→            {installable && (
+   364→              <button
+   365→                onClick={() => window.dispatchEvent(new CustomEvent('chandracycle-install-request'))}
+   366→                aria-label="Install ChandraCycle on this device"
+   367→                className="group flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+   368→              >
+   369→                <Smartphone className="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
+   370→                {sidebarOpen && (
+   371→                  <span className="flex items-center gap-1.5">
+   372→                    {t('nav.install')}
+   373→                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-0">PWA</Badge>
+   374→                  </span>
+   375→                )}
+   376→              </button>
+   377→            )}
+   378→            <button
+   379→              onClick={() => setTourOpen(true)}
+   380→              data-tour="replay"
+   381→              aria-label="Take a guided tour"
+   382→              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+   383→            >
+   384→              <HelpCircle className="h-5 w-5 shrink-0" />
+   385→              {sidebarOpen && <span>{t('nav.tour')}</span>}
+   386→            </button>
+   387→            <button
+   388→              onClick={() => handleNavClick('premium')}
+   389→              data-tour="premium"
+   390→              className="group relative flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium overflow-hidden bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:shadow-amber-500/30 transition-all"
+   391→            >
+   392→              <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+   393→              <Crown className="h-5 w-5 shrink-0 relative" />
+   394→              {sidebarOpen && (
+   395→                <span className="flex items-center gap-1.5 relative">
+   396→                  {t('nav.premium')}
+   397→                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-white/25 text-white border-0">PRO</Badge>
+   398→                </span>
+   399→              )}
+   400→            </button>
+   401→            <button
+   402→              onClick={() => handleNavClick('settings')}
+   403→              className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+   404→            >
+   405→              <Settings className="h-5 w-5 shrink-0" />
+   406→              {sidebarOpen && <span>{t('nav.settings')}</span>}
+   407→            </button>
+   408→          </div>
+   409→        </aside>
+   410→
+   411→        {/* ─── Main Content ───────────────────────────────────────────────── */}
+   412→        <div className={cn('flex-1 min-w-0 flex flex-col h-full transition-all duration-300 ease-in-out', desktopMainMargin)}>
+   413→          {/* Desktop Top Bar (lg+ only) — luxury glass header */}
+   414→          <header className="hidden lg:flex shrink-0 z-30 items-center justify-between gap-4 border-b border-border bg-card/70 backdrop-blur-xl px-4 lg:px-5 py-2.5 relative">
+   415→            {/* Subtle top gradient line */}
+   416→            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
+   417→            <div className="flex items-center gap-3 min-w-0 flex-1">
+   418→              <Button
+   419→                variant="ghost"
+   420→                size="icon"
+   421→                onClick={() => setSidebarOpen(!sidebarOpen)}
+   422→                className="shrink-0"
+   423→                aria-label="Toggle menu"
+   424→              >
+   425→                {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+   426→              </Button>
+   427→              <div className="flex items-center gap-2 min-w-0">
+   428→                {/* Compact greeting on lg, full greeting on xl */}
+   429→                <span className="text-sm font-medium truncate hidden xl:inline">{t(getGreetingKey())}, {firstName}</span>
+   430→                <span className="text-sm font-medium truncate xl:hidden">{t('greeting.hi')}, {firstName}</span>
+   431→                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 hidden xl:inline" />
+   432→                <span className="text-sm text-muted-foreground truncate hidden xl:inline">{activeItem ? t(activeItem.labelKey) : ''}</span>
+   433→              </div>
+   434→            </div>
+   435→
+   436→            <div className="flex items-center gap-3 shrink-0">
+   437→              <div className="relative hidden xl:block">
+   438→                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+   439→                <Input
+   440→                  placeholder="Search..."
+   441→                  value={searchQuery}
+   442→                  onChange={(e) => setSearchQuery(e.target.value)}
+   443→                  className="pl-9 w-56 h-9 bg-muted/50 border-0 focus-visible:ring-1"
+   444→                />
+   445→              </div>
+   446→              <span className="text-xs text-muted-foreground hidden 2xl:block tabular-nums">{currentTime}</span>
+   447→
+   448→              {/* Language quick-switch */}
+   449→              <LanguageSwitcher />
+   450→
+   451→              {/* Active notification bar */}
+   452→              <NotificationPanel userId={user.id} />
+   453→
+   454→              {/* Profile dropdown with brand presence */}
+   455→              <DropdownMenu>
+   456→                <DropdownMenuTrigger asChild>
+   457→                  <button
+   458→                    data-tour="profile"
+   459→                    className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background transition-transform hover:scale-105"
+   460→                  >
+   461→                    <Avatar className="h-9 w-9 ring-2 ring-amber-500/30 ring-offset-1 ring-offset-background">
+   462→                      {user.avatar && <AvatarImage src={user.avatar} alt={displayName} />}
+   463→                      <AvatarFallback className="bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-white text-xs font-semibold">
+   464→                        {initials}
+   465→                      </AvatarFallback>
+   466→                    </Avatar>
+   467→                  </button>
+   468→                </DropdownMenuTrigger>
+   469→                <DropdownMenuContent align="end" className="w-72 p-0 overflow-hidden">
+   470→                  {/* Brand header inside profile dropdown */}
+   471→                  <div className="relative px-4 py-4 bg-gradient-to-br from-amber-500 via-rose-500 to-fuchsia-600 text-white overflow-hidden">
+   472→                    <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
+   473→                    <div className="relative flex items-center gap-2.5">
+   474→                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 font-bold text-base">
+   475→                        C
+   476→                      </div>
+   477→                      <div className="flex flex-col">
+   478→                        <span className="font-serif font-bold text-base leading-tight tracking-tight">ChandraCycle</span>
+   479→                        <span className="text-[9px] uppercase tracking-[0.18em] text-white/80 leading-tight">Premium Health</span>
+   480→                      </div>
+   481→                    </div>
+   482→                  </div>
+   483→
+   484→                  {/* User identity */}
+   485→                  <div className="px-3 py-3 border-b border-border">
+   486→                    <div className="flex items-center gap-2.5">
+   487→                      <Avatar className="h-10 w-10 ring-1 ring-border">
+   488→                        {user.avatar && <AvatarImage src={user.avatar} alt={displayName} />}
+   489→                        <AvatarFallback className="bg-muted text-xs font-semibold">
+   490→                          {initials}
+   491→                        </AvatarFallback>
+   492→                      </Avatar>
+   493→                      <div className="min-w-0 flex-1">
+   494→                        <p className="text-sm font-semibold truncate">{displayName}</p>
+   495→                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+   496→                      </div>
+   497→                    </div>
+   498→                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+   499→                      <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-0 text-[10px] h-5 gap-0.5">
+   500→                        {user.provider === 'google' ? <Gem className="h-2.5 w-2.5" /> : <ShieldCheck className="h-2.5 w-2.5" />}
+   501→                        {user.provider === 'google' ? 'Google' : user.provider === 'apple' ? 'Apple' : user.provider === 'mobile' ? 'Mobile' : 'Email'}
+   502→                      </Badge>
+   503→                      {isPremium && (
+   504→                        <Badge className="bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white border-0 text-[10px] h-5 gap-0.5 shadow-sm">
+   505→                          <Crown className="h-2.5 w-2.5" /> Premium
+   506→                        </Badge>
+   507→                      )}
+   508→                    </div>
+   509→                  </div>
+   510→
+   511→                  <div className="p-1.5">
+   512→                    <DropdownMenuItem onClick={() => handleNavClick('settings')} className="rounded-lg py-2">
+   513→                      <Settings className="mr-2.5 h-4 w-4" />
+   514→                      <span>{t('nav.settings')} & Preferences</span>
+   515→                    </DropdownMenuItem>
+   516→                    <DropdownMenuItem onClick={() => handleNavClick('premium')} className="rounded-lg py-2">
+   517→                      <Crown className="mr-2.5 h-4 w-4 text-amber-500" />
+   518→                      <span>{isPremium ? 'Manage Premium' : 'Upgrade to Premium'}</span>
+   519→                    </DropdownMenuItem>
+   520→                  </div>
+   521→                  <DropdownMenuSeparator />
+   522→                  <div className="p-1.5">
+   523→                    <DropdownMenuItem onClick={onLogout} className="rounded-lg py-2 text-destructive focus:text-destructive">
+   524→                      <LogOut className="mr-2.5 h-4 w-4" />
+   525→                      <span>{t('common.signOut')}</span>
+   526→                    </DropdownMenuItem>
+   527→                  </div>
+   528→                </DropdownMenuContent>
+   529→              </DropdownMenu>
+   530→            </div>
+   531→          </header>
+   532→
+   533→          {/* Mobile Topbar (below lg) */}
+   534→          <MobileTopbar onTakeTour={() => setTourOpen(true)} userId={user.id} displayName={displayName} />
+   535→
+   536→          {/* Module Content — scrollable. Bottom padding on mobile for bottom nav. */}
+   537→          <main className="flex-1 overflow-y-auto">
+   538→            <div className="p-3 sm:p-4 lg:p-5 pb-28 lg:pb-8 max-w-7xl mx-auto">
+   539→              <AnimatePresence mode="wait">
+   540→                <motion.div
+   541→                  key={activeModule}
+   542→                  initial={{ opacity: 0, y: 8 }}
+   543→                  animate={{ opacity: 1, y: 0 }}
+   544→                  exit={{ opacity: 0, y: -8 }}
+   545→                  transition={{ duration: 0.25, ease: 'easeOut' }}
+   546→                >
+   547→                  {renderModule()}
+   548→                </motion.div>
+   549→              </AnimatePresence>
+   550→            </div>
+   551→          </main>
+   552→        </div>
+   553→
+   554→        {/* ─── Mobile Bottom Nav (below lg) ──────────────────────────────── */}
+   555→        <MobileBottomNav />
+   556→
+   557→        {/* ─── First-time onboarding tour ──────────────────────────────────── */}
+   558→        <WelcomeTour
+   559→          key={tourOpen ? 'tour-open' : 'tour-closed'}
+   560→          open={tourOpen}
+   561→          onClose={closeTour}
+   562→        />
+   563→      </div>
+   564→    </TooltipProvider>
+   565→  )
+   566→}
+   567→

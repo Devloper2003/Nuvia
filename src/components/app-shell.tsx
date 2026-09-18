@@ -116,6 +116,20 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
   const [tourOpen, setTourOpen] = useState(false)
   const [installable, setInstallable] = useState(false)
 
+  // ── Keyboard shortcut: "[" toggles the sidebar (desktop productivity nicety).
+  // Ignored while typing in inputs/textareas/selects or with modifier keys held.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== '[' || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || target?.isContentEditable) return
+      setSidebarOpen(!useAppStore.getState().sidebarOpen)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [setSidebarOpen])
+
   // Track PWA installability (prompt captured by <PwaRegister />)
   useEffect(() => {
     const onInstallable = (e: Event) => {
@@ -255,9 +269,6 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
   const initials = displayName.charAt(0).toUpperCase()
   const firstName = displayName.split(' ')[0]
 
-  // Desktop: sidebar width + collapse. Mobile uses MobileTopbar + MobileBottomNav.
-  const desktopMainMargin = sidebarOpen ? 'lg:ml-64' : 'lg:ml-[72px]'
-
   return (
     <TooltipProvider delayDuration={200}>
       <div className="h-dvh flex bg-background overflow-hidden">
@@ -285,7 +296,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                   transition={{ duration: 0.2 }}
                   className="relative flex flex-col overflow-hidden"
                 >
-                  <span className="font-serif text-base tracking-tight bg-gradient-to-r from-amber-600 via-rose-600 to-fuchsia-600 bg-clip-text text-transparent font-bold leading-none">
+                  <span className="font-serif text-base tracking-tight bg-gradient-to-r from-amber-600 via-rose-600 to-fuchsia-600 dark:from-amber-300 dark:via-rose-300 dark:to-fuchsia-300 bg-clip-text text-transparent font-bold leading-none">
                     ChandraCycle
                   </span>
                   <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80 leading-tight mt-0.5 font-medium">
@@ -409,7 +420,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
         </aside>
 
         {/* ─── Main Content ───────────────────────────────────────────────── */}
-        <div className={cn('flex-1 min-w-0 flex flex-col h-full transition-all duration-300 ease-in-out', desktopMainMargin)}>
+        <div className="flex-1 min-w-0 flex flex-col h-full">
           {/* Desktop Top Bar (lg+ only) — luxury glass header */}
           <header className="hidden lg:flex shrink-0 z-30 items-center justify-between gap-4 border-b border-border bg-card/70 backdrop-blur-xl px-4 lg:px-5 py-2.5 relative">
             {/* Subtle top gradient line */}
@@ -421,6 +432,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="shrink-0"
                 aria-label="Toggle menu"
+                title="Toggle sidebar ( [ )"
               >
                 {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </Button>

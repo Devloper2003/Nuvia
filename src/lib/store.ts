@@ -74,14 +74,38 @@ const todayISO = () => {
   return new Date().toISOString().split('T')[0]
 }
 
+// Sidebar collapse preference — persisted so the layout survives reloads.
+// SSR-safe: falls back to open on the server and when storage is unavailable.
+const SIDEBAR_PREF_KEY = 'chandracycle_sidebar_open'
+const readSidebarPref = (): boolean => {
+  if (typeof window === 'undefined') return true
+  try {
+    const stored = window.localStorage.getItem(SIDEBAR_PREF_KEY)
+    return stored === null ? true : stored === 'open'
+  } catch {
+    return true
+  }
+}
+const writeSidebarPref = (open: boolean) => {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(SIDEBAR_PREF_KEY, open ? 'open' : 'collapsed')
+  } catch {
+    /* storage unavailable (private mode) — preference just won't persist */
+  }
+}
+
 // HMR-safe store creation: cache on globalThis so HMR doesn't break the module
 // factory reference (fixes "module factory is not available" Turbopack error).
 function createStore() {
   return create<AppState>((set, get) => ({
     activeModule: 'dashboard',
     setActiveModule: (module) => set({ activeModule: module }),
-    sidebarOpen: true,
-    setSidebarOpen: (open) => set({ sidebarOpen: open }),
+    sidebarOpen: readSidebarPref(),
+    setSidebarOpen: (open) => {
+      writeSidebarPref(open)
+      set({ sidebarOpen: open })
+    },
     selectedDate: todayISO(),
     setSelectedDate: (date) => set({ selectedDate: date }),
     userProfile: null,

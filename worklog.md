@@ -898,3 +898,56 @@ Stage Summary:
   5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
   6. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
      double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.
+
+---
+Task ID: 12
+Agent: Z.ai Code (webDevReview round 12 — user-reported UI bug)
+Task: USER REPORTED BUG — "large black space between dashboard and side menu bar" + "complete
+UI/UX and website format exact set karo". Fix the shell layout, verify format consistency
+everywhere (light/dark/collapsed/expanded/mobile), add shell UX improvements.
+
+Work Log:
+- ROOT CAUSE FOUND (user screenshot + code read): src/components/app-shell.tsx had the desktop
+  main column styled with `lg:ml-64` / `lg:ml-[72px]` (desktopMainMargin) — but the sidebar
+  <aside> is an IN-FLOW flex sibling (w-64 / w-[72px], shrink-0), NOT fixed/absolute. The flex
+  layout already places the main column beside the sidebar, so the extra margin produced a
+  redundant 256px dead strip between sidebar edge and header/content. In dark mode that strip
+  rendered the dark bg-background between light surfaces → the "black space" the user saw.
+- FIX: removed desktopMainMargin entirely; main column is now `flex-1 min-w-0 flex flex-col h-full`.
+  Collapse/expand still animates smoothly (aside width transition drives flex reflow).
+- E2E VERIFIED (agent-browser, 1568×722):
+  - Light mode: header now starts immediately at sidebar edge; dashboard/tracker/settings all
+    aligned; no gap (screenshots uiqa_2/uiqa_4/uiqa_5).
+  - Sidebar collapse toggle: icon rail (72px) + expand both seamless, no gap (uiqa_3).
+  - DARK MODE: entire shell uniformly dark — sidebar/header/content consistent, the stray strip
+    is gone (uiqa_6). This confirms the user was in dark mode when they saw the black band.
+  - Mobile 390×844: topbar + bottom-nav render fine, no regression (uiqa_7).
+- UX FEATURE 1 — SIDEBAR STATE PERSISTENCE: sidebarOpen now round-trips through localStorage
+  (`chandracycle_sidebar_open`, SSR-safe guards, try/catch for private mode). Collapse the
+  sidebar → reload → it STAYS collapsed (VERIFIED: localStorage='collapsed' + screenshot
+  uiqa_10 after full reload; then back to 'open').
+- UX FEATURE 2 — KEYBOARD SHORTCUT: `[` toggles the desktop sidebar (ignored while typing in
+  input/textarea/select/contentEditable, ignores modifier keys). VERIFIED via browser keypress:
+  state flipped collapsed→open + persisted. Toggle button got `title="Toggle sidebar ( [ )"`.
+- STYLING DETAIL: sidebar brand "ChandraCycle" gradient text now has dark: variants
+  (amber-300/rose-300/fuchsia-300) — the 600-series gradient was muddy/low-contrast on dark card.
+- QA HYGIENE: created throwaway uiqa@test.com for the round, cascade-deleted after verification
+  (7 users back to baseline). Browser's stale r11verify localStorage session (user already gone;
+  dashboard was rendering from cached zustand state) cleared along with the sidebar pref.
+- Lint: 0 errors 0 warnings. Browser console: 0 errors (only HMR/info logs). dev.log clean.
+  Dev server was reaped mid-round (HTTP 000) — restarted via setsid double-fork, stable since.
+
+Stage Summary:
+- ✅ Shipped & verified: the reported black-gap layout bug fixed at the root (redundant flex
+  margin removed), format consistency confirmed in light+dark, collapsed+expanded, desktop+mobile;
+  sidebar collapse preference now persists across reloads; `[` keyboard shortcut added.
+- DB state changes: none (schema untouched; only throwaway QA user created+removed).
+- Remaining backlog (next round):
+  1. i18n depth: module interiors still hard-coded English (period tracker, coach empty states).
+  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+  4. Doctor Finder: Google Places unconfigured (demo notice covers it).
+  5. PayPal real keys / Google OAuth unconfigured (graceful degradation in place).
+  6. KNOWN: dev server reaping persists in sandbox — always `curl localhost:3000` first;
+     restart with setsid double-fork; restart mini-services/reminder-scheduler separately.
+  7. scripts/check-users.ts + scripts/cleanup-qa.ts kept as QA utilities (safe, read/cleanup only).
