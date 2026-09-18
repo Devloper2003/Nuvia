@@ -36,6 +36,9 @@ import {
   Check,
   CalendarPlus,
   Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
 import {
   Card,
@@ -68,6 +71,29 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import {
@@ -1160,7 +1186,21 @@ function PeriodPredictions({
 
 // ─── Historical Cycles Table ──────────────────────────────────────────
 
-function HistoricalCyclesTable({ cycles }: { cycles: CycleEntry[] }) {
+function HistoricalCyclesTable({
+  cycles,
+  onChanged,
+}: {
+  cycles: CycleEntry[]
+  onChanged?: () => void
+}) {
+  const [editing, setEditing] = useState<CycleEntry | null>(null)
+  const [deleting, setDeleting] = useState<CycleEntry | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [editStart, setEditStart] = useState('')
+  const [editEnd, setEditEnd] = useState('')
+  const [editFlow, setEditFlow] = useState('medium')
+  const [editNotes, setEditNotes] = useState('')
+
   if (cycles.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
@@ -1185,30 +1225,95 @@ function HistoricalCyclesTable({ cycles }: { cycles: CycleEntry[] }) {
     return 'Medium'
   }
 
+  function openEdit(cycle: CycleEntry) {
+    setEditing(cycle)
+    setEditStart(cycle.startDate)
+    setEditEnd(cycle.endDate ?? '')
+    setEditFlow(parseFlow(cycle.notes).toLowerCase())
+    // Strip the flow prefix so the textarea only holds the free-text part.
+    setEditNotes((cycle.notes ?? '').replace(/^(light|medium|heavy) flow\.?\s*/i, ''))
+  }
+
+  async function handleSaveEdit() {
+    if (!editing) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/cycles', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editing.id,
+          startDate: editStart || undefined,
+          endDate: editEnd || null,
+          flow: editFlow,
+          notes: editNotes,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to update cycle')
+      }
+      toast.success('Cycle updated')
+      setEditing(null)
+      onChanged?.()
+    } catch (e) {
+      console.error('Failed to update cycle:', e)
+      toast.error(e instanceof Error ? e.message : 'Could not update cycle')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleting) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/cycles?id=${encodeURIComponent(deleting.id)}`, {
+        method: 'DELETE',
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to delete cycle')
+      }
+      toast.success('Cycle record deleted')
+      setDeleting(null)
+      onChanged?.()
+    } catch (e) {
+      console.error('Failed to delete cycle:', e)
+      toast.error(e instanceof Error ? e.message : 'Could not delete cycle')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <div className="max-h-64 overflow-y-auto custom-scrollbar">
+      <div className="max-h-64 overflow-y-auto overflow-x-auto custom-scrollbar">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs">Start Date</TableHead>
-              <TableHead className="text-xs">End Date</TableHead>
+              <TableHead className="text-xs hidden sm:table-cell">End Date</TableHead>
               <TableHead className="text-xs text-center">Period</TableHead>
-              <TableHead className="text-xs text-center">Cycle</TableHead>
+              <TableHead className="text-xs text-center hidden sm:table-cell">Cycle</TableHead>
               <TableHead className="text-xs">Flow</TableHead>
+              <TableHead className="w-10" aria-label="Row actions" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {cycles.map((cycle) => (
-              <TableRow key={cycle.id}>
+              <TableRow
+                key={cycle.id}
+                className="group hover:bg-rose-50/60 dark:hover:bg-rose-950/20 transition-colors"
+              >
                 <TableCell className="text-xs font-medium">
                   {format(new Date(cycle.startDate), 'MMM d, yy')}
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                   {cycle.endDate ? format(new Date(cycle.endDate), 'MMM d, yy') : '—'}
                 </TableCell>
                 <TableCell className="text-xs text-center">
@@ -1216,7 +1321,7 @@ function HistoricalCyclesTable({ cycles }: { cycles: CycleEntry[] }) {
                     {cycle.periodLength}d
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs text-center">
+                <TableCell className="text-xs text-center hidden sm:table-cell">
                   <Badge variant="outline" className="text-[10px] px-1.5">
                     {cycle.cycleLength}d
                   </Badge>
@@ -1240,11 +1345,169 @@ function HistoricalCyclesTable({ cycles }: { cycles: CycleEntry[] }) {
                     )
                   })()}
                 </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        aria-label={`Actions for cycle starting ${format(new Date(cycle.startDate), 'MMM d, yy')}`}
+                        className="h-7 w-7 inline-flex items-center justify-center rounded-md text-muted-foreground/50 opacity-100 md:opacity-0 md:group-hover:opacity-100 focus-visible:opacity-100 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950/40 transition-all data-[state=open]:opacity-100"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-36">
+                      <DropdownMenuItem
+                        onClick={() => openEdit(cycle)}
+                        className="gap-2 text-xs cursor-pointer"
+                      >
+                        <Pencil className="h-3.5 w-3.5 text-rose-500" />
+                        Edit cycle
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setDeleting(cycle)}
+                        className="gap-2 text-xs cursor-pointer text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Edit dialog */}
+      <Dialog open={editing !== null} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40">
+                <Pencil className="h-3.5 w-3.5 text-rose-600" />
+              </span>
+              Edit cycle record
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Correct dates or flow — predictions and your dashboard update automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="cycle-edit-start" className="text-xs font-medium">
+                  Start date
+                </Label>
+                <Input
+                  id="cycle-edit-start"
+                  type="date"
+                  value={editStart}
+                  onChange={(e) => setEditStart(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cycle-edit-end" className="text-xs font-medium">
+                  End date
+                </Label>
+                <Input
+                  id="cycle-edit-end"
+                  type="date"
+                  value={editEnd}
+                  min={editStart || undefined}
+                  onChange={(e) => setEditEnd(e.target.value)}
+                  className="h-9 text-xs"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Flow intensity</Label>
+              <Select value={editFlow} onValueChange={setEditFlow}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="light">
+                    <span className="inline-flex items-center gap-2">
+                      <Droplets className="h-3 w-3 text-pink-300" /> Light
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <span className="inline-flex items-center gap-2">
+                      <Droplets className="h-3 w-3 text-pink-500" /> Medium
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="heavy">
+                    <span className="inline-flex items-center gap-2">
+                      <Droplets className="h-3 w-3 text-rose-600" /> Heavy
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cycle-edit-notes" className="text-xs font-medium">
+                Notes
+              </Label>
+              <Textarea
+                id="cycle-edit-notes"
+                value={editNotes}
+                onChange={(e) => setEditNotes(e.target.value)}
+                placeholder="Cramps, mood, anything worth remembering…"
+                className="min-h-[64px] text-xs resize-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => setEditing(null)}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-8 text-xs bg-rose-500 hover:bg-rose-600 text-white"
+              disabled={saving || !editStart}
+              onClick={handleSaveEdit}
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Save changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent className="sm:max-w-sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-base">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10">
+                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+              </span>
+              Delete this cycle record?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {deleting
+                ? `The cycle starting ${format(new Date(deleting.startDate), 'MMM d, yyyy')} will be permanently removed. Predictions will recalculate from your remaining records.`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-8 text-xs">Keep record</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={saving}
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              Delete cycle
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   )
 }
@@ -1515,7 +1778,7 @@ export default function PeriodModule() {
             <CardDescription className="text-xs">Your recent cycle records</CardDescription>
           </CardHeader>
           <CardContent className="px-2">
-            <HistoricalCyclesTable cycles={cycles} />
+            <HistoricalCyclesTable cycles={cycles} onChanged={refresh} />
           </CardContent>
         </Card>
       </div>

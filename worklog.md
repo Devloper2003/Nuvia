@@ -816,3 +816,85 @@ Stage Summary:
   5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
   6. KNOWN: dev server reaping continues — always `curl localhost:3000` first; restart with
      setsid double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.
+
+---
+Task ID: 11
+Agent: Z.ai Code (webDevReview round 11)
+Task: Cron QA + development round — onboarding↔tracker data-consistency bugfix, cycle history
+edit/delete (new feature), GDPR-style data export (new feature, replaced a fake toast with a real
+implementation), mandatory styling round, mobile touch-UX fix.
+
+Work Log:
+- QA BASELINE: fresh throwaway user r11qa@test.com signed up via real API + browser, 3-step
+  onboarding in headless browser, dashboard correct (Day 15, Ovulation phase), AI Coach real
+  streaming reply + history persisted to ChatMessage + restored after reload, Community persisted
+  (5 posts, gamification Level 9), Reports proper empty states, console clean. Dev server up;
+  scheduler healthy (6 runs, 0 errors). NOTE: earlier worklog said Priya was deleted — she was NOT
+  (my first user listing was truncated by tail; she has 7 cycles). Login failure this round was
+  just a password mismatch.
+- BUG FIXED — ONBOARDING DID NOT SEED A CYCLE RECORD (found via QA, data consistency):
+  POST /api/user only set user.lastPeriodStart, so a fresh onboarded user saw Dashboard "Day 15 /
+  Ovulation" (derived from user field) while Period Tracker showed "No cycle history yet / Log your
+  first period" (reads Cycle rows) — contradictory state for EVERY new user.
+  Fix: on onboarding completion with a period date, the route now idempotently creates the first
+  Cycle (skips if a cycle with the same startDate already exists; seed failure is non-fatal).
+  Extracted src/lib/cycle-math.ts (buildCycleFields) as the single source of truth for ovulation/
+  fertile-window math, now shared by /api/cycles POST and /api/user POST.
+  E2E VERIFIED: new browser signup r11verify@test.com + onboarding → Cycle row auto-created with
+  correct derived fields (start 2026-09-04 → ovulation 2026-09-18 = start+28−14), tracker history
+  + predictions ("Based on 1 tracked cycle", 58% confidence) light up consistently.
+- NEW FEATURE — CYCLE HISTORY EDIT + DELETE (data management core for a health app):
+  - PATCH /api/cycles (session-token auth, owner check, 401/404 paths verified): edits startDate /
+    endDate / flow / free-text notes. Flow lives in the notes prefix ("light|medium|heavy flow."),
+    rewritten via regex; derived ovulation/fertile fields recomputed on date change. When the newest
+    cycle's startDate moves, user.lastPeriodStart syncs (VERIFIED via API: patch 2026-08-10→08-20 →
+    user.lastPeriodStart=2026-08-20, ovulation→2026-09-03).
+  - DELETE /api/cycles?id= (same auth): when deleting the newest cycle, user.lastPeriodStart falls
+    back to the next-newest record or null (E2E VERIFIED: last row deleted → cycles=0,
+    lastPeriodStart=null, tracker returns to empty state, predictions clear).
+  - UI: per-row dropdown menu ("···" hover-reveal on desktop, ALWAYS visible on <md for touch),
+    Edit dialog (start/end date inputs, flow Select with droplet icons, notes textarea, branded
+    rose save button, toast confirm), Delete AlertDialog (explains date + recalculation,
+    destructive action). Table rows got rose hover tint + custom-scrollbar + aria-labels.
+- NEW FEATURE — REAL DATA EXPORT (was a FAKE feature before):
+  - The old Settings "Export My Data" button only fired a toast claiming an email would arrive in
+    24h. Replaced with GET /api/user/export (session auth, no-store): gathers profile + cycles,
+    moods, sleeps, waters, symptoms, chatMessages, communityPosts/Comments, notifications,
+    appointments into a versioned payload ($schema: chandracycle-data-export, $version: 1) with
+    per-table counts. Unauthenticated → 401 VERIFIED.
+  - Client downloads a pretty-printed JSON blob (chandracycle-export-YYYY-MM-DD.json) and shows a
+    REAL summary toast ("Export downloaded ✅ — Your data: 1 cycles.") with per-count breakdown;
+    loading spinner state on the button. Settings card redesigned (emerald gradient, JSON badge,
+    icon scale micro-interaction, chevron slide on hover).
+- MANDATORY STYLING ROUND (details):
+  - Cycle History: hover-reveal row actions (opacity-0 md:group-hover:opacity-100 — fixed to
+    always-visible on touch), rose row hover tint, icon micro-interactions.
+  - Edit/Delete dialogs: icon bubbles (rose pencil / destructive trash), min-h textarea with
+    placeholder, gradient save button, "Keep record" cancel copy.
+  - Export card: emerald gradient + JSON badge + group-hover icon scale + chevron translate.
+  - MOBILE 390×844 fix: history table hid End Date + Cycle columns on <sm so the row (with
+    actions) fits the viewport without horizontal scroll; overflow-x-auto kept as fallback.
+    E2E verified mobile (actions "···" visible & tappable) + desktop (all 5 columns intact).
+- INFRA NOTE: dev server reaped once mid-round (curl 000) — setsid double-fork restart per
+  established pattern. Scheduler stayed independent on :3031 (7 runs, 0 errors).
+- TEST ARTIFACT CLEANUP: r11qa + r11verify users cascade-deleted (their cycles/chats/notifications
+  gone with them). Final DB: 7 users (1 real preview user + 5 demo + 1 admin), 0 reports, 0 test
+  artifacts. E2E throwaway data never touched real accounts.
+
+Stage Summary:
+- ✅ Shipped & verified: onboarding→Cycle seeding bugfix (Dashboard ↔ Tracker now consistent for
+  every new user), cycle history edit/delete with lastPeriodStart sync + auth guards, real
+  GDPR-style data export replacing a fake button, mandatory styling round incl. mobile touch fix.
+- Lint: 0 errors 0 warnings. Browser console: 0 errors. dev.log clean. Scheduler healthy.
+- DB state changes: no schema changes this round (Cycle/User rows only via the new flows); all
+  test artifacts removed.
+- Remaining backlog (next round):
+  1. i18n depth: extend translations into module interiors (period tracker strings are still
+     hard-coded English; EN/HI/TA currently covers chrome/dashboard/settings).
+  2. Persisted analytics table for moderation stats (still 7-day AuditLog window).
+  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+  4. Data export: optional CSV format + scheduled export-to-email (now that real JSON export
+     exists); also consider import/restore.
+  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+  6. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
+     double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.

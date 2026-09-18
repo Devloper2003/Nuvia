@@ -9,6 +9,7 @@ import {
   toSessionUser,
   SessionUser,
 } from '@/lib/auth';
+import { buildCycleFields } from '@/lib/cycle-math';
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,6 +93,39 @@ export async function POST(request: NextRequest) {
           onboardingComplete: true,
         },
       });
+
+      // Seed the user's first Cycle record from onboarding data so the
+      // Period Tracker (history, predictions) and the Dashboard (day/phase
+      // math from user.lastPeriodStart) stay consistent. Previously this
+      // step only set user.lastPeriodStart, leaving the tracker's history
+      // empty ("No cycle history yet") while the dashboard showed day/phase.
+      // Idempotent: skips when a cycle with the same start date already
+      // exists (e.g., the user logged the period in the tracker first).
+      if (lastPeriodStart) {
+        try {
+          const existing = await db.cycle.findFirst({
+            where: { userId: sessionUser.id, startDate: lastPeriodStart },
+          });
+          if (!existing) {
+            const derived = buildCycleFields(
+              lastPeriodStart,
+              typeof cycleLength === 'number' ? cycleLength : sessionUser.cycleLength,
+              typeof periodLength === 'number' ? periodLength : sessionUser.periodLength
+            );
+            await db.cycle.create({
+              data: {
+                userId: sessionUser.id,
+                startDate: lastPeriodStart,
+                ...derived,
+              },
+            });
+          }
+        } catch (seedError) {
+          // Non-fatal: the tracker offers "Log your first period" as fallback.
+          console.warn('Onboarding cycle seed failed:', seedError);
+        }
+      }
+
       updatedSessionUser = toSessionUser(updatedUser);
     } catch (dbError) {
       console.warn('DB update failed (likely ephemeral Vercel filesystem). Issuing fresh JWT with request-body data only.', dbError);

@@ -316,10 +316,54 @@ export default function SettingsModule() {
     })
   }
 
-  const handleExportData = () => {
-    toast.success('Data export started', {
-      description: 'You\'ll receive an email with your data download link within 24 hours.',
-    })
+  const [exporting, setExporting] = useState(false)
+  const handleExportData = async () => {
+    setExporting(true)
+    try {
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('chandracycle_token')
+        : null
+      const res = await fetch('/api/user/export', {
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Export failed')
+      }
+      const payload = await res.json()
+      // Build the download client-side so we can show a real summary toast.
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `chandracycle-export-${new Date().toISOString().split('T')[0]}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      const c = payload.counts ?? {}
+      const parts = [
+        c.cycles ? `${c.cycles} cycles` : null,
+        c.moods ? `${c.moods} moods` : null,
+        c.sleeps ? `${c.sleeps} sleeps` : null,
+        c.symptoms ? `${c.symptoms} symptoms` : null,
+        c.chatMessages ? `${c.chatMessages} chats` : null,
+      ].filter(Boolean)
+      toast.success('Export downloaded ✅', {
+        description: parts.length
+          ? `Your data: ${parts.join(' · ')}.`
+          : 'Your data export is ready — accounts, records and AI conversations included.',
+      })
+    } catch (e) {
+      console.error('Data export failed:', e)
+      toast.error('Export failed', {
+        description: e instanceof Error ? e.message : 'Please try again.',
+      })
+    } finally {
+      setExporting(false)
+    }
   }
 
   const [seedingDemo, setSeedingDemo] = useState(false)
@@ -990,16 +1034,28 @@ export default function SettingsModule() {
 
           <button
             onClick={handleExportData}
-            className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left"
+            disabled={exporting}
+            className="group w-full flex items-center gap-3 p-3 rounded-lg border border-emerald-200/70 dark:border-emerald-900/60 bg-gradient-to-r from-emerald-50/60 to-transparent dark:from-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800 hover:shadow-sm transition-all text-left disabled:opacity-60"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
-              <Download className="h-4 w-4" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0 transition-transform group-hover:scale-110 group-active:scale-95">
+              {exporting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium">Export My Data</div>
-              <div className="text-xs text-muted-foreground">Download all your health data as a ZIP file</div>
+              <div className="text-sm font-medium flex items-center gap-1.5">
+                {exporting ? 'Preparing your export…' : 'Export My Data'}
+                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  JSON
+                </Badge>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Download everything — cycles, logs, AI chats & posts — as one portable file
+              </div>
             </div>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
           </button>
 
           <button
