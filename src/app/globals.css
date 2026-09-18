@@ -13,6 +13,44 @@ body {
   max-width: 100vw;
 }
 
+/* ─── Cross-device friendliness layer (Android & iOS) ─────────────────────
+   Kills the grey tap flash on Android, prevents iOS font inflation when the
+   device rotates, and stops rubber-band chaining inside nested scrollers. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  overscroll-behavior-y: contain;
+}
+/* Legacy iOS momentum scrolling inside app-level scroll containers */
+.chandracycle-scroll,
+[class*="overflow-y-"] {
+  -webkit-overflow-scrolling: touch;
+}
+/* iOS Safari zooms any focused input smaller than 16px — keep form fields
+   at 16px on touch/coarse devices so tapping a field never zoom-jumps. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+/* Minimum comfortable touch target helper (44×44 Apple HIG / 48dp Material).
+   Applied via .tap-target where dense controls exist. */
+.tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+@media (pointer: coarse) {
+  .tap-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -71,12 +109,17 @@ body {
   --color-peach-soft: var(--peach-soft);
   --color-blush: var(--blush);
   --color-lilac: var(--lilac);
+  --color-plum: var(--plum);
+  --color-plum-soft: var(--plum-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
 }
 
 :root {
-  /* ── Nuvia “Blush Petal” theme (redesigned from user references) ──
-     Soft rose-cream canvas, hot-pink primary, peach + lilac accents.
-     Larger radius = the pillowy card language from the references. */
+  /* ── Nuvia “Plum & Gold” theme (Nuvia brand-kit reference) ──
+     Blush-cream canvas · deep plum primary (#4B1D3F→#6E366F family)
+     · antique gold (#D4AF37) ornaments · rose highlights.
+     Larger radius = the pillowy card language from the brand kit. */
   --radius: 1rem;
   --background: oklch(0.978 0.014 350);
   --foreground: oklch(0.21 0.03 345);
@@ -84,7 +127,8 @@ body {
   --card-foreground: oklch(0.21 0.03 345);
   --popover: oklch(0.998 0.004 350);
   --popover-foreground: oklch(0.21 0.03 345);
-  --primary: oklch(0.62 0.22 355);
+  /* Deep plum-rose primary (brand #6E366F/#8E4463 band) — white text ≥5:1 */
+  --primary: oklch(0.47 0.135 352);
   --primary-foreground: oklch(0.99 0.005 355);
   --secondary: oklch(0.945 0.04 350);
   --secondary-foreground: oklch(0.38 0.1 350);
@@ -95,20 +139,20 @@ body {
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.93 0.035 350);
   --input: oklch(0.93 0.035 350);
-  --ring: oklch(0.62 0.22 355);
-  --chart-1: oklch(0.62 0.22 355);
-  --chart-2: oklch(0.78 0.13 55);
+  --ring: oklch(0.47 0.135 352);
+  --chart-1: oklch(0.55 0.2 352);
+  --chart-2: oklch(0.78 0.13 85);
   --chart-3: oklch(0.68 0.15 300);
   --chart-4: oklch(0.62 0.12 200);
   --chart-5: oklch(0.72 0.16 5);
   --sidebar: oklch(0.972 0.024 350);
   --sidebar-foreground: oklch(0.21 0.03 345);
-  --sidebar-primary: oklch(0.62 0.22 355);
+  --sidebar-primary: oklch(0.47 0.135 352);
   --sidebar-primary-foreground: oklch(0.99 0.005 355);
   --sidebar-accent: oklch(0.94 0.05 355);
   --sidebar-accent-foreground: oklch(0.38 0.1 350);
   --sidebar-border: oklch(0.93 0.035 350);
-  --sidebar-ring: oklch(0.62 0.22 355);
+  --sidebar-ring: oklch(0.47 0.135 352);
 
   /* Reference palette: teal medical (doctor pages), peach & blush & lilac surfaces */
   --medical: oklch(0.52 0.1 205);
@@ -118,6 +162,12 @@ body {
   --peach-soft: oklch(0.95 0.045 50);
   --blush: oklch(0.94 0.05 355);
   --lilac: oklch(0.9 0.06 300);
+
+  /* Nuvia brand kit: deep plum + antique gold (light) */
+  --plum: oklch(0.28 0.055 335);
+  --plum-soft: oklch(0.42 0.075 335);
+  --gold: oklch(0.72 0.115 85);
+  --gold-soft: oklch(0.94 0.06 90);
 
   --rose: oklch(0.62 0.22 355);
   --rose-foreground: oklch(0.99 0.005 355);
@@ -148,7 +198,7 @@ body {
   --card-foreground: oklch(0.96 0.01 350);
   --popover: oklch(0.19 0.028 348);
   --popover-foreground: oklch(0.96 0.01 350);
-  --primary: oklch(0.72 0.18 355);
+  --primary: oklch(0.76 0.14 352);
   --primary-foreground: oklch(0.16 0.04 350);
   --secondary: oklch(0.26 0.04 348);
   --secondary-foreground: oklch(0.92 0.02 350);
@@ -159,20 +209,20 @@ body {
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.18 355);
+  --ring: oklch(0.76 0.14 352);
   --chart-1: oklch(0.7 0.18 350);
-  --chart-2: oklch(0.75 0.16 30);
+  --chart-2: oklch(0.8 0.13 85);
   --chart-3: oklch(0.65 0.14 160);
   --chart-4: oklch(0.7 0.14 280);
   --chart-5: oklch(0.75 0.12 60);
   --sidebar: oklch(0.17 0.026 346);
   --sidebar-foreground: oklch(0.96 0.01 350);
-  --sidebar-primary: oklch(0.72 0.18 355);
+  --sidebar-primary: oklch(0.76 0.14 352);
   --sidebar-primary-foreground: oklch(0.16 0.04 350);
   --sidebar-accent: oklch(0.3 0.05 350);
   --sidebar-accent-foreground: oklch(0.92 0.02 350);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.72 0.18 355);
+  --sidebar-ring: oklch(0.76 0.14 352);
 
   /* Dark-mode reference palette */
   --medical: oklch(0.68 0.1 205);
@@ -182,6 +232,12 @@ body {
   --peach-soft: oklch(0.3 0.05 50);
   --blush: oklch(0.3 0.05 350);
   --lilac: oklch(0.32 0.06 300);
+
+  /* Nuvia brand kit: plum + gold (dark) — gilded against the night plum */
+  --plum: oklch(0.86 0.05 340);
+  --plum-soft: oklch(0.32 0.06 335);
+  --gold: oklch(0.82 0.13 88);
+  --gold-soft: oklch(0.32 0.05 85);
 
   --rose: oklch(0.72 0.18 355);
   --rose-foreground: oklch(0.16 0.04 350);
@@ -591,8 +647,8 @@ a:focus-visible,
   outline-offset: 2px;
   box-shadow:
     0 0 0 2px var(--background, oklch(0.985 0.002 325)),
-    0 0 0 4px oklch(0.6 0.22 350 / 70%),
-    0 0 0 5px oklch(0.6 0.18 60 / 35%);
+    0 0 0 4px oklch(0.47 0.135 352 / 75%),
+    0 0 0 5px oklch(0.72 0.115 85 / 40%);
 }
 
 /* ─── Luxury custom scrollbar (chandracycle-scroll) ───────────────────────── */
@@ -715,6 +771,130 @@ summary, label {
 .chip-soft:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px -8px rgba(214, 51, 132, 0.45);
+}
+
+/* ─── Nuvia “Plum & Gold” signature pieces (brand-kit reference) ──────────── */
+
+/* Deep-plum pill CTA — the “Get Started / Next →” button from the kit.
+   Plum→rose gradient, gilded top highlight, soft plum shadow. */
+.btn-plum {
+  background: linear-gradient(
+    135deg,
+    oklch(0.42 0.09 335) 0%,
+    oklch(0.47 0.135 352) 55%,
+    oklch(0.52 0.16 350) 100%
+  );
+  color: oklch(0.99 0.005 355);
+  border: 1px solid oklch(0.42 0.1 340 / 60%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 22%),
+    0 10px 26px -12px oklch(0.42 0.12 345 / 55%);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.btn-plum:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 28%),
+    0 14px 32px -12px oklch(0.42 0.12 345 / 65%);
+}
+.btn-plum:active {
+  transform: translateY(0);
+}
+.dark .btn-plum {
+  background: linear-gradient(
+    135deg,
+    oklch(0.34 0.07 335) 0%,
+    oklch(0.4 0.1 345) 55%,
+    oklch(0.45 0.12 350) 100%
+  );
+  border: 1px solid oklch(1 0 0 / 14%);
+  color: oklch(0.97 0.01 350);
+}
+
+/* Antique-gold hairline divider with a centre lotus bud — used under
+   serif page titles (“A Healthier You Every Cycle” ornament in the kit). */
+.gold-divider {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.gold-divider::before,
+.gold-divider::after {
+  content: "";
+  height: 1px;
+  width: 2.25rem;
+  background: linear-gradient(
+    to right,
+    transparent,
+    oklch(0.72 0.115 85 / 75%),
+    transparent
+  );
+}
+.gold-divider > span {
+  color: oklch(0.72 0.115 85);
+}
+
+/* Gilded shimmer text — premium/gold moments (“Selfcare…” card headings). */
+.gold-shine {
+  background: linear-gradient(
+    100deg,
+    oklch(0.62 0.1 85) 0%,
+    oklch(0.82 0.14 90) 35%,
+    oklch(0.72 0.125 85) 60%,
+    oklch(0.55 0.08 80) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-shift 6s ease-in-out infinite;
+}
+
+/* Arch frame — the tall rounded arch from the splash/onboarding art.
+   Wrap imagery inside a div.arch-frame (overflow-hidden). */
+.arch-frame {
+  border-radius: 999px 999px calc(var(--radius) + 0.75rem) calc(var(--radius) + 0.75rem);
+  border: 1px solid oklch(0.72 0.115 85 / 45%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 70%),
+    0 24px 60px -28px oklch(0.45 0.14 345 / 35%);
+}
+.dark .arch-frame {
+  border-color: oklch(0.82 0.13 88 / 30%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 10%),
+    0 24px 60px -28px oklch(0.1 0.02 345 / 70%);
+}
+
+/* Deep plum showcase card — “Selfcare is a form of Selflove” panel:
+   night-plum gradient, gilded heading, faint lotus watermark. */
+.card-plum {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--radius) + 0.5rem);
+  background:
+    radial-gradient(120% 140% at 85% -10%, oklch(0.5 0.13 350 / 55%), transparent 55%),
+    linear-gradient(160deg, oklch(0.3 0.07 332) 0%, oklch(0.24 0.06 335) 55%, oklch(0.2 0.05 338) 100%);
+  border: 1px solid oklch(0.72 0.115 85 / 35%);
+  color: oklch(0.97 0.01 350);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 12%),
+    0 22px 50px -22px oklch(0.25 0.06 335 / 65%);
+}
+
+/* Decorative lotus watermark (inline SVG data-URI), ~6% ink.
+   Usage: <div aria-hidden class="lotus-watermark absolute inset-0" /> */
+.lotus-watermark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cpath d='M60 14c7 10 11 21 11 32 0 15-5 27-11 34-6-7-11-19-11-34 0-11 4-22 11-32z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M26 44c11 4 20 12 26 22 4 8 6 16 5 24-9-2-19-8-26-17-7-9-9-19-5-29z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M94 44c-11 4-20 12-26 22-4 8-6 16-5 24 9-2 19-8 26-17 7-9 9-19 5-29z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M14 78c8 10 22 17 46 17s38-7 46-17c-14 4-28 6-46 6s-32-2-46-6z' stroke='%23b06a93' stroke-width='1.6'/%3E%3C/svg%3E");
+  background-size: 130px 130px;
+  background-repeat: repeat;
+  opacity: 0.08;
+  pointer-events: none;
+}
+.dark .lotus-watermark {
+  opacity: 0.06;
 }
 
 /* ─── Brand text selection ─────────────────────────────────────────────────── */

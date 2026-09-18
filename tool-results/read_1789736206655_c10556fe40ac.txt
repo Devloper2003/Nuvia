@@ -1,0 +1,585 @@
+   621→
+   622→              {/* Weight Change */}
+   623→              <div className="space-y-3">
+   624→                <Label className="text-sm font-medium flex items-center gap-2">
+   625→                  ⚖️ Weight Change
+   626→                </Label>
+   627→                <div className="flex items-center gap-2">
+   628→                  <Input
+   629→                    type="number"
+   630→                    placeholder="0"
+   631→                    value={weightChange}
+   632→                    onChange={(e) => setWeightChange(e.target.value)}
+   633→                    className="w-24 text-center border-red-200 dark:border-red-900/50 focus-visible:ring-red-400"
+   634→                  />
+   635→                  <span className="text-sm text-muted-foreground">kg</span>
+   636→                  <div className="flex gap-1 ml-2">
+   637→                    {weightChange && parseFloat(weightChange) !== 0 && (
+   638→                      <Badge
+   639→                        className={`border-0 ${
+   640→                          parseFloat(weightChange) > 0
+   641→                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+   642→                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+   643→                        }`}
+   644→                      >
+   645→                        {parseFloat(weightChange) > 0 ? '↑ Gain' : '↓ Loss'}
+   646→                      </Badge>
+   647→                    )}
+   648→                  </div>
+   649→                </div>
+   650→                <p className="text-xs text-muted-foreground">Enter positive for gain, negative for loss</p>
+   651→              </div>
+   652→
+   653→              {/* Save Button */}
+   654→              <div className="md:col-span-2 flex justify-end pt-2">
+   655→                <motion.div whileTap={{ scale: 0.95 }}>
+   656→                  <Button
+   657→                    onClick={handleSave}
+   658→                    className={`gap-2 ${
+   659→                      saved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
+   660→                    } text-white`}
+   661→                  >
+   662→                    {saved ? (
+   663→                      <>
+   664→                        <Check className="h-4 w-4" /> Saved!
+   665→                      </>
+   666→                    ) : (
+   667→                      <>
+   668→                        <Save className="h-4 w-4" /> Save Today&apos;s Log
+   669→                      </>
+   670→                    )}
+   671→                  </Button>
+   672→                </motion.div>
+   673→              </div>
+   674→            </div>
+   675→          </CardContent>
+   676→        </Card>
+   677→      </motion.div>
+   678→
+   679→      {/* ════════════════════════════════════════════════════════════════════
+   680→          SECTION 3: Symptom Trends
+   681→      ════════════════════════════════════════════════════════════════════ */}
+   682→      <motion.div
+   683→        initial={{ opacity: 0, y: 10 }}
+   684→        animate={{ opacity: 1, y: 0 }}
+   685→        transition={{ delay: 0.15 }}
+   686→      >
+   687→        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+   688→          <CardHeader>
+   689→            <div className="flex items-center justify-between flex-wrap gap-2">
+   690→              <div>
+   691→                <CardTitle className="text-base flex items-center gap-2">
+   692→                  <TrendingUp className="h-4 w-4 text-red-500" /> Symptom Trends
+   693→                </CardTitle>
+   694→                <CardDescription>Visualize your symptoms over time</CardDescription>
+   695→              </div>
+   696→              <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+   697→                <button
+   698→                  onClick={() => setTimeRange('weekly')}
+   699→                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+   700→                    timeRange === 'weekly'
+   701→                      ? 'bg-white dark:bg-gray-700 shadow-sm text-red-600 dark:text-red-400'
+   702→                      : 'text-muted-foreground hover:text-foreground'
+   703→                  }`}
+   704→                >
+   705→                  Weekly
+   706→                </button>
+   707→                <button
+   708→                  onClick={() => setTimeRange('monthly')}
+   709→                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+   710→                    timeRange === 'monthly'
+   711→                      ? 'bg-white dark:bg-gray-700 shadow-sm text-red-600 dark:text-red-400'
+   712→                      : 'text-muted-foreground hover:text-foreground'
+   713→                  }`}
+   714→                >
+   715→                  Monthly
+   716→                </button>
+   717→              </div>
+   718→            </div>
+   719→          </CardHeader>
+   720→          <CardContent>
+   721→            <Tabs defaultValue="hotflashes" className="space-y-4">
+   722→              <TabsList className="bg-red-50 dark:bg-red-950/30">
+   723→                <TabsTrigger value="hotflashes" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+   724→                  🔥 Hot Flashes
+   725→                </TabsTrigger>
+   726→                <TabsTrigger value="sleep" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+   727→                  😴 Sleep Quality
+   728→                </TabsTrigger>
+   729→                <TabsTrigger value="mood" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+   730→                  😔 Mood Pattern
+   731→                </TabsTrigger>
+   732→              </TabsList>
+   733→
+   734→              {/* Hot Flashes Chart */}
+   735→              <TabsContent value="hotflashes">
+   736→                {hasHistory ? (
+   737→                <div className="h-[320px] w-full">
+   738→                  <ResponsiveContainer width="100%" height="100%">
+   739→                    <AreaChart data={hotFlashesData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+   740→                      <defs>
+   741→                        <linearGradient id="hotFlashGradient" x1="0" y1="0" x2="0" y2="1">
+   742→                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+   743→                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+   744→                        </linearGradient>
+   745→                        <linearGradient id="nightSweatGradient" x1="0" y1="0" x2="0" y2="1">
+   746→                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
+   747→                          <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+   748→                        </linearGradient>
+   749→                      </defs>
+   750→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+   751→                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   752→                      <YAxis tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   753→                      <RechartsTooltip content={<ChartTooltip />} />
+   754→                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+   755→                      <Area
+   756→                        type="monotone"
+   757→                        dataKey="hotFlashes"
+   758→                        name="Hot Flashes"
+   759→                        stroke="#ef4444"
+   760→                        strokeWidth={2.5}
+   761→                        fill="url(#hotFlashGradient)"
+   762→                        dot={false}
+   763→                        activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+   764→                      />
+   765→                      <Area
+   766→                        type="monotone"
+   767→                        dataKey="nightSweats"
+   768→                        name="Night Sweats"
+   769→                        stroke="#6366f1"
+   770→                        strokeWidth={2.5}
+   771→                        fill="url(#nightSweatGradient)"
+   772→                        dot={false}
+   773→                        activeDot={{ r: 5, fill: '#6366f1', stroke: '#fff', strokeWidth: 2 }}
+   774→                      />
+   775→                    </AreaChart>
+   776→                  </ResponsiveContainer>
+   777→                </div>
+   778→                ) : (
+   779→                  <div className="flex flex-col items-center justify-center py-16 text-center">
+   780→                    <Thermometer className="h-8 w-8 text-muted-foreground mb-3" />
+   781→                    <p className="text-sm font-medium">No symptom logs yet</p>
+   782→                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+   783→                      Log your hot flashes and night sweats daily to see trends here.
+   784→                    </p>
+   785→                  </div>
+   786→                )}
+   787→              </TabsContent>
+   788→
+   789→              {/* Sleep Quality Chart */}
+   790→              <TabsContent value="sleep">
+   791→                {hasHistory ? (
+   792→                <div className="h-[320px] w-full">
+   793→                  <ResponsiveContainer width="100%" height="100%">
+   794→                    <LineChart data={sleepData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+   795→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+   796→                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   797→                      <YAxis domain={[0, 8]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   798→                      <RechartsTooltip content={<ChartTooltip />} />
+   799→                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+   800→                      <Line
+   801→                        type="monotone"
+   802→                        dataKey="quality"
+   803→                        name="Sleep Quality"
+   804→                        stroke="#8b5cf6"
+   805→                        strokeWidth={2.5}
+   806→                        dot={false}
+   807→                        activeDot={{ r: 5, fill: '#8b5cf6', stroke: '#fff', strokeWidth: 2 }}
+   808→                      />
+   809→                      <Line
+   810→                        type="monotone"
+   811→                        dataKey="duration"
+   812→                        name="Hours Slept"
+   813→                        stroke="#06b6d4"
+   814→                        strokeWidth={2.5}
+   815→                        dot={false}
+   816→                        activeDot={{ r: 5, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }}
+   817→                      />
+   818→                    </LineChart>
+   819→                  </ResponsiveContainer>
+   820→                </div>
+   821→                ) : (
+   822→                  <div className="flex flex-col items-center justify-center py-16 text-center">
+   823→                    <BedDouble className="h-8 w-8 text-muted-foreground mb-3" />
+   824→                    <p className="text-sm font-medium">No sleep logs yet</p>
+   825→                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+   826→                      Log your sleep quality over time to see patterns here.
+   827→                    </p>
+   828→                  </div>
+   829→                )}
+   830→              </TabsContent>
+   831→
+   832→              {/* Mood Pattern Chart */}
+   833→              <TabsContent value="mood">
+   834→                {hasHistory ? (
+   835→                <div className="h-[320px] w-full">
+   836→                  <ResponsiveContainer width="100%" height="100%">
+   837→                    <AreaChart data={moodData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+   838→                      <defs>
+   839→                        <linearGradient id="moodMenopauseGradient" x1="0" y1="0" x2="0" y2="1">
+   840→                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4} />
+   841→                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+   842→                        </linearGradient>
+   843→                        <linearGradient id="anxietyGradient" x1="0" y1="0" x2="0" y2="1">
+   844→                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+   845→                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+   846→                        </linearGradient>
+   847→                      </defs>
+   848→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+   849→                      <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   850→                      <YAxis domain={[0, 7]} tick={{ fontSize: 10, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
+   851→                      <RechartsTooltip content={<ChartTooltip />} />
+   852→                      <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+   853→                      <Area
+   854→                        type="monotone"
+   855→                        dataKey="mood"
+   856→                        name="Mood Score"
+   857→                        stroke="#f59e0b"
+   858→                        strokeWidth={2.5}
+   859→                        fill="url(#moodMenopauseGradient)"
+   860→                        dot={false}
+   861→                        activeDot={{ r: 5, fill: '#f59e0b', stroke: '#fff', strokeWidth: 2 }}
+   862→                      />
+   863→                      <Area
+   864→                        type="monotone"
+   865→                        dataKey="anxiety"
+   866→                        name="Anxiety Level"
+   867→                        stroke="#ef4444"
+   868→                        strokeWidth={2.5}
+   869→                        fill="url(#anxietyGradient)"
+   870→                        dot={false}
+   871→                        activeDot={{ r: 5, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+   872→                      />
+   873→                    </AreaChart>
+   874→                  </ResponsiveContainer>
+   875→                </div>
+   876→                ) : (
+   877→                  <div className="flex flex-col items-center justify-center py-16 text-center">
+   878→                    <Brain className="h-8 w-8 text-muted-foreground mb-3" />
+   879→                    <p className="text-sm font-medium">No mood logs yet</p>
+   880→                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+   881→                      Log mood and anxiety over time to see patterns here.
+   882→                    </p>
+   883→                  </div>
+   884→                )}
+   885→              </TabsContent>
+   886→            </Tabs>
+   887→          </CardContent>
+   888→        </Card>
+   889→      </motion.div>
+   890→
+   891→      {/* ════════════════════════════════════════════════════════════════════
+   892→          SECTION 4: AI Insights
+   893→      ════════════════════════════════════════════════════════════════════ */}
+   894→      <motion.div
+   895→        initial={{ opacity: 0, y: 10 }}
+   896→        animate={{ opacity: 1, y: 0 }}
+   897→        transition={{ delay: 0.2 }}
+   898→      >
+   899→        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+   900→          <CardHeader>
+   901→            <CardTitle className="text-base flex items-center gap-2">
+   902→              <Sparkles className="h-4 w-4 text-amber-500" /> AI-Powered Insights
+   903→            </CardTitle>
+   904→            <CardDescription>Personalized analysis based on your tracked data</CardDescription>
+   905→          </CardHeader>
+   906→          <CardContent>
+   907→            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+   908→              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
+   909→                <Sparkles className="h-6 w-6 text-muted-foreground" />
+   910→              </div>
+   911→              <p className="text-sm font-medium text-foreground">Personalized insights coming soon</p>
+   912→              <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+   913→                Log your symptoms, sleep, and mood for a few weeks — Nuvia will then surface correlations like hot-flash triggers and sleep-mood patterns here.
+   914→              </p>
+   915→            </div>
+   916→
+   917→            {/* AI Disclaimer */}
+   918→            <div className="flex items-start gap-2 p-3 mt-4 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40">
+   919→              <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+   920→              <p className="text-xs text-amber-700 dark:text-amber-300">
+   921→                Insights will be based on tracked data patterns and general medical knowledge. Always consult your healthcare provider before making treatment decisions.
+   922→              </p>
+   923→            </div>
+   924→          </CardContent>
+   925→        </Card>
+   926→      </motion.div>
+   927→
+   928→      {/* ════════════════════════════════════════════════════════════════════
+   929→          SECTION 5: Management Tips
+   930→      ════════════════════════════════════════════════════════════════════ */}
+   931→      <motion.div
+   932→        initial={{ opacity: 0, y: 10 }}
+   933→        animate={{ opacity: 1, y: 0 }}
+   934→        transition={{ delay: 0.25 }}
+   935→      >
+   936→        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+   937→          <CardHeader>
+   938→            <CardTitle className="text-base flex items-center gap-2">
+   939→              <Heart className="h-4 w-4 text-pink-500" /> Management Tips
+   940→            </CardTitle>
+   941→            <CardDescription>Practical advice for managing your symptoms</CardDescription>
+   942→          </CardHeader>
+   943→          <CardContent>
+   944→            <Accordion type="single" collapsible className="space-y-2">
+   945→              {MANAGEMENT_TIPS.map((category, index) => (
+   946→                <AccordionItem
+   947→                  key={category.id}
+   948→                  value={category.id}
+   949→                  className={`border rounded-xl px-4 overflow-hidden ${
+   950→                    selectedStage === 'menopause'
+   951→                      ? 'border-red-100 dark:border-red-900/30'
+   952→                      : selectedStage === 'postmenopause'
+   953→                        ? 'border-purple-100 dark:border-purple-900/30'
+   954→                        : 'border-amber-100 dark:border-amber-900/30'
+   955→                  }`}
+   956→                >
+   957→                  <AccordionTrigger className="hover:no-underline py-3">
+   958→                    <div className="flex items-center gap-3">
+   959→                      <div className={`p-2 rounded-lg ${category.bgColor}`}>
+   960→                        <category.icon className={`h-4 w-4 ${category.iconColor}`} />
+   961→                      </div>
+   962→                      <span className="text-sm font-medium">{category.title}</span>
+   963→                      <Badge variant="secondary" className="text-[9px] h-4 px-1.5">
+   964→                        {category.tips.length} tips
+   965→                      </Badge>
+   966→                    </div>
+   967→                  </AccordionTrigger>
+   968→                  <AccordionContent>
+   969→                    <div className="space-y-2 pb-2">
+   970→                      {category.tips.map((tip, tipIndex) => (
+   971→                        <motion.div
+   972→                          key={tipIndex}
+   973→                          initial={{ opacity: 0, x: -5 }}
+   974→                          animate={{ opacity: 1, x: 0 }}
+   975→                          transition={{ delay: tipIndex * 0.05 }}
+   976→                          className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+   977→                        >
+   978→                          <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+   979→                          <p className="text-xs text-muted-foreground leading-relaxed">{tip}</p>
+   980→                        </motion.div>
+   981→                      ))}
+   982→                    </div>
+   983→                  </AccordionContent>
+   984→                </AccordionItem>
+   985→              ))}
+   986→            </Accordion>
+   987→          </CardContent>
+   988→        </Card>
+   989→      </motion.div>
+   990→
+   991→      {/* ════════════════════════════════════════════════════════════════════
+   992→          SECTION 6: HRT Tracker
+   993→      ════════════════════════════════════════════════════════════════════ */}
+   994→      <motion.div
+   995→        initial={{ opacity: 0, y: 10 }}
+   996→        animate={{ opacity: 1, y: 0 }}
+   997→        transition={{ delay: 0.3 }}
+   998→      >
+   999→        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+  1000→          <CardHeader>
+  1001→            <div className="flex items-center justify-between flex-wrap gap-2">
+  1002→              <div>
+  1003→                <CardTitle className="text-base flex items-center gap-2">
+  1004→                  <Pill className="h-4 w-4 text-red-500" /> HRT Tracker
+  1005→                </CardTitle>
+  1006→                <CardDescription>Track your hormone replacement therapy</CardDescription>
+  1007→              </div>
+  1008→              <Button
+  1009→                onClick={() => setShowHrtForm(!showHrtForm)}
+  1010→                size="sm"
+  1011→                className="gap-1 bg-red-500 hover:bg-red-600 text-white"
+  1012→              >
+  1013→                {showHrtForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+  1014→                {showHrtForm ? 'Cancel' : 'Add Medication'}
+  1015→              </Button>
+  1016→            </div>
+  1017→          </CardHeader>
+  1018→          <CardContent>
+  1019→            {/* Add HRT Form */}
+  1020→            <AnimatePresence>
+  1021→              {showHrtForm && (
+  1022→                <motion.div
+  1023→                  initial={{ height: 0, opacity: 0 }}
+  1024→                  animate={{ height: 'auto', opacity: 1 }}
+  1025→                  exit={{ height: 0, opacity: 0 }}
+  1026→                  transition={{ duration: 0.3 }}
+  1027→                  className="overflow-hidden"
+  1028→                >
+  1029→                  <div className="p-4 rounded-xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 mb-4 space-y-4">
+  1030→                    <h4 className="text-sm font-semibold flex items-center gap-2">
+  1031→                      <Plus className="h-4 w-4 text-red-500" /> New Medication
+  1032→                    </h4>
+  1033→                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  1034→                      <div className="space-y-1.5">
+  1035→                        <Label className="text-xs font-medium">Medication Name</Label>
+  1036→                        <Input
+  1037→                          placeholder="e.g., Estradiol"
+  1038→                          value={newHrt.medication}
+  1039→                          onChange={(e) => setNewHrt({ ...newHrt, medication: e.target.value })}
+  1040→                          className="border-red-200 dark:border-red-900/50 focus-visible:ring-red-400 h-9"
+  1041→                        />
+  1042→                      </div>
+  1043→                      <div className="space-y-1.5">
+  1044→                        <Label className="text-xs font-medium">Dosage</Label>
+  1045→                        <Input
+  1046→                          placeholder="e.g., 0.05mg"
+  1047→                          value={newHrt.dosage}
+  1048→                          onChange={(e) => setNewHrt({ ...newHrt, dosage: e.target.value })}
+  1049→                          className="border-red-200 dark:border-red-900/50 focus-visible:ring-red-400 h-9"
+  1050→                        />
+  1051→                      </div>
+  1052→                      <div className="space-y-1.5">
+  1053→                        <Label className="text-xs font-medium">Frequency</Label>
+  1054→                        <Input
+  1055→                          placeholder="e.g., Daily, Weekly"
+  1056→                          value={newHrt.frequency}
+  1057→                          onChange={(e) => setNewHrt({ ...newHrt, frequency: e.target.value })}
+  1058→                          className="border-red-200 dark:border-red-900/50 focus-visible:ring-red-400 h-9"
+  1059→                        />
+  1060→                      </div>
+  1061→                      <div className="space-y-1.5">
+  1062→                        <Label className="text-xs font-medium">Start Date</Label>
+  1063→                        <Input
+  1064→                          type="date"
+  1065→                          value={newHrt.startDate}
+  1066→                          onChange={(e) => setNewHrt({ ...newHrt, startDate: e.target.value })}
+  1067→                          className="border-red-200 dark:border-red-900/50 focus-visible:ring-red-400 h-9"
+  1068→                        />
+  1069→                      </div>
+  1070→                    </div>
+  1071→                    <div className="space-y-2">
+  1072→                      <Label className="text-xs font-medium">Effectiveness (1-5)</Label>
+  1073→                      <div className="flex gap-2">
+  1074→                        {[1, 2, 3, 4, 5].map((val) => (
+  1075→                          <button
+  1076→                            key={val}
+  1077→                            onClick={() => setNewHrt({ ...newHrt, effectiveness: val })}
+  1078→                            className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+  1079→                              newHrt.effectiveness === val
+  1080→                                ? `${effectivenessColors[val]} text-white shadow-sm`
+  1081→                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+  1082→                            }`}
+  1083→                          >
+  1084→                            {val}
+  1085→                          </button>
+  1086→                        ))}
+  1087→                      </div>
+  1088→                      <p className="text-[10px] text-muted-foreground">
+  1089→                        Selected: {effectivenessLabels[newHrt.effectiveness]}
+  1090→                      </p>
+  1091→                    </div>
+  1092→                    <div className="space-y-1.5">
+  1093→                      <Label className="text-xs font-medium">Notes</Label>
+  1094→                      <Input
+  1095→                        placeholder="Any observations..."
+  1096→                        value={newHrt.notes}
+  1097→                        onChange={(e) => setNewHrt({ ...newHrt, notes: e.target.value })}
+  1098→                        className="border-red-200 dark:border-red-900/50 focus-visible:ring-red-400 h-9"
+  1099→                      />
+  1100→                    </div>
+  1101→                    <Button
+  1102→                      onClick={addHrtEntry}
+  1103→                      className="w-full bg-red-500 hover:bg-red-600 text-white gap-2"
+  1104→                      disabled={!newHrt.medication || !newHrt.dosage}
+  1105→                    >
+  1106→                      <Plus className="h-4 w-4" /> Add Medication
+  1107→                    </Button>
+  1108→                  </div>
+  1109→                </motion.div>
+  1110→              )}
+  1111→            </AnimatePresence>
+  1112→
+  1113→            {/* HRT Entries List */}
+  1114→            <div className="space-y-3">
+  1115→              {hrtEntries.length === 0 ? (
+  1116→                <div className="text-center py-8">
+  1117→                  <Pill className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-30" />
+  1118→                  <p className="text-sm text-muted-foreground">No medications tracked yet</p>
+  1119→                  <p className="text-xs text-muted-foreground">Click &quot;Add Medication&quot; to get started</p>
+  1120→                </div>
+  1121→              ) : (
+  1122→                hrtEntries.map((entry, index) => (
+  1123→                  <motion.div
+  1124→                    key={entry.id}
+  1125→                    initial={{ opacity: 0, y: 5 }}
+  1126→                    animate={{ opacity: 1, y: 0 }}
+  1127→                    transition={{ delay: index * 0.05 }}
+  1128→                    className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:shadow-sm transition-shadow"
+  1129→                  >
+  1130→                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30 shrink-0">
+  1131→                      <Pill className="h-5 w-5 text-red-500" />
+  1132→                    </div>
+  1133→                    <div className="flex-1 min-w-0">
+  1134→                      <div className="flex items-center gap-2 flex-wrap">
+  1135→                        <h4 className="text-sm font-semibold">{entry.medication}</h4>
+  1136→                        <Badge variant="secondary" className="text-[10px]">{entry.dosage}</Badge>
+  1137→                        <Badge variant="outline" className="text-[10px]">{entry.frequency}</Badge>
+  1138→                      </div>
+  1139→                      <p className="text-xs text-muted-foreground mt-1">
+  1140→                        Started: {new Date(entry.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+  1141→                      </p>
+  1142→                      {entry.notes && (
+  1143→                        <p className="text-xs text-muted-foreground mt-1 italic">{entry.notes}</p>
+  1144→                      )}
+  1145→                      {/* Effectiveness bar */}
+  1146→                      <div className="mt-2">
+  1147→                        <div className="flex items-center gap-2 mb-1">
+  1148→                          <span className="text-[10px] font-medium text-muted-foreground">Effectiveness:</span>
+  1149→                          <span className="text-[10px] font-semibold">{effectivenessLabels[entry.effectiveness]}</span>
+  1150→                        </div>
+  1151→                        <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+  1152→                          <div
+  1153→                            className={`h-full rounded-full ${effectivenessColors[entry.effectiveness]}`}
+  1154→                            style={{ width: `${(entry.effectiveness / 5) * 100}%` }}
+  1155→                          />
+  1156→                        </div>
+  1157→                      </div>
+  1158→                    </div>
+  1159→                    <Button
+  1160→                      variant="ghost"
+  1161→                      size="icon"
+  1162→                      className="h-8 w-8 shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+  1163→                      onClick={() => removeHrtEntry(entry.id)}
+  1164→                    >
+  1165→                      <X className="h-4 w-4" />
+  1166→                    </Button>
+  1167→                  </motion.div>
+  1168→                ))
+  1169→              )}
+  1170→            </div>
+  1171→
+  1172→            {/* HRT Summary */}
+  1173→            {hrtEntries.length > 0 && (
+  1174→              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40">
+  1175→                <div className="flex items-center gap-2 mb-2">
+  1176→                  <BarChart3 className="h-4 w-4 text-red-500" />
+  1177→                  <span className="text-xs font-semibold text-red-700 dark:text-red-300">HRT Summary</span>
+  1178→                </div>
+  1179→                <div className="grid grid-cols-3 gap-3 text-center">
+  1180→                  <div>
+  1181→                    <div className="text-lg font-bold text-red-600 dark:text-red-400">{hrtEntries.length}</div>
+  1182→                    <div className="text-[10px] text-muted-foreground">Medications</div>
+  1183→                  </div>
+  1184→                  <div>
+  1185→                    <div className="text-lg font-bold text-red-600 dark:text-red-400">
+  1186→                      {(hrtEntries.reduce((sum, e) => sum + e.effectiveness, 0) / hrtEntries.length).toFixed(1)}
+  1187→                    </div>
+  1188→                    <div className="text-[10px] text-muted-foreground">Avg Effectiveness</div>
+  1189→                  </div>
+  1190→                  <div>
+  1191→                    <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+  1192→                      {hrtEntries.filter((e) => e.effectiveness >= 4).length}
+  1193→                    </div>
+  1194→                    <div className="text-[10px] text-muted-foreground">Working Well</div>
+  1195→                  </div>
+  1196→                </div>
+  1197→              </div>
+  1198→            )}
+  1199→          </CardContent>
+  1200→        </Card>
+  1201→      </motion.div>
+  1202→    </div>
+  1203→  )
+  1204→}
+  1205→

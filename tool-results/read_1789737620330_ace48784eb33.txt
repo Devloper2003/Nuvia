@@ -1,0 +1,955 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect } from 'react'
+     4→import * as XLSX from 'xlsx'
+     5→import { useAppStore } from '@/lib/store'
+     6→import { toast } from 'sonner'
+     7→import { motion, AnimatePresence } from 'framer-motion'
+     8→import {
+     9→  BarChart,
+    10→  Bar,
+    11→  PieChart,
+    12→  Pie,
+    13→  LineChart,
+    14→  Line,
+    15→  RadarChart,
+    16→  Radar,
+    17→  PolarGrid,
+    18→  PolarAngleAxis,
+    19→  PolarRadiusAxis,
+    20→  XAxis,
+    21→  YAxis,
+    22→  CartesianGrid,
+    23→  Cell,
+    24→  ResponsiveContainer,
+    25→  Legend,
+    26→  Tooltip,
+    27→} from 'recharts'
+    28→import {
+    29→  Download,
+    30→  FileSpreadsheet,
+    31→  FileText,
+    32→  TrendingUp,
+    33→  TrendingDown,
+    34→  Minus,
+    35→  Activity,
+    36→  Heart,
+    37→  Moon,
+    38→  Droplets,
+    39→  Brain,
+    40→  BarChart3,
+    41→  Sparkles,
+    42→  ChevronRight,
+    43→  RefreshCcw,
+    44→  Loader2,
+    45→} from 'lucide-react'
+    46→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    47→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    48→import { Button } from '@/components/ui/button'
+    49→import { Badge } from '@/components/ui/badge'
+    50→import { Progress } from '@/components/ui/progress'
+    51→import { Separator } from '@/components/ui/separator'
+    52→
+    53→// ── Types ───────────────────────────────────────────────────────────────────
+    54→type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'annual'
+    55→
+    56→interface PeriodData {
+    57→  cycleSummary: { day: number; phase: string; note: string }[]
+    58→  symptomFrequency: { name: string; count: number }[]
+    59→  moodDistribution: { name: string; value: number; color: string }[]
+    60→  sleepAvg: number
+    61→  waterAvg: number
+    62→  cycleRegularity: number
+    63→  symptomSeverity: number
+    64→  moodStability: number
+    65→  wellnessScore: number
+    66→  prevCycleRegularity: number
+    67→  prevSymptomSeverity: number
+    68→  prevMoodStability: number
+    69→  prevWellnessScore: number
+    70→  insights: string[]
+    71→  trendLine: { label: string; wellness: number; symptoms: number }[]
+    72→  radarData: { subject: string; current: number; previous: number }[]
+    73→}
+    74→
+    75→// ── Helpers ─────────────────────────────────────────────────────────────────
+    76→function TrendIcon({ current, previous }: { current: number; previous: number }) {
+    77→  const diff = current - previous
+    78→  if (diff > 2) return <TrendingUp className="size-4 text-emerald-500" />
+    79→  if (diff < -2) return <TrendingDown className="size-4 text-red-400" />
+    80→  return <Minus className="size-4 text-muted-foreground" />
+    81→}
+    82→
+    83→function TrendLabel({ current, previous, suffix = '' }: { current: number; previous: number; suffix?: string }) {
+    84→  const diff = current - previous
+    85→  const pct = previous !== 0 ? Math.round((diff / previous) * 100) : 0
+    86→  if (diff > 2)
+    87→    return (
+    88→      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+    89→        +{pct}%{suffix}
+    90→      </span>
+    91→    )
+    92→  if (diff < -2)
+    93→    return (
+    94→      <span className="text-xs text-red-500 font-medium">
+    95→        {pct}%{suffix}
+    96→      </span>
+    97→    )
+    98→  return (
+    99→    <span className="text-xs text-muted-foreground font-medium">No change{suffix}</span>
+   100→  )
+   101→}
+   102→
+   103→// ── Score Card ──────────────────────────────────────────────────────────────
+   104→function ScoreCard({
+   105→  title,
+   106→  score,
+   107→  prevScore,
+   108→  icon: Icon,
+   109→  color,
+   110→  delay = 0,
+   111→}: {
+   112→  title: string
+   113→  score: number
+   114→  prevScore: number
+   115→  icon: React.ElementType
+   116→  color: string
+   117→  delay?: number
+   118→}) {
+   119→  return (
+   120→    <motion.div
+   121→      initial={{ opacity: 0, y: 20 }}
+   122→      animate={{ opacity: 1, y: 0 }}
+   123→      transition={{ duration: 0.4, delay }}
+   124→    >
+   125→      <Card className="relative overflow-hidden border-teal-100 dark:border-teal-900/50 hover:shadow-md transition-shadow">
+   126→        <CardContent className="p-4">
+   127→          <div className="flex items-start justify-between mb-3">
+   128→            <div className={`p-2 rounded-lg ${color}`}>
+   129→              <Icon className="size-4 text-white" />
+   130→            </div>
+   131→            <div className="flex items-center gap-1">
+   132→              <TrendIcon current={score} previous={prevScore} />
+   133→              <TrendLabel current={score} previous={prevScore} />
+   134→            </div>
+   135→          </div>
+   136→          <p className="text-2xl font-bold text-foreground">{score}</p>
+   137→          <p className="text-xs text-muted-foreground mt-0.5">{title}</p>
+   138→          <Progress value={score} className="mt-3 h-1.5 bg-teal-100 dark:bg-teal-900/50 [&>div]:bg-teal-500" />
+   139→        </CardContent>
+   140→      </Card>
+   141→    </motion.div>
+   142→  )
+   143→}
+   144→
+   145→// ── Main Component ──────────────────────────────────────────────────────────
+   146→export default function ReportsModule() {
+   147→  const userProfile = useAppStore((s) => s.userProfile)
+   148→  const [period, setPeriod] = useState<ReportPeriod>('weekly')
+   149→  const [data, setData] = useState<(PeriodData & { period?: { label: string; startDate: string; endDate: string } }) | null>(null)
+   150→  const [loading, setLoading] = useState(true)
+   151→
+   152→  // ── Fetch the real report for the selected period (and on period switch) ──
+   153→  useEffect(() => {
+   154→    if (!userProfile?.id) return
+   155→    let cancelled = false
+   156→    // Defer to a microtask so the effect body itself stays free of sync
+   157→    // state updates (react-hooks/set-state-in-effect).
+   158→    Promise.resolve().then(() => {
+   159→      if (!cancelled) setLoading(true)
+   160→    })
+   161→    fetch(`/api/reports/summary?userId=${encodeURIComponent(userProfile.id)}&period=${period}`)
+   162→      .then((r) => (r.ok ? r.json() : null))
+   163→      .then((rep) => {
+   164→        if (cancelled) return
+   165→        const counts = rep?.counts
+   166→        const hasEntries =
+   167→          counts && counts.symptoms + counts.moods + counts.sleeps + counts.waters > 0
+   168→        setData(hasEntries ? rep : null)
+   169→        setLoading(false)
+   170→      })
+   171→      .catch(() => {
+   172→        if (!cancelled) {
+   173→          setData(null)
+   174→          setLoading(false)
+   175→        }
+   176→      })
+   177→    return () => {
+   178→      cancelled = true
+   179→    }
+   180→  }, [userProfile?.id, period])
+   181→
+   182→  // ── CSV export (real client-side download of the current report) ──────────
+   183→  const handleExportCsv = () => {
+   184→    if (!data) return
+   185→    const rows: string[][] = []
+   186→    rows.push(['Nuvia Report', data.period?.label ?? ''])
+   187→    rows.push(['Window', `${data.period?.startDate ?? ''} → ${data.period?.endDate ?? ''}`])
+   188→    rows.push([])
+   189→    rows.push(['Metric', 'Current', 'Previous'])
+   190→    rows.push(['Wellness Score', String(data.wellnessScore), String(data.prevWellnessScore)])
+   191→    rows.push(['Cycle Regularity', String(data.cycleRegularity), String(data.prevCycleRegularity)])
+   192→    rows.push(['Symptom Severity', String(data.symptomSeverity), String(data.prevSymptomSeverity)])
+   193→    rows.push(['Mood Stability', String(data.moodStability), String(data.prevMoodStability)])
+   194→    rows.push(['Sleep Average (h)', String(data.sleepAvg), ''])
+   195→    rows.push(['Water Average (glasses)', String(data.waterAvg), ''])
+   196→    rows.push([])
+   197→    rows.push(['Trend', 'Wellness', 'Symptoms'])
+   198→    for (const t of data.trendLine) rows.push([t.label, String(t.wellness), String(t.symptoms)])
+   199→    rows.push([])
+   200→    rows.push(['Symptom', 'Count'])
+   201→    for (const s of data.symptomFrequency) rows.push([s.name, String(s.count)])
+   202→    rows.push([])
+   203→    rows.push(['Mood', 'Count'])
+   204→    for (const m of data.moodDistribution) rows.push([m.name, String(m.value)])
+   205→
+   206→    const csv = rows
+   207→      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+   208→      .join('\n')
+   209→    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+   210→    const url = URL.createObjectURL(blob)
+   211→    const a = document.createElement('a')
+   212→    a.href = url
+   213→    a.download = `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.csv`
+   214→    a.click()
+   215→    URL.revokeObjectURL(url)
+   216→    toast.success('CSV report downloaded')
+   217→  }
+   218→
+   219→  // ── Excel export (real multi-sheet .xlsx workbook via SheetJS) ────────────
+   220→  const handleExportExcel = () => {
+   221→    if (!data) return
+   222→    try {
+   223→      const wb = XLSX.utils.book_new()
+   224→
+   225→      // Sheet 1 — Summary: headline metrics current vs previous
+   226→      const summary = XLSX.utils.aoa_to_sheet([
+   227→        ['Nuvia Health Report'],
+   228→        ['Window', `${data.period?.startDate ?? ''} → ${data.period?.endDate ?? ''}`],
+   229→        ['Generated', new Date().toLocaleString('en-IN')],
+   230→        [],
+   231→        ['Metric', 'Current', 'Previous'],
+   232→        ['Wellness Score', data.wellnessScore, data.prevWellnessScore],
+   233→        ['Cycle Regularity', data.cycleRegularity, data.prevCycleRegularity],
+   234→        ['Symptom Severity', data.symptomSeverity, data.prevSymptomSeverity],
+   235→        ['Mood Stability', data.moodStability, data.prevMoodStability],
+   236→        ['Sleep Average (h)', data.sleepAvg, ''],
+   237→        ['Water Average (glasses)', data.waterAvg, ''],
+   238→      ])
+   239→      summary['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }]
+   240→      XLSX.utils.book_append_sheet(wb, summary, 'Summary')
+   241→
+   242→      // Sheet 2 — Trends
+   243→      const trends = XLSX.utils.json_to_sheet(
+   244→        data.trendLine.map((t) => ({ Period: t.label, Wellness: t.wellness, Symptoms: t.symptoms }))
+   245→      )
+   246→      trends['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 12 }]
+   247→      XLSX.utils.book_append_sheet(wb, trends, 'Trends')
+   248→
+   249→      // Sheet 3 — Symptoms
+   250→      const symptoms = XLSX.utils.json_to_sheet(
+   251→        data.symptomFrequency.map((s) => ({ Symptom: s.name, Count: s.count }))
+   252→      )
+   253→      symptoms['!cols'] = [{ wch: 26 }, { wch: 10 }]
+   254→      XLSX.utils.book_append_sheet(wb, symptoms, 'Symptoms')
+   255→
+   256→      // Sheet 4 — Mood
+   257→      const moods = XLSX.utils.json_to_sheet(
+   258→        data.moodDistribution.map((m) => ({ Mood: m.name, Entries: m.value }))
+   259→      )
+   260→      moods['!cols'] = [{ wch: 18 }, { wch: 10 }]
+   261→      XLSX.utils.book_append_sheet(wb, moods, 'Mood')
+   262→
+   263→      // Sheet 5 — Cycle milestones
+   264→      const cycle = XLSX.utils.json_to_sheet(
+   265→        data.cycleSummary.map((c) => ({ Day: c.day, Phase: c.phase, Note: c.note }))
+   266→      )
+   267→      cycle['!cols'] = [{ wch: 8 }, { wch: 18 }, { wch: 52 }]
+   268→      XLSX.utils.book_append_sheet(wb, cycle, 'Cycle Log')
+   269→
+   270→      // Sheet 6 — Insights
+   271→      const insights = XLSX.utils.aoa_to_sheet([
+   272→        ['AI Insights'],
+   273→        ...data.insights.map((i, idx) => [`${idx + 1}.`, i]),
+   274→      ])
+   275→      insights['!cols'] = [{ wch: 6 }, { wch: 80 }]
+   276→      XLSX.utils.book_append_sheet(wb, insights, 'Insights')
+   277→
+   278→      XLSX.writeFile(wb, `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.xlsx`)
+   279→      toast.success('Excel workbook downloaded', {
+   280→        description: '6 sheets: Summary, Trends, Symptoms, Mood, Cycle Log, Insights.',
+   281→      })
+   282→    } catch {
+   283→      toast.error('Could not generate the Excel file')
+   284→    }
+   285→  }
+   286→
+   287→  // ── PDF export: opens a print-ready report in a new tab and triggers the ──
+   288→  // browser's "Save as PDF" flow. Works fully client-side with real data.
+   289→  const handleExportPdf = () => {
+   290→    if (!data) return
+   291→    const esc = (s: string) =>
+   292→      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+   293→
+   294→    const metricRow = (label: string, current: number, previous?: number) => `
+   295→      <tr>
+   296→        <td>${esc(label)}</td>
+   297→        <td><strong>${current}</strong></td>
+   298→        <td>${previous !== undefined ? previous : '—'}</td>
+   299→      </tr>`
+   300→
+   301→    const symptomRows = data.symptomFrequency
+   302→      .map(
+   303→        (s) =>
+   304→          `<tr><td>${esc(s.name)}</td><td>${s.count}</td><td>${'█'.repeat(Math.min(s.count, 20))}</td></tr>`
+   305→      )
+   306→      .join('')
+   307→    const moodRows = data.moodDistribution
+   308→      .map(
+   309→        (m) =>
+   310→          `<tr><td><span class="dot" style="background:${m.color}"></span>${esc(m.name)}</td><td>${m.value}</td></tr>`
+   311→      )
+   312→      .join('')
+   313→    const insightItems = data.insights.map((i) => `<li>${esc(i)}</li>`).join('')
+   314→    const cycleItems = data.cycleSummary
+   315→      .map((c) => `<li><strong>Day ${c.day}</strong> (${esc(c.phase)}) — ${esc(c.note)}</li>`)
+   316→      .join('')
+   317→    const trendRows = data.trendLine
+   318→      .map((t) => `<tr><td>${esc(t.label)}</td><td>${t.wellness}</td><td>${t.symptoms}</td></tr>`)
+   319→      .join('')
+   320→
+   321→    const html = `<!DOCTYPE html>
+   322→<html>
+   323→<head>
+   324→<meta charset="utf-8" />
+   325→<title>Nuvia ${period} report</title>
+   326→<style>
+   327→  * { box-sizing: border-box; }
+   328→  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1f2937; margin: 32px; max-width: 780px; }
+   329→  h1 { font-size: 20px; margin: 0; color: #0f766e; }
+   330→  h2 { font-size: 14px; color: #0f766e; border-bottom: 2px solid #ccfbf1; padding-bottom: 4px; margin-top: 28px; }
+   331→  .sub { color: #6b7280; font-size: 12px; margin-top: 2px; }
+   332→  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+   333→  .logo { width: 38px; height: 38px; border-radius: 10px; object-fit: contain; }
+   334→  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+   335→  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+   336→  th { background: #f0fdfa; color: #0f766e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+   337→  .scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+   338→  .score { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px; text-align: center; }
+   339→  .score .num { font-size: 22px; font-weight: 700; color: #0f766e; }
+   340→  .score .lbl { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px; }
+   341→  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+   342→  ul { font-size: 12px; padding-left: 18px; }
+   343→  li { margin: 4px 0; }
+   344→  .foot { margin-top: 30px; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+   345→  .bar { color: #14b8a6; font-size: 10px; letter-spacing: -1px; }
+   346→  @media print { body { margin: 16px; } }
+   347→</style>
+   348→</head>
+   349→<body>
+   350→  <div class="brand">
+   351→    <img class="logo" src="/brand/nuvia-mark.png" alt="Nuvia logo" />
+   352→    <div>
+   353→      <h1>Nuvia Health Report</h1>
+   354→      <div class="sub">${esc(data.period?.label ?? '')} · ${esc(data.period?.startDate ?? '')} → ${esc(data.period?.endDate ?? '')}</div>
+   355→    </div>
+   356→  </div>
+   357→
+   358→  <div class="scores">
+   359→    <div class="score"><div class="num">${data.wellnessScore}</div><div class="lbl">Wellness</div></div>
+   360→    <div class="score"><div class="num">${data.cycleRegularity}</div><div class="lbl">Cycle regularity</div></div>
+   361→    <div class="score"><div class="num">${data.moodStability}</div><div class="lbl">Mood stability</div></div>
+   362→    <div class="score"><div class="num">${100 - data.symptomSeverity}</div><div class="lbl">Symptom comfort</div></div>
+   363→  </div>
+   364→
+   365→  <h2>Key Metrics</h2>
+   366→  <table>
+   367→    <tr><th>Metric</th><th>Current</th><th>Previous</th></tr>
+   368→    ${metricRow('Wellness Score', data.wellnessScore, data.prevWellnessScore)}
+   369→    ${metricRow('Cycle Regularity', data.cycleRegularity, data.prevCycleRegularity)}
+   370→    ${metricRow('Symptom Severity', data.symptomSeverity, data.prevSymptomSeverity)}
+   371→    ${metricRow('Mood Stability', data.moodStability, data.prevMoodStability)}
+   372→    ${metricRow('Sleep Average (h)', data.sleepAvg)}
+   373→    ${metricRow('Water Average (glasses/day)', data.waterAvg)}
+   374→  </table>
+   375→
+   376→  <h2>Symptom Frequency</h2>
+   377→  <table>
+   378→    <tr><th>Symptom</th><th>Count</th><th></th></tr>
+   379→    ${symptomRows || '<tr><td colspan="3">No symptoms logged this period 🎉</td></tr>'}
+   380→  </table>
+   381→
+   382→  <h2>Mood Distribution</h2>
+   383→  <table>
+   384→    <tr><th>Mood</th><th>Count</th></tr>
+   385→    ${moodRows || '<tr><td colspan="2">No mood entries this period</td></tr>'}
+   386→  </table>
+   387→
+   388→  <h2>Wellness Trend</h2>
+   389→  <table>
+   390→    <tr><th>Point</th><th>Wellness</th><th>Symptom load</th></tr>
+   391→    ${trendRows}
+   392→  </table>
+   393→
+   394→  <h2>Insights</h2>
+   395→  <ul>${insightItems || '<li>No insights for this period yet.</li>'}</ul>
+   396→
+   397→  <h2>Cycle Milestones</h2>
+   398→  <ul>${cycleItems || '<li>No cycle milestones in this window.</li>'}</ul>
+   399→
+   400→  <div class="foot">
+   401→    Generated by Nuvia · AI Women's Health Companion · ${new Date().toLocaleString('en-IN')} ·
+   402→    Wellness information only — not medical advice.
+   403→  </div>
+   404→
+   405→  <script>window.onload = function () { setTimeout(function () { window.print(); }, 350); };</script>
+   406→</body>
+   407→</html>`
+   408→
+   409→    const win = window.open('', '_blank', 'width=860,height=1000')
+   410→    if (!win) {
+   411→      toast.error('Pop-up blocked — allow pop-ups to export PDF')
+   412→      return
+   413→    }
+   414→    win.document.open()
+   415→    win.document.write(html)
+   416→    win.document.close()
+   417→    toast.success('Print view opened — choose "Save as PDF"')
+   418→  }
+   419→
+   420→  const chartConfig = {
+   421→    wellness: { label: 'Wellness', color: '#14b8a6' },
+   422→    symptoms: { label: 'Symptoms', color: '#f59e0b' },
+   423→    count: { label: 'Count', color: '#14b8a6' },
+   424→  }
+   425→
+   426→  const radarChartConfig = {
+   427→    current: { label: 'Current', color: '#14b8a6' },
+   428→    previous: { label: 'Previous', color: '#99f6e4' },
+   429→  }
+   430→
+   431→  return (
+   432→    <div className="flex flex-col h-full bg-gradient-to-b from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background rounded-xl border border-teal-100 dark:border-teal-900/50">
+   433→      {/* Header */}
+   434→      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-teal-100 dark:border-teal-900/50 bg-white/80 dark:bg-background/80 backdrop-blur-sm rounded-t-xl">
+   435→        <div className="flex items-center gap-2.5">
+   436→          <div className="p-2 rounded-lg bg-teal-500 text-white">
+   437→            <BarChart3 className="size-5" />
+   438→          </div>
+   439→          <div>
+   440→            <h2 className="text-base font-semibold text-foreground">Report Center</h2>
+   441→            <p className="text-xs text-muted-foreground">
+   442→              {data?.period?.label
+   443→                ? `${data.period.label} · ${data.period.startDate} → ${data.period.endDate}`
+   444→                : 'AI-powered health insights'}
+   445→            </p>
+   446→          </div>
+   447→        </div>
+   448→
+   449→        {/* Period Selector */}
+   450→        <Tabs value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
+   451→          <TabsList className="bg-teal-50 dark:bg-teal-950/50">
+   452→            <TabsTrigger value="daily" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   453→              Daily
+   454→            </TabsTrigger>
+   455→            <TabsTrigger value="weekly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   456→              Weekly
+   457→            </TabsTrigger>
+   458→            <TabsTrigger value="monthly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   459→              Monthly
+   460→            </TabsTrigger>
+   461→            <TabsTrigger value="annual" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   462→              Annual
+   463→            </TabsTrigger>
+   464→          </TabsList>
+   465→        </Tabs>
+   466→      </div>
+   467→
+   468→      {/* Scrollable Content */}
+   469→      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
+   470→        {loading ? (
+   471→          // ── Loading skeletons while the report is being computed ──
+   472→          <div className="space-y-5">
+   473→            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   474→              {Array.from({ length: 4 }).map((_, i) => (
+   475→                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+   476→                  <CardContent className="p-4 space-y-3">
+   477→                    <div className="h-8 w-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+   478→                    <div className="h-6 w-16 rounded bg-muted animate-pulse" />
+   479→                    <div className="h-1.5 w-full rounded-full bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+   480→                  </CardContent>
+   481→                </Card>
+   482→              ))}
+   483→            </div>
+   484→            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   485→              {Array.from({ length: 2 }).map((_, i) => (
+   486→                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+   487→                  <CardContent className="p-4">
+   488→                    <div className="h-[220px] rounded-lg bg-teal-50 dark:bg-teal-950/20 animate-pulse" />
+   489→                  </CardContent>
+   490→                </Card>
+   491→              ))}
+   492→            </div>
+   493→          </div>
+   494→        ) : data === null ? (
+   495→          // ── Empty state: no reports yet (brand-new user) ──
+   496→          <motion.div
+   497→            initial={{ opacity: 0, y: 10 }}
+   498→            animate={{ opacity: 1, y: 0 }}
+   499→            transition={{ duration: 0.35 }}
+   500→          >
+   501→            <Card className="border-dashed border-teal-200 dark:border-teal-900/50">
+   502→              <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
+   503→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
+   504→                  <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+   505→                </div>
+   506→                <p className="text-sm font-medium text-foreground">No data for this period yet</p>
+   507→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+   508→                  Log your cycle, mood, sleep, water, or symptoms and your {period} report —
+   509→                  wellness score, symptom patterns, mood distribution, and AI insights — will be
+   510→                  generated here automatically.
+   511→                </p>
+   512→                <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+   513→                  <Badge variant="secondary" className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-[10px] gap-1">
+   514→                    <Activity className="h-3 w-3" /> Log cycle
+   515→                  </Badge>
+   516→                  <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] gap-1">
+   517→                    <Brain className="h-3 w-3" /> Log mood
+   518→                  </Badge>
+   519→                  <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] gap-1">
+   520→                    <Moon className="h-3 w-3" /> Log sleep
+   521→                  </Badge>
+   522→                </div>
+   523→              </CardContent>
+   524→            </Card>
+   525→          </motion.div>
+   526→        ) : (
+   527→          <>
+   528→        {/* Score Cards Row */}
+   529→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   530→          <ScoreCard
+   531→            title="Cycle Regularity"
+   532→            score={data.cycleRegularity}
+   533→            prevScore={data.prevCycleRegularity}
+   534→            icon={Activity}
+   535→            color="bg-teal-500"
+   536→            delay={0}
+   537→          />
+   538→          <ScoreCard
+   539→            title="Symptom Severity"
+   540→            score={100 - data.symptomSeverity}
+   541→            prevScore={100 - data.prevSymptomSeverity}
+   542→            icon={Heart}
+   543→            color="bg-rose-400"
+   544→            delay={0.05}
+   545→          />
+   546→          <ScoreCard
+   547→            title="Mood Stability"
+   548→            score={data.moodStability}
+   549→            prevScore={data.prevMoodStability}
+   550→            icon={Brain}
+   551→            color="bg-amber-400"
+   552→            delay={0.1}
+   553→          />
+   554→          <ScoreCard
+   555→            title="Wellness Score"
+   556→            score={data.wellnessScore}
+   557→            prevScore={data.prevWellnessScore}
+   558→            icon={Sparkles}
+   559→            color="bg-emerald-500"
+   560→            delay={0.15}
+   561→          />
+   562→        </div>
+   563→
+   564→        {/* Charts Row 1: Symptom Frequency + Mood Distribution */}
+   565→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   566→          {/* Symptom Frequency Bar Chart */}
+   567→          <motion.div
+   568→            initial={{ opacity: 0, y: 20 }}
+   569→            animate={{ opacity: 1, y: 0 }}
+   570→            transition={{ duration: 0.4, delay: 0.2 }}
+   571→          >
+   572→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   573→              <CardHeader className="pb-2">
+   574→                <CardTitle className="text-sm font-semibold">Symptom Frequency</CardTitle>
+   575→                <CardDescription className="text-xs">Most reported symptoms this period</CardDescription>
+   576→              </CardHeader>
+   577→              <CardContent>
+   578→                <div className="h-[220px]">
+   579→                  <ResponsiveContainer width="100%" height="100%">
+   580→                    <BarChart data={data.symptomFrequency} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   581→                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" stroke="var(--border)" />
+   582→                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} />
+   583→                      <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} allowDecimals={false} />
+   584→                      <Tooltip
+   585→                        contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)' }}
+   586→                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+   587→                        cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+   588→                      />
+   589→                      <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+   590→                    </BarChart>
+   591→                  </ResponsiveContainer>
+   592→                </div>
+   593→              </CardContent>
+   594→            </Card>
+   595→          </motion.div>
+   596→
+   597→          {/* Mood Distribution Pie Chart */}
+   598→          <motion.div
+   599→            initial={{ opacity: 0, y: 20 }}
+   600→            animate={{ opacity: 1, y: 0 }}
+   601→            transition={{ duration: 0.4, delay: 0.25 }}
+   602→          >
+   603→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   604→              <CardHeader className="pb-2">
+   605→                <CardTitle className="text-sm font-semibold">Mood Distribution</CardTitle>
+   606→                <CardDescription className="text-xs">How your moods were distributed</CardDescription>
+   607→              </CardHeader>
+   608→              <CardContent>
+   609→                <div className="h-[220px]">
+   610→                  <ResponsiveContainer width="100%" height="100%">
+   611→                    <PieChart>
+   612→                      <Pie
+   613→                        data={data.moodDistribution}
+   614→                        cx="50%"
+   615→                        cy="50%"
+   616→                        innerRadius={55}
+   617→                        outerRadius={85}
+   618→                        paddingAngle={3}
+   619→                        dataKey="value"
+   620→                      >
+   621→                        {data.moodDistribution.map((entry, index) => (
+   622→                          <Cell key={`cell-${index}`} fill={entry.color} />
+   623→                        ))}
+   624→                      </Pie>
+   625→                      <Legend
+   626→                        iconType="circle"
+   627→                        iconSize={8}
+   628→                        wrapperStyle={{ fontSize: '11px' }}
+   629→                      />
+   630→                    </PieChart>
+   631→                  </ResponsiveContainer>
+   632→                </div>
+   633→              </CardContent>
+   634→            </Card>
+   635→          </motion.div>
+   636→        </div>
+   637→
+   638→        {/* Charts Row 2: Wellness Trend Line + Radar */}
+   639→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   640→          {/* Wellness & Symptom Trend */}
+   641→          <motion.div
+   642→            initial={{ opacity: 0, y: 20 }}
+   643→            animate={{ opacity: 1, y: 0 }}
+   644→            transition={{ duration: 0.4, delay: 0.3 }}
+   645→          >
+   646→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   647→              <CardHeader className="pb-2">
+   648→                <CardTitle className="text-sm font-semibold">Wellness & Symptom Trends</CardTitle>
+   649→                <CardDescription className="text-xs">Tracking over time</CardDescription>
+   650→              </CardHeader>
+   651→              <CardContent>
+   652→                <div className="h-[220px]">
+   653→                  <ResponsiveContainer width="100%" height="100%">
+   654→                    <LineChart data={data.trendLine} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   655→                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+   656→                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} />
+   657→                      <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} domain={[0, 100]} />
+   658→                      <Line
+   659→                        type="monotone"
+   660→                        dataKey="wellness"
+   661→                        stroke="#14b8a6"
+   662→                        strokeWidth={2.5}
+   663→                        dot={{ fill: '#14b8a6', r: 3 }}
+   664→                        activeDot={{ r: 5 }}
+   665→                      />
+   666→                      <Line
+   667→                        type="monotone"
+   668→                        dataKey="symptoms"
+   669→                        stroke="#f59e0b"
+   670→                        strokeWidth={2}
+   671→                        dot={{ fill: '#f59e0b', r: 3 }}
+   672→                        activeDot={{ r: 5 }}
+   673→                        strokeDasharray="5 5"
+   674→                      />
+   675→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+   676→                    </LineChart>
+   677→                  </ResponsiveContainer>
+   678→                </div>
+   679→              </CardContent>
+   680→            </Card>
+   681→          </motion.div>
+   682→
+   683→          {/* Radar: Current vs Previous */}
+   684→          <motion.div
+   685→            initial={{ opacity: 0, y: 20 }}
+   686→            animate={{ opacity: 1, y: 0 }}
+   687→            transition={{ duration: 0.4, delay: 0.35 }}
+   688→          >
+   689→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   690→              <CardHeader className="pb-2">
+   691→                <CardTitle className="text-sm font-semibold">Period Comparison</CardTitle>
+   692→                <CardDescription className="text-xs">Current vs previous period</CardDescription>
+   693→              </CardHeader>
+   694→              <CardContent>
+   695→                <div className="h-[220px]">
+   696→                  <ResponsiveContainer width="100%" height="100%">
+   697→                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.radarData}>
+   698→                      <PolarGrid stroke="#e5e7eb" />
+   699→                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+   700→                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
+   701→                      <Radar
+   702→                        name="Current"
+   703→                        dataKey="current"
+   704→                        stroke="#14b8a6"
+   705→                        fill="#14b8a6"
+   706→                        fillOpacity={0.25}
+   707→                        strokeWidth={2}
+   708→                      />
+   709→                      <Radar
+   710→                        name="Previous"
+   711→                        dataKey="previous"
+   712→                        stroke="#99f6e4"
+   713→                        fill="#99f6e4"
+   714→                        fillOpacity={0.15}
+   715→                        strokeWidth={1.5}
+   716→                        strokeDasharray="4 4"
+   717→                      />
+   718→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+   719→                    </RadarChart>
+   720→                  </ResponsiveContainer>
+   721→                </div>
+   722→              </CardContent>
+   723→            </Card>
+   724→          </motion.div>
+   725→        </div>
+   726→
+   727→        {/* Key Metrics Row: Sleep + Water Averages */}
+   728→        <div className="grid grid-cols-2 gap-3">
+   729→          <motion.div
+   730→            initial={{ opacity: 0, y: 20 }}
+   731→            animate={{ opacity: 1, y: 0 }}
+   732→            transition={{ duration: 0.4, delay: 0.4 }}
+   733→          >
+   734→            <Card className="border-teal-100 dark:border-teal-900/50">
+   735→              <CardContent className="p-4 flex items-center gap-3">
+   736→                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50">
+   737→                  <Moon className="size-5 text-indigo-500" />
+   738→                </div>
+   739→                <div className="flex-1 min-w-0">
+   740→                  <p className="text-xs text-muted-foreground">Sleep Average</p>
+   741→                  <p className="text-lg font-bold text-foreground">{data.sleepAvg}h</p>
+   742→                </div>
+   743→                <Badge variant="secondary" className="text-[10px] shrink-0">
+   744→                  {data.sleepAvg >= 7 ? 'Good' : data.sleepAvg >= 6 ? 'Fair' : 'Low'}
+   745→                </Badge>
+   746→              </CardContent>
+   747→            </Card>
+   748→          </motion.div>
+   749→
+   750→          <motion.div
+   751→            initial={{ opacity: 0, y: 20 }}
+   752→            animate={{ opacity: 1, y: 0 }}
+   753→            transition={{ duration: 0.4, delay: 0.45 }}
+   754→          >
+   755→            <Card className="border-teal-100 dark:border-teal-900/50">
+   756→              <CardContent className="p-4 flex items-center gap-3">
+   757→                <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/50">
+   758→                  <Droplets className="size-5 text-sky-500" />
+   759→                </div>
+   760→                <div className="flex-1 min-w-0">
+   761→                  <p className="text-xs text-muted-foreground">Water Average</p>
+   762→                  <p className="text-lg font-bold text-foreground">{data.waterAvg} glasses</p>
+   763→                </div>
+   764→                <Badge variant="secondary" className="text-[10px] shrink-0">
+   765→                  {data.waterAvg >= 8 ? 'On Target' : data.waterAvg >= 6 ? 'Fair' : 'Low'}
+   766→                </Badge>
+   767→              </CardContent>
+   768→            </Card>
+   769→          </motion.div>
+   770→        </div>
+   771→
+   772→        {/* Trend Comparison Table */}
+   773→        <motion.div
+   774→          initial={{ opacity: 0, y: 20 }}
+   775→          animate={{ opacity: 1, y: 0 }}
+   776→          transition={{ duration: 0.4, delay: 0.5 }}
+   777→        >
+   778→          <Card className="border-teal-100 dark:border-teal-900/50">
+   779→            <CardHeader className="pb-2">
+   780→              <CardTitle className="text-sm font-semibold">Trend Comparison</CardTitle>
+   781→              <CardDescription className="text-xs">Current vs previous period metrics</CardDescription>
+   782→            </CardHeader>
+   783→            <CardContent>
+   784→              <div className="space-y-3">
+   785→                {[
+   786→                  { label: 'Cycle Regularity', current: data.cycleRegularity, previous: data.prevCycleRegularity, higher: true },
+   787→                  { label: 'Symptom Severity (inverted)', current: 100 - data.symptomSeverity, previous: 100 - data.prevSymptomSeverity, higher: true },
+   788→                  { label: 'Mood Stability', current: data.moodStability, previous: data.prevMoodStability, higher: true },
+   789→                  { label: 'Overall Wellness', current: data.wellnessScore, previous: data.prevWellnessScore, higher: true },
+   790→                  { label: 'Sleep Quality', current: Math.round(data.sleepAvg * 10), previous: Math.round((data.sleepAvg - 0.3) * 10), higher: true },
+   791→                  { label: 'Hydration', current: Math.round(data.waterAvg * 10), previous: Math.round((data.waterAvg - 0.5) * 10), higher: true },
+   792→                ].map((item, i) => (
+   793→                  <div key={item.label} className="flex items-center gap-3">
+   794→                    <p className="text-xs text-muted-foreground w-36 shrink-0 truncate">{item.label}</p>
+   795→                    <div className="flex-1 flex items-center gap-2">
+   796→                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+   797→                        <motion.div
+   798→                          className="h-full rounded-full bg-teal-400"
+   799→                          initial={{ width: 0 }}
+   800→                          animate={{ width: `${item.previous}%` }}
+   801→                          transition={{ duration: 0.8, delay: 0.1 * i }}
+   802→                        />
+   803→                      </div>
+   804→                      <span className="text-[10px] text-muted-foreground w-7 text-right">{item.previous}</span>
+   805→                    </div>
+   806→                    <ChevronRight className="size-3 text-muted-foreground shrink-0" />
+   807→                    <div className="flex-1 flex items-center gap-2">
+   808→                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+   809→                        <motion.div
+   810→                          className="h-full rounded-full bg-teal-600"
+   811→                          initial={{ width: 0 }}
+   812→                          animate={{ width: `${item.current}%` }}
+   813→                          transition={{ duration: 0.8, delay: 0.1 * i + 0.3 }}
+   814→                        />
+   815→                      </div>
+   816→                      <span className="text-[10px] font-medium text-foreground w-7 text-right">{item.current}</span>
+   817→                    </div>
+   818→                  </div>
+   819→                ))}
+   820→                <div className="flex items-center gap-4 pt-1">
+   821→                  <div className="flex items-center gap-1.5">
+   822→                    <div className="size-2.5 rounded-full bg-teal-400" />
+   823→                    <span className="text-[10px] text-muted-foreground">Previous</span>
+   824→                  </div>
+   825→                  <div className="flex items-center gap-1.5">
+   826→                    <div className="size-2.5 rounded-full bg-teal-600" />
+   827→                    <span className="text-[10px] text-muted-foreground">Current</span>
+   828→                  </div>
+   829→                </div>
+   830→              </div>
+   831→            </CardContent>
+   832→          </Card>
+   833→        </motion.div>
+   834→
+   835→        {/* AI Health Insights */}
+   836→        <motion.div
+   837→          initial={{ opacity: 0, y: 20 }}
+   838→          animate={{ opacity: 1, y: 0 }}
+   839→          transition={{ duration: 0.4, delay: 0.55 }}
+   840→        >
+   841→          <Card className="border-teal-100 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background">
+   842→            <CardHeader className="pb-2">
+   843→              <div className="flex items-center gap-2">
+   844→                <Sparkles className="size-4 text-teal-500" />
+   845→                <CardTitle className="text-sm font-semibold">AI Health Insights</CardTitle>
+   846→              </div>
+   847→              <CardDescription className="text-xs flex items-center gap-1.5">
+   848→                Generated from your real tracking data
+   849→                {loading && <Loader2 className="size-3 animate-spin" />}
+   850→              </CardDescription>
+   851→            </CardHeader>
+   852→            <CardContent>
+   853→              <div className="space-y-2.5">
+   854→                {data.insights.map((insight, i) => (
+   855→                  <motion.div
+   856→                    key={i}
+   857→                    initial={{ opacity: 0, x: -10 }}
+   858→                    animate={{ opacity: 1, x: 0 }}
+   859→                    transition={{ duration: 0.3, delay: 0.6 + i * 0.08 }}
+   860→                    className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/80 dark:bg-background/80 border border-teal-100 dark:border-teal-900/30"
+   861→                  >
+   862→                    <div className="mt-0.5 size-1.5 rounded-full bg-teal-500 shrink-0" />
+   863→                    <p className="text-xs text-foreground leading-relaxed">{insight}</p>
+   864→                  </motion.div>
+   865→                ))}
+   866→              </div>
+   867→            </CardContent>
+   868→          </Card>
+   869→        </motion.div>
+   870→
+   871→        {/* Cycle Summary */}
+   872→        <motion.div
+   873→          initial={{ opacity: 0, y: 20 }}
+   874→          animate={{ opacity: 1, y: 0 }}
+   875→          transition={{ duration: 0.4, delay: 0.6 }}
+   876→        >
+   877→          <Card className="border-teal-100 dark:border-teal-900/50">
+   878→            <CardHeader className="pb-2">
+   879→              <CardTitle className="text-sm font-semibold">Cycle Summary</CardTitle>
+   880→              <CardDescription className="text-xs">Key phase milestones this period</CardDescription>
+   881→            </CardHeader>
+   882→            <CardContent>
+   883→              <div className="space-y-2">
+   884→                {data.cycleSummary.map((item, i) => (
+   885→                  <div key={i} className="flex items-center gap-3 text-xs">
+   886→                    <div className="flex items-center justify-center size-7 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-medium shrink-0">
+   887→                      {item.day}
+   888→                    </div>
+   889→                    <Badge variant="outline" className="text-[10px] border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 shrink-0">
+   890→                      {item.phase}
+   891→                    </Badge>
+   892→                    <span className="text-muted-foreground truncate">{item.note}</span>
+   893→                  </div>
+   894→                ))}
+   895→              </div>
+   896→            </CardContent>
+   897→          </Card>
+   898→        </motion.div>
+   899→
+   900→        {/* Export Options */}
+   901→        <motion.div
+   902→          initial={{ opacity: 0, y: 20 }}
+   903→          animate={{ opacity: 1, y: 0 }}
+   904→          transition={{ duration: 0.4, delay: 0.65 }}
+   905→        >
+   906→          <Card className="border-teal-100 dark:border-teal-900/50">
+   907→            <CardContent className="p-4">
+   908→              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+   909→                <div>
+   910→                  <p className="text-sm font-medium text-foreground">Export Report</p>
+   911→                  <p className="text-xs text-muted-foreground">Download your health data for sharing</p>
+   912→                </div>
+   913→                <div className="flex flex-wrap gap-2">
+   914→                  <Button
+   915→                    variant="outline"
+   916→                    size="sm"
+   917→                    disabled={!data}
+   918→                    onClick={handleExportCsv}
+   919→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   920→                  >
+   921→                    <Download className="size-3.5 mr-1.5" />
+   922→                    CSV
+   923→                  </Button>
+   924→                  <Button
+   925→                    variant="outline"
+   926→                    size="sm"
+   927→                    disabled={!data}
+   928→                    onClick={handleExportPdf}
+   929→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   930→                  >
+   931→                    <FileText className="size-3.5 mr-1.5" />
+   932→                    PDF
+   933→                  </Button>
+   934→                  <Button
+   935→                    variant="outline"
+   936→                    size="sm"
+   937→                    disabled={!data}
+   938→                    onClick={handleExportExcel}
+   939→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   940→                  >
+   941→                    <FileSpreadsheet className="size-3.5 mr-1.5" />
+   942→                    Excel
+   943→                  </Button>
+   944→                </div>
+   945→              </div>
+   946→            </CardContent>
+   947→          </Card>
+   948→        </motion.div>
+   949→          </>
+   950→        )}
+   951→      </div>
+   952→    </div>
+   953→  )
+   954→}
+   955→

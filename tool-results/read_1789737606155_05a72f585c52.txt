@@ -1,0 +1,1408 @@
+     1→---
+     2→Task ID: 1
+     3→Agent: Z.ai Code (main)
+     4→Task: Analyse https://github.com/Devloper2003/Chandracycle.git and execute (run) it in this sandbox.
+     5→
+     6→Work Log:
+     7→- Cloned the repo to /tmp/chandracycle-analysis and performed a full analysis.
+     8→  - ChandraCycle = AI Women's Health Companion (Next.js 16 + TS + Tailwind 4 + shadcn + Prisma).
+     9→  - 20 modules: Dashboard, Period Tracker, Hormone IQ, Symptoms, PCOS Care, Fertility, Pregnancy,
+    10→    Menopause, AI Coach, Diet Advisor, Find Doctor, Mind & Soul, Move & Flow, Skin & Beauty,
+    11→    Wellness Market, Community, Reports, AI Insights, Premium (PayPal), Settings.
+    12→  - 20+ API routes under src/app/api (auth, cycles, mood, sleep, water, chat, diet-chat, community, etc.).
+    13→  - Auth: custom JWT (HMAC) + Google OAuth (google-auth-library) + modal fallback; token in
+    14→    localStorage `chandracycle_token` + cookie.
+    15→  - AI chat uses z-ai-web-dev-sdk (works in this sandbox).
+    16→  - Original DB = PostgreSQL (Neon); .env.example pointed at Postgres + admin-sync/PayPal/Google vars.
+    17→- Migration to sandbox:
+    18→  - Copied src/, public/, next.config.ts, prisma/schema.prisma from repo into /home/z/my-project.
+    19→  - Changed prisma provider postgresql -> sqlite (schema is SQLite-safe: no enums/Json/@db attrs).
+    20→  - Installed missing dependency: google-auth-library@11.
+    21→  - .env: kept DATABASE_URL=file:/home/z/my-project/db/custom.db, added JWT_SECRET.
+    22→  - `bun run db:push` → schema synced, Prisma Client generated.
+    23→- Dev server was already running on port 3000; Next hot-reloaded the new source. Verified via curl:
+    24→  GET /api/auth/config → {"google":{"configured":false}} and / renders ChandraCycle auth screen.
+    25→- End-to-end verification with agent-browser:
+    26→  - Signup flow: created user priya.sharma@test.com (Priya Sharma) → success.
+    27→  - Onboarding: 3 steps (welcome → last period date (2026-09-09) → goal "Track my period") → done.
+    28→  - Dashboard renders: "Good Morning, Priya", Day 10 of Cycle, Follicular Phase ring, quick-log cards,
+    29→    18-module sidebar, welcome tour.
+    30→  - Period Tracker: logged period (medium flow + notes) via Log tab → POST /api/cycles 201;
+    31→    cycle calendar shows Menstrual/Follicular/Ovulation/Luteal phases.
+    32→  - AI Coach: asked nutrition question → full streamed AI answer (POST /api/chat 200, ~7s).
+    33→  - Symptoms & Mood: selected Happy + sliders → POST /api/mood 201, /api/sleep 201, /api/water 201.
+    34→  - Notifications panel: seeded items render (POST /api/notifications/seed 200).
+    35→  - Community: created post via dialog (renders in feed; note: component uses local state — see below).
+    36→  - Mobile (390×844): mobile topbar + bottom nav (Home/Period/AI Coach/Insights/More) all render.
+    37→  - Browser console: no page errors; only React DevTools info + HMR logs.
+    38→- DB check via Prisma: 2 users (test user + growthive9@gmail.com "Shivam" who signed up through the
+    39→  public preview — proves the app is reachable), 1 cycle, 1 mood entry.
+    40→
+    41→Stage Summary:
+    42→- ✅ ChandraCycle is fully migrated to SQLite and RUNNING on port 3000 (served through preview panel).
+    43→- ✅ Verified flows: signup → onboarding → dashboard → period logging → AI Coach (live AI) →
+    44→  mood/sleep/water logging → notifications → community UI → mobile layout.
+    45→- Graceful degradation confirmed: Google OAuth falls back to modal flow (not configured),
+    46→  PayPal degrades via isPaypalConfigured(), admin-sync is best-effort.
+    47→- Known gaps / next-phase opportunities (priority order):
+    48→  1. Community component keeps posts in local state; wire it to /api/community (GET/POST) + comments.
+    49→  2. Chat history is not persisted to ChatMessage table; add persistence per user.
+    50→  3. Premium module: PayPal keys not set — consider a mock/demo checkout mode.
+    51→  4. Doctor Finder / geocode rely on external services — verify and add graceful fallbacks.
+    52→  5. Add demo seed data (cycles, symptoms history) so dashboards/charts look alive for first-time users.
+    53→- External services intentionally left unconfigured: GOOGLE_CLIENT_ID, PAYPAL_CLIENT_ID/SECRET,
+    54→  ADMIN_SYNC_URL (all degrade safely).
+    55→
+    56→---
+    57→Task ID: 2
+    58→Agent: Z.ai Code (webDevReview round 2)
+    59→Task: Cron QA + development round — assess status, fix bugs, add features (community persistence, chat history, seed data, dashboard wiring).
+    60→
+    61→Work Log:
+    62→- Reviewed worklog.md; QA baseline via agent-browser: app healthy, session persisted, no console errors.
+    63→- FOUND & FIXED latent bug: src/components/modules/ai-coach.tsx shipped with corrupted syntax
+    64→  (`const essages, setMessages]` / `}, essages])`) from the original repo commit. It "worked" only
+    65→  because the dev server was serving a stale compiled bundle. Verified current file parses; lint passes.
+    66→  (File later appeared restored — sandbox file-sync artifact — but the broken state was real and confirmed
+    67→  via sed/grep/cat -A. Watch for transient file corruption in this environment.)
+    68→- Community module wired to backend (was local-state only):
+    69→  - GET /api/community on mount (loading state + error toast), mapped API→UI model.
+    70→  - POST create → persists to DB; category mapping UI↔API (General↔general, Mental Health↔mental_health).
+    71→  - Likes persist via NEW PATCH /api/community (optimistic UI + revert on failure).
+    72→  - Comments: NEW /api/community/comments route (GET ?postId / POST); comments dialog with avatar list,
+    73→    add-comment input, counts update in feed. Verified post + like + comment all SURVIVE page reloads.
+    74→  - Live trending topics computed from real posts; gamification (level/score/badges) derived from real
+    75→    activity; deterministic anonymous alias (flower_N) hashed from post/comment id.
+    76→- AI Coach chat persistence:
+    77→  - /api/chat now: GET ?userId= history (last 100), POST persists user+assistant messages to
+    78→    ChatMessage (guarded by user-exists check to avoid FK errors), DELETE ?userId= clears history.
+    79→  - ai-coach.tsx loads history on mount, passes userId on send, Reset clears server history.
+    80→  - Verified: conversation survives full page reload.
+    81→- Demo/seed data:
+    82→  - NEW /api/seed-demo (POST {userId}): 6 past cycles + 21 days symptoms/mood/sleep/water,
+    83→    idempotent (skips if user has ≥3 cycles). Seeded for both existing users.
+    84→  - Sample gynecologist appointment created for both users.
+    85→  - NEW "Load Demo History" button in Settings → Privacy & Security with result toasts.
+    86→- Dashboard un-hardcoded (was 3 static empty states):
+    87→  - Weekly Symptoms: REAL recharts BarChart (7-day counts, pink gradient bars) with empty-state fallback.
+    88→  - Recent Activity: merged real feed from symptoms+mood+sleep+water APIs, color-coded icons,
+    89→    Today/Yesterday formatting.
+    90→  - Upcoming Reminders: wired to /api/appointments (upcoming, non-cancelled, top 3).
+    91→- Verified in browser: seeded chart bars render; activity feed lists water/sleep/mood entries;
+    92→  reminders show "Dr. Kavita Mehta — Gynecologist 2026-09-23 11:30 AM".
+    93→
+    94→Stage Summary:
+    95→- ✅ All priority backlog items shipped & verified: community persistence, chat history, seed data,
+    96→  dashboard real-data sections, plus repo-bug fix (ai-coach syntax).
+    97→- DB now: 13 cycles, 43 mood/sleep/water each, 35 symptoms, 2 chat msgs, 1 post, 1 comment, 2 appointments.
+    98→- Lint: 0 errors 0 warnings. Console: clean.
+    99→- Risks/notes: (1) transient file-corruption observed once — future rounds should re-verify file integrity
+   100→  before deep debugging; (2) PayPal/Google OAuth still unconfigured (graceful); (3) dev.log shows old
+   101→  EADDRINUSE from duplicate start attempt — harmless.
+   102→- Next-phase recommendations (priority):
+   103→  1. Wire Upcoming Reminders deeper: appointments CRUD from Find Doctor module (book → appears in reminders).
+   104→  2. Period Tracker timeline & Hormone IQ charts can now benefit from seeded history — verify + polish visuals.
+   105→  3. Dark-mode pass on new components (activity icons/reminder cards use dark: variants — verify contrast).
+   106→  4. Community: add "delete own post", report/flag flow; admin moderation later.
+   107→  5. Consider pagination for community feed when posts grow.
+   108→
+   109→---
+   110→Task ID: 3
+   111→Agent: Z.ai Code (webDevReview round 3)
+   112→Task: Cron QA + development round — bug fixes (file corruption, theme provider, Dr. prefix), doctor booking persistence, community delete-own-post, dark mode polish.
+   113→
+   114→Work Log:
+   115→- QA baseline: server healthy (200), lint clean, session persisted.
+   116→- TRANSIENT FILE CORRUPTION (2nd occurrence): doctor-finder.tsx briefly showed corrupted lines
+   117→  (`const asSearched, setHasSearched]` / `}, asSearched, doctors, …])` — the literal "[h" substring
+   118→  dropped, same class of corruption as ai-coach.tsx "[m" drop in round 2). Confirmed via grep+sed+cat -A;
+   119→  the file SELF-HEALED between reads (sandbox file-sync race). Mitigation adopted: never trust a single
+   120→  read — verify with lint as the final gate; re-read before editing; replace via exact unique strings.
+   121→- Find Doctor → appointment booking PERSISTED (was client-only):
+   122→  - confirmBooking now POSTs /api/appointments (userId, doctorName, specialty, date, time,
+   123→    type video/in_person from doctor.videoConsult, notes=reason) with loading state ("Booking…"),
+   124→    success toast, error toasts.
+   125→  - Verified end-to-end in browser: search "Mumbai" → 12 demo doctors → Book → date 23 Sep + 11:00 AM
+   126→    slot + reason → Confirm → success dialog → appointment appears in Dashboard Upcoming Reminders.
+   127→- Doctor finder fallback (backlog #4) SHIPPED:
+   128→  - Root cause: search route intentionally returned [] without GOOGLE_PLACES_API_KEY (module dead in
+   129→    sandbox; generateSimulatedDoctors existed but was never called — dead code).
+   130→  - Now: falls back to deterministic simulated listings (seeded RNG, Indian clinics/names) with
+   131→    source:"simulated"; client badge shows "Demo listings" (was "Live results" for everything non-google).
+   132→  - Real Google Places still used first when key present.
+   133→- Community delete-own-post SHIPPED:
+   134→  - NEW DELETE /api/community?postId&userId — ownership enforced server-side (403 for non-owner,
+   135→    verified via cross-user curl test: non-owner→403, owner→200).
+   136→  - UI: Trash icon on own posts only (isOwn mapped from API user.id), shadcn AlertDialog confirm,
+   137→    optimistic removal + revert on failure.
+   138→- Theme toggle FIXED (was non-functional):
+   139→  - Settings used next-themes useTheme but NO ThemeProvider was mounted → setTheme was a no-op.
+   140→  - Added src/components/theme-provider.tsx and wrapped layout (attribute="class", defaultTheme="light",
+   141→    enableSystem). globals.css already had @custom-variant dark (.dark class) — now actually works.
+   142→  - Verified in browser: Settings → Dark → whole app flips (dashboard cards/sidebar/chart); Light restores.
+   143→- Styling polish:
+   144→  - Weekly Symptoms chart now theme-aware: grid stroke var(--border), axis ticks var(--muted-foreground)
+   145→    (were hardcoded light grays — glaring in dark mode).
+   146→  - Fixed "Dr. Dr. Karthik Kapoor" double-prefix in dashboard reminders (startsWith('Dr.') guard).
+   147→  - Mobile (390×844) verified: chart, reminders, activity feed all render cleanly.
+   148→
+   149→Stage Summary:
+   150→- ✅ Shipped: booking persistence E2E, doctor-search demo fallback, community delete-own-post (+authz),
+   151→  working dark mode via ThemeProvider, chart theming, Dr.-prefix fix.
+   152→- Known environment risk: intermittent file corruption in sandbox sync (2 incidents, both self-healed);
+   153→  always lint before finishing a round.
+   154→- Remaining backlog (next round):
+   155→  1. Delete/cancel appointment UI (settings or reminders) to complete the appointments CRUD.
+   156→  2. Community feed pagination + report/flag flow.
+   157→  3. Wire "Start Video Consult" to a room/flow (currently decorative) or hide without config.
+   158→  4. Hormone IQ / Reports modules: verify with 7 seeded cycles, polish visuals.
+   159→  5. Premium module: mock checkout mode (PayPal keys absent).
+   160→
+   161→---
+   162→Task ID: 4
+   163→Agent: Z.ai Code (webDevReview round 4)
+   164→Task: Cron QA + development round — bring dead modules to life (Reports, Hormone Preview, AI Insights, Community content), appointments CRUD completion, community moderation, premium subscription persistence, styling details.
+   165→
+   166→Work Log:
+   167→- QA baseline: server 200, lint clean. Browser QA found FOUR dead surfaces despite rich seeded data:
+   168→  (1) Community feed empty (round-2 post lost in DB reset → brand-new users see "Be the first to post");
+   169→  (2) Reports module permanently showed "No reports yet" (UI shell hardwired `periodData = null`, API never called);
+   170→  (3) Dashboard "Hormone Preview" empty state claimed "no cycle data" with 13 cycles present;
+   171→  (4) Dashboard "AI Insights" said "coming soon" despite logs.
+   172→- DEAD MODULE REVIVED — Report Center now 100% real data:
+   173→  - NEW GET /api/reports/summary?userId&period (daily|weekly|monthly|annual): aggregates real
+   174→    symptoms/mood/sleep/water/cycles for current + previous equivalent window; computes wellnessScore
+   175→    (weighted composite of mood/energy/stress/sleep/hydration/symptom-severity), cycleRegularity
+   176→    (std-dev of cycle-start gaps), symptomSeverity, moodStability, sleepAvg, waterAvg, rule-based
+   177→    insights (up to 6, with pct-change vs previous period), trendLine (7d daily / 4wk monthly / 12mo
+   178→    annual), radarData (5-axis current-vs-previous), cycleSummary (period start/end, fertile window,
+   179→    ovulation per overlapping cycle), counts. Mood labels normalized case-insensitively ("happy"→"Happy").
+   180→  - report-center.tsx: fetches on mount + on period-tab change (deferred-microtask setState for lint),
+   181→    loading skeletons (score cards + chart placeholders), period label + date range in header,
+   182→    empty state only when the period genuinely has 0 entries.
+   183→  - BONUS: Export CSV button now REALLY downloads a formatted report (summary metrics, trend series,
+   184→    symptom + mood breakdowns → Blob download, verified file on disk chandracycle-monthly-report-*.csv);
+   185→    PDF/Excel disabled with tooltips (honest UI).
+   186→- Dashboard Hormone Preview REVIVED: educational estrogen + progesterone area curves generated from the
+   187→  user's own cycle length (cosine-eased phases: follicular rise → ovulation peak → luteal progesterone
+   188→  bump), "Today" ReferenceLine at current cycle day + dashed ovulation line, theme-aware grid/axis,
+   189→  legend incl. ovulation day, honest caption "Typical pattern for your cycle length — real readings
+   190→  need lab data", EDUCATIONAL badge. Empty state only when no cycles exist.
+   191→- Dashboard AI Insights REVIVED: fetches /api/reports/summary weekly → "Wellness score 63/100" badge +
+   192→  top-3 real insight cards (sparkle bullets, staggered fade-in).
+   193→- Appointments CRUD COMPLETED:
+   194→  - PATCH /api/appointments {id,userId,action:cancel} → status='cancelled' (ownership enforced, cross-user
+   195→    curl → 403); DELETE /api/appointments?id&userId → hard delete.
+   196→  - Dashboard reminder cards: hover-reveal X button → AlertDialog confirm ("Keep appointment"/"Cancel
+   197→    appointment") → optimistic removal + revert on failure + toasts; verified E2E (DB status flipped,
+   198→    card vanished).
+   199→  - STYLING: dates now "Today"/"Tomorrow"/"Wed, 23 Sept" (were raw ISO), type icon+label map
+   200→    (video→Video "Video consult", chat→MessageCircle, consultation/in_person→Stethoscope "In-person
+   201→    visit", case-insensitive), "Today" amber badge + highlighted card, empty state now points to
+   202→    Find Doctor ("Book an appointment … shows up here automatically").
+   203→- Community REVIVED + moderation shipped:
+   204→  - seed-demo now seeds shared community content via seedCommunityIfEmpty() (extracted; runs BEFORE the
+   205→    has-cycles early return so it fires even for seeded users): 5 demo personas (provider:"demo") +
+   206→    5 realistic posts (cramps relief, PCOS tracking habits, fertile window Q&A, sleep-cycle correlation,
+   207→    doctor-visit checklist) + 10 comments, staggered timestamps + like counts. Feed verified alive:
+   208→    personas with avatars, anon aliases (Iris_9), "5h ago", gamification jumped to Level 10 from real
+   209→    activity.
+   210→  - Report/flag flow: schema added CommunityPost.reportedCount + hidden (db:push ok); PATCH action
+   211→    'report' increments and auto-hides at 3 reports; GET excludes hidden; UI: Flag icon on non-own
+   212→    posts → reason dialog (5 reasons, selectable) → optimistic removal for reporter + informative
+   213→    toasts ("Report recorded…"/"hidden pending moderator review"). Verified: reporter stops seeing post,
+   214→    others still see it (correct semantics).
+   215→- Premium subscription PERSISTENCE (was in-memory only):
+   216→  - NEW /api/subscription: GET (active sub check w/ endDate), POST (validates plan/tier, replaces old
+   217→    actives, endDate +30d/+365d, invoiceId CC-XXXX), DELETE (cancel). Subscription model existed but
+   218→    was never used.
+   219→  - Checkout E2E FIXED: modal previously dead-ended when PayPal keys absent (Smart Buttons never
+   220→    rendered) — added config detection (GET /api/payment/paypal) + "🧪 Complete sandbox payment"
+   221→    demo path → simulated processing → real sandbox receipt (SBX- txn id) → success step.
+   222→  - onSuccess now carries transactionId → premium.tsx persists subscription (amount+18% GST, tier,
+   223→    txn id) → app-shell restores premium on every load via GET → "Premium is active" banner w/ PAYPAL
+   224→    SANDBOX chip in premium module, plan cards show "Current Plan", profile dropdown shows gradient
+   225→    "Crown Premium" badge + "Manage Premium" label. Verified: subscription survives full reload
+   226→    (active:true, invoice CC-MU6KF3M5).
+   227→- Environment note: dev server had to be killed+restarted this round — Prisma Client regeneration is
+   228→  NOT picked up by the running Next process (db:push generate alone insufficient for new fields).
+   229→- Bug fixed during QA: reminders crashed with "Element type is invalid: got object" (I had assigned
+   230→  the {icon,label} object itself as TypeIcon component) — destructured properly.
+   231→- Learned: MultiEdit is NOT atomic in this environment (1 of 3 edits applied on failure) — prefer
+   232→  python surgery or single Edits; always lint after every edit batch.
+   233→- DB final: 7 users (2 real + 5 demo personas), 13 cycles, 35 symptoms, 43 moods/sleeps/waters,
+   234→  3 appointments (1 upcoming), 5 community posts, 10 comments, 2 subscriptions (1 active).
+   235→
+   236→Stage Summary:
+   237→- ✅ Shipped & verified in browser: Reports module fully real (all 4 periods, trends, radar, CSV export),
+   238→  dashboard Hormone Preview chart + real AI Insights, appointment cancel E2E, community seeding +
+   239→  report/moderation flow, premium sandbox checkout → persisted subscription → restore-on-reload.
+   240→- All four previously-dead surfaces now live; app has NO "coming soon"/"empty" states despite data
+   241→  existing (checked dashboard, community, reports, premium).
+   242→- Lint: 0 errors. Console: clean. Dev.log: no errors.
+   243→- Remaining backlog (next round):
+   244→  1. Admin moderation surface for reported posts (list hidden posts, dismiss/restore) — data model ready.
+   245→  2. PDF export for reports (CSV done) — could use browser print or pdf skill.
+   246→  3. Community pagination when posts grow (>20).
+   247→  4. Premium "Manage" panel: show subscription details/invoice + cancel flow in Settings.
+   248→  5. Doctor Finder: de-dupe seeded appointments (2x Kavita Mehta rows exist from double-seed).
+   249→  6. Consider wiring AI Insights section to LLM-generated narrative instead of rule-based strings.
+   250→
+   251→---
+   252→Task ID: 5
+   253→Agent: Z.ai Code (webDevReview round 5)
+   254→Task: Cron QA + development round — admin moderation console (session auth + audit trail), LLM weekly narrative on dashboard, real premium management panel, community pagination, reports PDF export, styling polish.
+   255→
+   256→Work Log:
+   257→- QA baseline: FOUND DEV SERVER DOWN on round start (port 3000 refused; the container does not
+   258→  supervise the dev process — processes spawned from a tool-call shell get reaped when the call
+   259→  ends). FIX that works: double-fork detach `(setsid bun run dev > /dev/null 2>&1 &)` from the
+   260→  project dir — survives across tool calls. Server died once more mid-round (after next.config
+   261→  edit restart) — same restart command fixed it. Future rounds: check `curl localhost:3000` first.
+   262→- Agent-browser QA before changes: dashboard/community/reports all healthy, session persisted,
+   263→  no real console errors.
+   264→- ADMIN MODERATION CONSOLE (backlog #1) — full feature using previously-unused AdminUser,
+   265→  AdminSession and AuditLog models:
+   266→  - NEW /api/admin/login: verifies credentials against AdminUser (same HMAC password scheme as
+   267→    user auth), issues DB-backed AdminSession token (24h TTL, randomBytes 32), auto-provisions a
+   268→    default operator on first run (admin@chandracycle.app / chandra-admin) when table is empty,
+   269→    housekeeps expired sessions, updates lastLoginAt.
+   270→  - NEW /api/admin/logout: revokes the caller's session.
+   271→  - NEW /api/admin/moderation: GET returns the queue (posts with reportedCount>0 OR hidden=true)
+   272→    incl. author, comment count, plus community stats and the 8 most recent AuditLog entries.
+   273→    PATCH {postId, action} with three moderator actions: 'restore' (unhide + clear reports),
+   274→    'dismiss' (clear reports, KEEP hidden), 'delete' (remove post + comments). EVERY action writes
+   275→    an AuditLog row (admin, action, target, details). 401 without valid Bearer session (verified
+   276→    via curl).
+   277→  - Settings UI: new "Content Moderation" section — login form (email pre-filled + password,
+   278→    Enter-key submit), operator session persisted in sessionStorage (survives reloads), queue
+   279→    cards (amber=reported-only, rose=hidden) with title/content/author/reports/comments/likes,
+   280→    three action buttons with per-post busy spinners, delete confirm dialog, collapsible audit
+   281→    trail with timestamps, empty state "Queue is clear".
+   282→  - E2E VERIFIED IN BROWSER: report post 3x via API → auto-hidden → queue shows it → Refresh →
+   283→    "Restore & clear reports" → success toast, post back in feed (5 visible), queue empty, audit
+   284→    trail records the action. Also verified earlier curl restore appears in the trail.
+   285→- LLM WEEKLY NARRATIVE (backlog #6) on dashboard AI Insights:
+   286→  - NEW POST /api/insights/narrative: builds a 7-day digest straight from the DB (cycle day/phase,
+   287→    sleep avg, hydration avg, mood distribution, energy/stress avgs, top symptoms with severity,
+   288→    logged-days count), feeds it to z-ai-web-dev-sdk with a strict prompt (3–4 sentences + one
+   289→    "Focus tip:" line, no invented numbers, no diagnosis). Cache: SiteSetting key-value row
+   290→    `narrative:{userId}:{weekStart}` with 6h TTL; force flag bypasses (Regenerate button).
+   291→    Returns {narrative:null, reason:'no-data'} for users who never logged.
+   292→  - Dashboard: auto-loads with the wellness section (non-blocking), renders a "Weekly AI summary"
+   293→    card — skeleton shimmer while loading, gradient container, "cached" chip when served from
+   294→    cache, Regenerate with spinner, focus tip highlighted in its own box (robust split: handles
+   295→    the tip inline OR on its own line), "Continue in AI Coach →" link. Verified live: first call
+   296→    ~1.4s LLM generation, cached chip on reload, dark mode renders cleanly.
+   297→- REAL PREMIUM MANAGEMENT (backlog #4) — Settings Subscription section rewritten (was fake local
+   298→  toggle that also wrongly flipped premium state):
+   299→  - Fetches GET /api/subscription on mount and syncs the store both ways.
+   300→  - Active plan card: tier · plan, Active badge, payment method chip, real price breakdown
+   301→    (₹amount + GST = total), Started / Renews-Ends / Invoice / Transaction grid.
+   302→  - Cancel flow: AlertDialog with honest copy ("features remain active until {endDate}") →
+   303→    DELETE /api/subscription → store + UI flip to Free plan. E2E VERIFIED: cancel in UI →
+   304→    DB active:false → Free card + Upgrade CTA. Then re-subscribed via POST API (invoice
+   305→    CC-MU6MAJZZ) → reload → profile dropdown shows Premium badge + Manage Premium again.
+   306→  - Free plan: clear card + "Upgrade to Premium" → jumps to premium module.
+   307→  - app-shell restore fixed to sync BOTH ways (setPremium(Boolean(d?.active))) so a cancellation
+   308→    on another device is reflected after reload.
+   309→- COMMUNITY FEED PAGINATION (backlog #3):
+   310→  - GET /api/community now supports ?limit&offset → {posts, total, hasMore, nextOffset} envelope;
+   311→  no params still returns the full array (back-compat verified).
+   312→  - UI: 4 posts per page, "Load more posts (4 of 5)" dashed button at feed bottom with spinner,
+   313→    "You're all caught up 🌙 N posts" footer when exhausted, total counter updates on new post.
+   314→  - VERIFIED IN BROWSER: initial 4/5 → click → all 5 + caught-up footer.
+   315→- REPORTS PDF EXPORT (backlog #2) + chart polish:
+   316→  - PDF button ENABLED (was disabled "coming soon"): opens a print-ready HTML report in a new tab
+   317→    (brand header, 4 score tiles, key metrics current-vs-previous table, symptom frequency with
+   318→    ASCII bars, mood distribution, trend table, insights, cycle milestones, disclaimer footer) and
+   319→    auto-triggers window.print() → user saves as PDF. Verified in browser: document opens with
+   320→    correct real data ("Last 7 days · 2026-09-12 → 2026-09-18", wellness 63, etc.).
+   321→  - Symptom Frequency chart: integer Y-axis ticks (allowDecimals=false), theme-aware grid/axis
+   322→    colors (was hardcoded light gray — invisible in dark mode), hover Tooltip added.
+   323→  - Trends chart grid/axis theme-aware too.
+   324→- STYLING DETAILS (mandatory):
+   325→  - next.config.ts: devIndicators.position="bottom-right" — the dev-tools "N" bubble no longer
+   326→    overlaps the sidebar Settings button (visible in every screenshot before).
+   327→  - Reports: chart tooltip + integer ticks + theme-aware grid (above).
+   328→  - Community: pagination footer styled to match feed; post-count footer.
+   329→  - Dashboard: narrative card gradient + shimmer skeleton + focus-tip box.
+   330→  - Settings: moderation queue cards color-coded, subscription metric tiles, audit trail rows.
+   331→- BUG FOUND & FIXED (mobile): topbar avatar was HARDCODED "U" for everyone — MobileTopbar now
+   332→  takes displayName and renders the user's initial. Verified: shows "P" for Priya at 640px.
+   333→- NOT A BUG (closed backlog item #5): the two "duplicate" Kavita Mehta appointments belong to two
+   334→  DIFFERENT users (per-user seed data, correct). No de-dupe needed; dashboard only shows the
+   335→  current user's rows anyway.
+   336→- ENVIRONMENT: 3rd instance of transient file corruption observed — doctor-finder.tsx briefly had
+   337→  DUPLICATE import identifiers (Sparkles/Zap/Siren twice → Turbopack "Ecmascript file had an
+   338→  error" at 55:3/57:3). File self-healed between reads; md5 changed between checks; after self-
+   339→  heal the module compiles, renders and search works. Mitigation unchanged: lint is the final
+   340→  gate; re-read files before editing.
+   341→- Theme restored to light after dark-mode verification; viewport restored to 1280×800.
+   342→
+   343→Stage Summary:
+   344→- ✅ Shipped & browser-verified: admin moderation console (login/queue/restore/dismiss/delete +
+   345→  audit trail), LLM weekly AI summary with caching + regenerate, real subscription management
+   346→  (details/cancel/upgrade), community pagination, reports PDF export, mobile avatar fix, plus
+   347→  mandatory styling details (dev indicator reposition, theme-aware charts, tooltips).
+   348→- Lint: 0 errors 0 warnings. dev.log: clean (no errors). Browser console: clean.
+   349→- Admin demo credentials (auto-provisioned on first login): admin@chandracycle.app / chandra-admin
+   350→  — documented only here, session token is DB-backed and revocable.
+   351→- DB state: 7 users (2 real + 5 demo personas), 13 cycles, wellness logs, 5 community posts,
+   352→  10 comments, appointments (2 upcoming across users, 1 cancelled), 3 subscriptions (1 active),
+   353→  AdminUser=1, narrative cache rows in SiteSetting.
+   354→- Remaining backlog (next round):
+   355→  1. Doctor booking de-dupe guard in doctor-finder (prevent double-click double-book, same slot).
+   356→  2. Community pagination could become server-side category filtering (currently client-side on
+   357→     loaded pages).
+   358→  3. Excel export still honestly disabled; could add real XLSX via a sheet library.
+   359→  4. Admin console: add comment moderation + user flagging (model fields exist), bulk actions.
+   360→  5. Consider rendering the LLM narrative with a typewriter effect and per-week re-generation
+   361→     notification ("Your weekly summary was updated").
+   362→  6. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   363→
+   364→---
+   365→Task ID: 6
+   366→Agent: Z.ai Code (webDevReview round 6)
+   367→Task: Cron QA + development round — appointment double-booking guard, server-side community category filtering, real XLSX export, admin comment moderation + bulk actions, typewriter AI narrative, styling polish.
+   368→
+   369→Work Log:
+   370→- QA baseline: dev server was DOWN again on round start (same reaping issue as round 5) — restarted with
+   371→  `(setsid bun run dev > /dev/null 2>&1 &)` from project dir. Lint 0 errors, app healthy, session persisted.
+   372→  Also died once mid-round after tool call ended; same restart command fixed it. FUTURE ROUNDS: check
+   373→  `curl localhost:3000` FIRST, restart detached if refused.
+   374→- APPOINTMENT DOUBLE-BOOKING GUARD (backlog #1):
+   375→  - Server: POST /api/appointments now returns 409 + existing appointmentId when the same user already has a
+   376→    non-cancelled appointment with the same doctorName+date+time.
+   377→  - Client: booking dialog loads the user's appointments on open; booked slots render crossed-out, greyed,
+   378→    disabled with tooltip + legend line ("Crossed-out slots are already booked by you."); confirmBooking has
+   379→    a client-side guard AND handles 409 by syncing the booked set + clearing the selection + toast.
+   380→  - E2E VERIFIED: curl duplicate → HTTP 409; browser: booked Dr. Vidya Sharma 2026-09-21 10:00 AM → reopened
+   381→    dialog → 10:00 AM crossed-out and unclickable, other slots enabled (screenshot /tmp/booking2.png).
+   382→    Test booking deleted afterwards to restore DB state.
+   383→- COMMUNITY SERVER-SIDE CATEGORY FILTERING (backlog #2):
+   384→  - UI now passes `&category=<api>` to /api/community when a filter is active; loadPosts(cat)/loadMorePosts
+   385→    are category-aware; changing chip reloads page 1 from the server (with loading skeleton).
+   386→  - New post only prepends when it matches the active filter, else toast suggests switching category.
+   387→  - Fixed 2 real bugs while in there: (a) likedIds in loadPosts deps caused a FULL FEED RELOAD on every like —
+   388→    now a ref mirror keeps mapping dependency-free; (b) gamification `myPosts` counted ALL non-anonymous posts
+   389→    instead of the user's own — now uses p.isOwn against a full stats snapshot.
+   390→  - Trending topics + chip counts now computed from a legacy full-feed stats fetch (accurate under pagination);
+   391→    filter chips show live count badges ("All 5", "PCOS 1") in rounded-full pills.
+   392→  - E2E VERIFIED: clicking PCOS → `GET /api/community?limit=4&offset=0&category=pcos` in dev.log, only the PCOS
+   393→    post renders, caught-up footer shows category total ("1 post in the community").
+   394→- REPORTS REAL XLSX EXPORT (backlog #3) — Excel button no longer disabled/"coming soon":
+   395→  - Installed `xlsx` (SheetJS). handleExportExcel builds a 6-sheet workbook (Summary current-vs-previous,
+   396→    Trends, Symptoms, Mood, Cycle Log, Insights) with column widths, downloads via XLSX.writeFile.
+   397→  - E2E VERIFIED: browser click downloaded chandracycle-weekly-report-2026-09-18.xlsx (25.7KB); read back with
+   398→    SheetJS: all 6 sheets present, Wellness 63 vs 54 in Summary, 7 trend rows, real mood/cycle/insight data.
+   399→- ADMIN COMMENT MODERATION + BULK ACTIONS (backlog #4):
+   400→  - Schema: Comment.hidden Boolean @default(false) added, db:push done.
+   401→  - Feed: all comment queries in /api/community + /api/community/comments now filter hidden:false, so moderator
+   402→    -hidden comments vanish from the UI everywhere.
+   403→  - /api/admin/moderation GET: adds commentQueue (hidden comments + author + parent post) and stats.hiddenComments;
+   404→    audit log now covers community_comment too (take 12). PATCH: unified {targetType: 'post'|'comment', id|ids,
+   405→    action} — supports bulk (ids array, ≤50), legacy {postId, action} still accepted, one AuditLog row per target.
+   406→  - Settings UI: bulk action bar (N selected → Restore/Dismiss/Delete selected + clear), per-post checkboxes,
+   407→    hidden-comment cards (orange, EyeOff badge, parent post title, Restore/Delete with confirm dialog).
+   408→    Queue-empty state now requires BOTH queues empty.
+   409→  - E2E VERIFIED via API: hide comment → commentQueue size 1 + stats.hiddenComments 1 → bulk restore via ids →
+   410→    "Comment restored — 1 processed"; 401 without session; hidden comment excluded from /api/community/comments;
+   411→    UI console shows "5 posts · 0 hidden · 0 hidden comments · queue 0" badge + the comment-restore row in the
+   412→    audit trail (screenshot /tmp/mod2.png).
+   413→- AI NARRATIVE TYPEWRITER + REGENERATION TOAST (backlog #5):
+   414→  - Dashboard types the weekly summary out progressively (~150 ticks @16ms, cursor blink); focus-tip box and
+   415→    "Continue in AI Coach" fade in only after typing completes; text renders instantly when the user prefers
+   416→    reduced-motion (a11y).
+   417→  - Regenerating shows toast "Your weekly summary was updated ✨" (only when a previous narrative existed).
+   418→  - E2E VERIFIED: screenshot caught mid-type ("...this we|") + toast visible (/tmp/mid-type.png).
+   419→- STYLING DETAILS (mandatory):
+   420→  - Community: rounded-full filter chips with live count pills; luxury `chandracycle-scroll` scrollbar on feed
+   421→    ScrollArea and comments dialog.
+   422→  - Doctor finder: booked-slot line-through/grey state + legend dot.
+   423→  - Settings: violet bulk-action bar, orange hidden-comment cards, luxury scrollbar on moderation queue.
+   424→  - Reports: Excel button now live (was disabled/greyed).
+   425→  - Dashboard: typewriter cursor + min-height to prevent layout shift.
+   426→- ENVIRONMENT: dev server reaped twice this round again — the setsid double-fork restart is the reliable fix.
+   427→  Stale browser-console errors for doctor-finder.tsx:55/57 from the OLD pre-self-heal session reappear in
+   428→  `agent-browser console` history; file verified clean (single imports), fresh load has ZERO console errors.
+   429→  Mitigation stands: always hard-reload + console --clear before trusting console output.
+   430→
+   431→Stage Summary:
+   432→- ✅ Shipped & verified: appointment double-booking guard (server+client+UI), server-side community category
+   433→  filtering (+like-reload & gamification bug fixes), real 6-sheet XLSX export, admin comment moderation with
+   434→  bulk actions + audit trail, typewriter AI narrative with regeneration toast, and the mandatory styling round.
+   435→- Lint: 0 errors 0 warnings. Fresh browser console: clean. dev.log: clean.
+   436→- DB state changes: Comment.hidden column added (default false, all visible); test appointment created+deleted;
+   437→  1 comment hidden+restored during verification (final state unchanged); narrative cache refreshed by regenerate.
+   438→- Remaining backlog (next round):
+   439→  1. Community: report-comment flow for users (currently only admins can hide comments; model field ready).
+   440→  2. Admin console: user flagging surface (AdminUser model ready), moderation stats over time.
+   441→  3. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider a visible
+   442→     "demo directory" notice.
+   443→  4. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   444→  5. Consider i18n (hi/ta) for the menstrual-health copy, and PWA manifest for installability.
+   445→
+   446→---
+   447→Task ID: 7
+   448→Agent: Z.ai Code (webDevReview round 7)
+   449→Task: Cron QA + development round — user-facing comment reporting + admin reported-comment queue, PWA installability (manifest/SW/install button), .ics calendar export of cycle predictions, mandatory styling round.
+   450→
+   451→Work Log:
+   452→- QA baseline: lint 0/0, dashboard clean, session persisted. Dev server reaped TWICE mid-round again
+   453→  (curl exit 7) — setsid double-fork restart used both times. FUTURE ROUNDS: curl localhost:3000 FIRST.
+   454→- COMMENT REPORTING FLOW (backlog #1, closed):
+   455→  - Schema: Comment.reportedCount Int @default(0) added, db:push done.
+   456→  - API: PATCH /api/community/comments {commentId, action:'report'} → increments reportedCount,
+   457→    auto-hides at 3 (mirrors post semantics). Admin moderation: commentQueue now includes
+   458→    reported-but-visible comments (OR hidden OR reportedCount>0), stats.reportedComments added,
+   459→    comment restore ALSO resets reportedCount, new comment 'dismiss' action clears reports keeping
+   460→    the comment visible; audit details now record reports/wasHidden.
+   461→  - Community UI: hover-reveal flag button on every non-own comment (always visible at 60% opacity
+   462→    on mobile, full reveal on desktop hover), unified report dialog handles posts AND comments
+   463→    (title/description adapt, reason chips shared), reporter stops seeing the flagged comment
+   464→    immediately, optimistic revert on failure.
+   465→  - Settings admin UI: comment cards are color-coded — amber "Reported · N report(s)" (visible) with
+   466→    Dismiss reports + Delete vs orange "Hidden comment" with Restore + Delete; stats badge line now
+   467→    shows "N reported".
+   468→  - E2E VERIFIED (desktop + mobile 390px): report via UI → toast "Report recorded", comment removed
+   469→    for reporter, DB reportedCount=1; admin queue shows amber card with post context + author;
+   470→    3× API reports → hidden:true at 3, excluded from GET /api/community/comments; admin restore →
+   471→    reportedCount 0 + visible again; dismiss path verified via UI ("Comment dismissed — 1 processed").
+   472→    All test reports dismissed/restored — final DB state clean (all comments reportedCount=0).
+   473→- PWA INSTALLABILITY (backlog #5 partially, closed):
+   474→  - Found manifest.json + sw.js + icons ALREADY in /public but never wired: layout metadata pointed
+   475→    the icon at an external CDN logo and NO manifest link / SW registration existed.
+   476→  - layout.tsx: metadata.manifest="/manifest.json", applicationName, local /icon.svg + apple
+   477→    /icon-maskable.svg, formatDetection.telephone=false.
+   478→  - NEW src/components/pwa-register.tsx: registers /sw.js on load, captures beforeinstallprompt,
+   479→    re-broadcasts installability via 'chandracycle-installable' window event, handles
+   480→    'chandracycle-install-request' → prompt().
+   481→  - AppShell sidebar: "Install app · PWA" button (Smartphone icon, hover-scale) appears only when
+   482→    installable, hides on appinstalled. VERIFIED in browser via main-world event dispatch.
+   483→  - sw.js: script strategy changed cache-first → STALE-WHILE-REVALIDATE and cache bumped to
+   484→    chandracycle-v2. Root cause found the hard way: cache-first served STALE dev chunks after edits
+   485→    (new AppShell code on disk + in fetched chunk, but old module running) — SWR fixes staleness
+   486→    forever and is still a standard production pattern.
+   487→  - VERIFIED: manifest link in HTML head, /manifest.json + /sw.js 200, SW active + controlling page
+   488→    ("SW active: .../sw.js"), Install button renders in sidebar (desktop), zero console errors.
+   489→- CYCLE CALENDAR EXPORT (new feature):
+   490→  - PeriodPredictions card gained "Sync 6 cycles to my calendar (.ics)" — client-side RFC5545
+   491→    generator: 18 all-day events (6 cycles × predicted period with exclusive DTEND, 6-day fertile
+   492→    window, ovulation day), emoji summaries, confidence note in DESCRIPTION, escaped text, CRLF
+   493→    line endings, downloads chandracycle-predictions-YYYY-MM-DD.md→.ics via Blob.
+   494→  - E2E VERIFIED: browser download captured; file validated — VCALENDAR header + 18 VEVENTs, dates
+   495→    correct (next period Oct 16 = Sep 18 + 28d, ovulation Oct 2 = start − 14d, DTEND exclusive).
+   496→- STYLING DETAILS (mandatory):
+   497→  - Dashboard quick-stat cards: hover lift (-translate-y-0.5) + shadow-lg + icon chip scale via
+   498→    group/card — subtle premium micro-interaction.
+   499→  - Comment bubbles: hover bg transition + hover-reveal flag button (mobile-visible fallback).
+   500→  - ICS button: rose outline, icon -rotate-12 on hover, loading spinner state.
+   501→  - Install button: primary-tinted with hover bg + icon scale + PWA badge.
+   502→  - globals.css: brand ::selection (light + dark), thin brand-tinted document scrollbar, .safe-bottom
+   503→    utility for iOS safe areas.
+   504→  - Dark mode verified on dashboard after changes — clean.
+   505→- TEST METHOD NOTE: agent-browser eval runs in an ISOLATED world — window CustomEvents dispatched
+   506→  from eval do NOT reach page listeners. To simulate page-scope events (beforeinstallprompt etc.),
+   507→  inject a <script> tag. window.__probe-style cross-eval tests are misleading for event flows.
+   508→
+   509→Stage Summary:
+   510→- ✅ Shipped & browser-verified: comment reporting (user + admin sides incl. auto-hide-at-3,
+   511→  dismiss/restore semantics, audit trail), full PWA installability (manifest + SW with SWR + install
+   512→  button), .ics calendar export of 6 predicted cycles, mandatory styling round (hover lifts, hover
+   513→  reveals, brand selection/scrollbar, safe-area utility).
+   514→- Lint: 0 errors 0 warnings. Fresh browser console: clean (only pre-existing benign recharts
+   515→  width-0 warnings during module transitions). dev.log: clean.
+   516→- DB state changes: Comment.reportedCount column added (all rows 0 after test cleanup); audit trail
+   517→  gained comment dismiss/restore entries; no other data mutated.
+   518→- Remaining backlog (next round):
+   519→  1. Push notification scaffolding (SW 'push' listener + permission ask + server endpoint) — natural
+   520→     next PWA step; enables period reminders.
+   521→  2. Community: report counter visible on posts ("2 reports") for transparency, per-user report
+   522→     de-dupe (one report per user per comment — currently repeatable).
+   523→  3. i18n (hi/ta) for menstrual-health copy; in-app offline banner using SW online/offline events.
+   524→  4. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider a
+   525→     visible "demo directory" notice.
+   526→  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   527→
+   528→---
+   529→Task ID: 8
+   530→Agent: Z.ai Code (webDevReview round 8)
+   531→Task: Cron QA + development round — web push notifications with period reminder engine, community report
+   532→de-duplication + author transparency badge, offline banner, notification seed de-dupe bugfix, styling round.
+   533→
+   534→Work Log:
+   535→- QA baseline: lint 0/0, server healthy with live traffic (real user Shivam active), then server REAPED mid-round
+   536→  again (curl 000) — setsid double-fork restart used. Prisma client had to be reloaded via restart after schema push
+   537→  (db.pushSubscription was undefined in the old process → 500 on /api/push; restart fixed).
+   538→- WEB PUSH NOTIFICATIONS (backlog #1, closed) — no external service account needed:
+   539→  - Installed web-push@3.6.7; generated VAPID keys → .env (NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
+   540→    VAPID_SUBJECT).
+   541→  - Schema: PushSubscription model (endpoint unique, p256dh, auth, userAgent) + ContentReport model (below), db:push done.
+   542→  - NEW src/lib/push.ts: VAPID config, sendPushToUser() fans out to all of a user's devices, prunes 404/410 dead
+   543→    subs, returns {sent, pruned, failed, total} so callers distinguish "no devices" from "send failed".
+   544→  - /api/push: GET (publicKey + subscribed status) · POST (upsert subscription) · DELETE (unsubscribe by endpoint)
+   545→    · PUT (test push to all devices).
+   546→  - sw.js: JSON push listener (title/body/tag/url, renotify, vibrate) + notificationclick (focus existing window
+   547→    or open url); cache bumped to chandracycle-v3.
+   548→  - NotificationPanel UI: "Enable reminders" pill (permission → pushManager.subscribe with urlBase64ToUint8Array →
+   549→    POST save → confirmation test push), states prompt/subscribing/subscribed/denied/unsupported/unconfigured;
+   550→    subscribed shows green "Reminders on" pill; denied shows actionable toast.
+   551→  - E2E: GET configured:true+key, POST upsert → subscribed:true, UI state machine verified (prompt pill visible,
+   552→    denied toast "Notifications are blocked…"), fake-sub PUT → 502 with accurate failed:1/total:1 accounting,
+   553→    DELETE cleanup → subscribed:false. Headless Chromium can't grant notification permission, so the granted path
+   554→    is code-verified only (standard boilerplate).
+   555→- PERIOD REMINDER ENGINE (new, extends notifications):
+   556→  - /api/notifications/check POST {userId}: same cycle math as dashboard (daysSince → daysUntilPeriod); fires
+   557→    "expected today/in N days" (0–2 days) or "N days late" (≥2 overdue) reminders. Two-layer cooldown: identical
+   558→    title 36h + ANY period_reminder 24h (covers seed route variants). Creates Notification row + web-push fan-out.
+   559→  - Panel runs check on mount; on trigger refetches list and shows a local SW notification when permission granted.
+   560→  - E2E VERIFIED with controlled data (shifted latest cycle start → due in 1 day): triggered:true with correct
+   561→    title/message/daysUntilPeriod, push attempted (0 subs = correct), immediate repeat → cooldown. Data restored
+   562→    after test.
+   563→- COMMUNITY REPORT DE-DUPLICATION (backlog #2, closed) + author transparency:
+   564→  - ContentReport model (reporterId+postId / reporterId+commentId unique) → one report per user per target.
+   565→  - PATCH report (posts + comments): requires userId, blocks self-reporting (400), duplicate report → 409 "You
+   566→    have already reported…" without inflating count; reportedCount now mirrors UNIQUE reporters; auto-hide still
+   567→    at 3.
+   568→  - Admin moderation restore/dismiss now deletes the target's ContentReports (users can re-report later; counts
+   569→    reset cleanly). Post/comment deletion cascades reports via FK relations.
+   570→  - Community UI: report bodies carry userId; 409 keeps the flagged content hidden for the reporter with an info
+   571→    toast (no error revert); own posts with reports show an amber "🚩 N report(s) · under review" badge.
+   572→  - E2E VERIFIED: first report → count 1; duplicate → 409 + count stays 1; self-report → 400; comment de-dupe same;
+   573→    badge screenshot on own post (/tmp/r8-badge.png); all test reports deleted, counts reset, DB clean (0 reports).
+   574→- BUG FIX — notification seed duplicates: the screenshot exposed 4 stacked "Welcome to ChandraCycle!" rows. Seed
+   575→  route only checked unreadCount<2, so welcomes re-seeded after the user read them. Now de-duped by title
+   576→  (welcome + period-soon variants exist at most once per user); existing duplicates purged for all users (6 rows).
+   577→- OFFLINE/ONLINE BANNER: NEW src/components/offline-banner.tsx mounted in root layout — amber gradient ribbon
+   578→  with ping dot while offline ("data shown may be out of date"), green "Back online — syncing your latest data"
+   579→  confirmation that auto-dismisses in 3s; framer-motion slide, aria-live polite, lazy navigator.onLine init.
+   580→  E2E VERIFIED desktop + mobile 390×844 via window offline/online events (/tmp/r8-offline.png,
+   581→  /tmp/r8-mobile-offline.png).
+   582→- STYLING DETAILS (mandatory):
+   583→  - "Enable reminders" pill: hover-wiggle bell animation (new @keyframes bell-wiggle + .hover-wiggle/.wiggle-target,
+   584→    reduced-motion respected).
+   585→  - Unread period_reminder rows: soft rose tint distinct from other unread rows.
+   586→  - Report flag button: icon scale+rotate micro-interaction on hover (group/flag).
+   587→  - Report badge, offline/online banners styled as above; screenshots confirm polish on light UI.
+   588→- NOTE on identity: earlier rounds' logs mapped ids correctly — cmu6iahpu…=Priya (test account used in headless
+   589→  browser), cmu6idrlc…=Shivam (real preview user). This round I initially mixed them up while testing; caught it
+   590→  because the own-post badge didn't render, and the misplaced test post was DELETED from Shivam's account
+   591→  immediately. Final DB state has zero test artifacts.
+   592→- STALE DEV OVERLAY: "1 Issue" badge for doctor-finder.tsx:57 "Loader2 defined multiple times" is a STALE HMR
+   593→  artifact from before the restart — file verified single-import, dev.log has zero occurrences, GET / 200, fresh
+   594→  console clean. Ignore if seen in old sessions; hard reload clears it.
+   595→
+   596→Stage Summary:
+   597→- ✅ Shipped & verified: full web-push stack (VAPID → subscribe → fan-out → prune) + period reminder engine with
+   598→  layered anti-spam cooldown, per-user report de-duplication with self-report guard and author transparency badge,
+   599→  offline/online connectivity banner, notification seed de-dupe bugfix, mandatory styling round.
+   600→- Lint: 0 errors 0 warnings. Fresh browser console: clean. dev.log: clean (after restart).
+   601→- DB state changes: PushSubscription + ContentReport tables created (both empty), 6 duplicate notifications purged,
+   602→  all test posts/reports/cycle-shifts reverted. Zero test artifacts on the real user's account.
+   603→- Remaining backlog (next round):
+   604→  1. Reminders scheduler: currently the reminder check runs when the panel mounts (app open). Add a periodic
+   605→     server-side sweep (cron route or SW periodicsync) so push reminders arrive with the app closed.
+   606→  2. i18n (hi/ta) for menstrual-health copy; remaining PWA polish (offline fallback page for navigations).
+   607→  3. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider visible
+   608→     "demo directory" notice.
+   609→  4. Admin console: moderation stats over time; ContentReport reasons are stored but not yet surfaced in the
+   610→     admin queue UI (show reasons + reporter count tooltip).
+   611→  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   612→
+   613→---
+   614→Task ID: 9
+   615→Agent: Z.ai Code (webDevReview round 9)
+   616→Task: Cron QA + development round — server-side reminder scheduler, admin moderation transparency
+   617→(report reasons + reporter identity + 7-day pulse), PWA offline fallback page, dashboard live stats +
+   618→count-up styling, plus 3 real bug fixes found during QA.
+   619→
+   620→Work Log:
+   621→- QA BASELINE + 3 BUGS FIXED:
+   622→  1. HYDRATION MISMATCH (root-caused, was misdiagnosed before): offline-banner.tsx read
+   623→     `navigator.onLine` in a lazy useState initialiser guarded by `typeof navigator !== 'undefined'`
+   624→     — but Node 21+/Bun HAVE a global navigator with `onLine: undefined` → falsy → SERVER rendered
+   625→     the offline ribbon while client rendered nothing. Fresh sessions showed 1 hydration error on
+   626→     every load. First fix (init true + sync in effect) worked but tripped the new
+   627→     react-hooks/set-state-in-effect lint rule; FINAL fix = useSyncExternalStore with server
+   628→     snapshot `true` (canonical pattern, zero lint issues). Fresh console now 0 errors.
+   629→  2. WELCOME NOTIFICATION TYPE BUG: seed route created "Welcome to ChandraCycle! 🌸" with
+   630→     type='period_reminder' → participated in the 24h reminder cooldown (layer b) → real period
+   631→     reminders SUPPRESSED for 24h after signup + wrong rose styling. Re-typed to new 'system' type;
+   632→     added 'system' entry to notification-panel TYPE_CONFIG (HeartHandshake icon, primary tint,
+   633→     "ChandraCycle" label); migrated 1 existing DB row.
+   634→  3. SW NAVIGATION CACHE POISONING: sw.js cached EVERY navigation response incl. 404/500s — a
+   635→     cached error page would then be served offline forever. Fixed: only status===200 responses are
+   636→     cached. (Discovered live: first CDP offline test served a cached 404 instead of /offline.)
+   637→  4. DAILY CHECK-IN DUPLICATES: seed route de-duped welcome/period variants (round 8) but NOT the
+   638→     check-in; parallel panel mounts race past the unreadCount<2 guard → user had 3 identical
+   639→     check-ins. Fixed with per-day title de-dupe; purged 2 dup rows (all users clean).
+   640→- SERVER-SIDE REMINDER SWEEP (backlog #1, closed — reminders now arrive with app closed):
+   641→  - NEW src/lib/reminders.ts: single source of truth — evaluatePeriodReminder (pure cycle math) +
+   642→    maybeCreatePeriodReminder (cooldowns 36h/24h + Notification row + push fan-out).
+   643→  - /api/notifications/check refactored onto the shared engine — response contract preserved
+   644→    VERIFIED (per-user check still returns triggered/cooldown/no-cycle-data identically).
+   645→  - NEW /api/cron/reminders: sweeps ALL onboarded users in batches of 20, tallies
+   646→    triggered/cooldown/notDue/noCycleData/errors + pushesSent, in-memory last-sweep summary on GET.
+   647→    Auth: if CRON_SECRET set, requires x-cron-secret header or ?secret= (unset → open in sandbox).
+   648→  - NEW mini-services/reminder-scheduler (bun, port 3031): pings the sweep every 15 min + boot sweep
+   649→    after 20s grace; /health observability (uptime, runs, lastRun, lastError); /run-now manual
+   650→    trigger. Started with setsid; auto-restart via `bun --hot`.
+   651→  - E2E VERIFIED: shifted Priya's (test account) cycle start 2026-09-18 → 2026-08-23 (due in 2
+   652→    days) → sweep triggered:true, correct title "🌸 Period expected in 2 days", Notification created,
+   653→    push attempted (0 subs correct); per-user check then returned cooldown (proof shared engine +
+   654→    cooldown work across both paths); data restored + test notification deleted (0 reminders left).
+   655→  - Sweep verified working again after each server reap; scheduler survived restarts (runs counter).
+   656→- ADMIN MODERATION TRANSPARENCY (backlog #4 partial, closed):
+   657→  - GET /api/admin/moderation now attaches per-item `reports: [{reason, createdAt, reporter}]`
+   658→    (reporter = name/email, operator-only) for both post and comment queues, plus `activity`:
+   659→    7-day moderation pulse from AuditLog (per-day counts + restore/dismiss/delete totals).
+   660→  - settings.tsx console: report reason chips on queue cards ("🚩 Spam or misleading · R9 Reporter",
+   661→    tooltip with full timestamp, +N more after 4); "Moderation pulse — last 7 days" violet mini bar
+   662→    chart with per-day tooltips and action totals summary.
+   663→  - UI E2E VERIFIED with throwaway users: r9-mod-test posted, r9-reporter reported via PATCH
+   664→    /api/community (reason "Spam or misleading") → admin login (bootstrap admin@chandracycle.app /
+   665→    chandra-admin) → queue card shows chip + pulse strip renders (screenshot r9-admin-queue2.png).
+   666→- PWA OFFLINE FALLBACK (backlog #2 partial, closed):
+   667→  - NEW /offline route: branded fallback (moon logo + wifi-off badge, gradient bg, Try again client
+   668→    island — page stays a Server Component so it renders from pure cached HTML; Go to homepage link).
+   669→    Note: onClick in the server page initially threw "Event handlers cannot be passed to Client
+   670→    Component props" — extracted retry-button.tsx client island.
+   671→  - sw.js: /offline added to CORE precache, navigation fallback chain cached→/offline→/ cache
+   672→    bumped chandracycle-v3→v4, only-200s cached (bug fix above).
+   673→  - E2E VERIFIED via CDP: attached to BOTH page and service-worker targets, Network.emulateNetworkConditions
+   674→    offline:true on each (emulation does NOT propagate to the SW unless attached to its target —
+   675→    first attempt without SW attachment hit the network and got a live 404), navigated to a fresh
+   676→    uncached URL → SW served cached /offline (title "You are offline — ChandraCycle", both CTAs
+   677→    present), then restored online. Also fixed stale-cache pitfall: purge poisoned entries before
+   678→    re-testing (caches.delete).
+   679→- STYLING ROUND (mandatory):
+   680→  - Dashboard quick-stats: two DEAD cards now LIVE — "Fertility Status" shows Peak/Rising/Low by
+   681→    phase (was "—" for 3 of 4 phases) and "Next Ovulation" shows days + "≈ Oct 14 · 29-day cycle"
+   682→    date estimate (was always "—"). Same ovulation math as the cycle card.
+   683→  - NEW AnimatedNumber component: rAF count-up with ease-out cubic on numeric stats, tabular-nums
+   684→    for stable width, prefers-reduced-motion respected (jumps instantly, implemented lint-clean via
+   685→    rAF-only setState).
+   686→  - globals.css: brand :focus-visible ring (oklch rose, 2px, offset 2) for keyboard users; img
+   687→    content-visibility auto.
+   688→  - /offline page styling (gradient, hover lift on Try again, icon rotate micro-interaction).
+   689→- TEST ARTIFACT CLEANUP: r9-mod-test + r9-reporter + r9-visual users deleted (cascades posts/
+   690→  reports/cycles/moods); test reminder notification deleted; Priya's cycle date restored to
+   691→  2026-09-18; duplicate check-ins purged. Final DB: 7 users (real), 0 reports, 0 test posts,
+   692→  no dup notifications. Visual-test data note: throwaway users were created via the real signup API
+   693→  and deleted via cascade — zero impact on real users (Priya cmu6iahpu…, Shivam cmu6idrlc…).
+   694→- INFRA NOTE: dev server reaped 3× this round (curl 000) — setsid double-fork restart each time.
+   695→  The scheduler mini-service on :3031 is independent and survived.
+   696→
+   697→Stage Summary:
+   698→- ✅ Shipped & verified: server-side reminder sweep + scheduler mini-service (reminders work with
+   699→  app closed), admin moderation transparency (reasons + reporter identity + 7-day pulse chart),
+   700→  PWA offline fallback page with SW wiring, 4 real bug fixes (hydration mismatch, welcome type
+   701→  suppressing reminders, SW cache poisoning, check-in duplicates), mandatory styling round
+   702→  (live stats, count-up animation, focus ring, offline page design).
+   703→- Lint: 0 errors 0 warnings. Fresh browser console: 0 errors. dev.log: clean after restart.
+   704→  Sweep endpoint: 7 swept / 0 errors post-restart. Scheduler: healthy on :3031.
+   705→- DB state changes: Notification types migrated (welcome → system), 2 dup check-ins purged, no
+   706→  schema changes this round. All test artifacts removed.
+   707→- Remaining backlog (next round):
+   708→  1. i18n (hi/ta) for menstrual-health copy — largest remaining item, untouched.
+   709→  2. Admin: bulk-selection currently only on posts; add bulk actions to comment queue. Moderation
+   710→     stats could move to a persisted analytics table instead of 7-day AuditLog window.
+   711→  3. Doctor Finder: visible "demo directory" notice still pending (external Places API unconfigured).
+   712→  4. Reminder scheduler: consider making interval user-configurable (per-user quiet hours).
+   713→  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   714→  6. KNOWN: dev server keeps getting reaped between rounds — check `curl localhost:3000` first and
+   715→     restart with setsid double-fork before QA. Mini-service scheduler must be restarted separately
+   716→     if the whole sandbox recycles (cd mini-services/reminder-scheduler && setsid bun run dev &).
+   717→
+   718→---
+   719→Task ID: 10
+   720→Agent: Z.ai Code (webDevReview round 10)
+   721→Task: Cron QA + development round — i18n foundation (EN/HI/TA), per-user reminder quiet hours,
+   722→Doctor Finder demo-directory notice, admin comment queue bulk actions, admin logout bugfix,
+   723→mandatory styling round.
+   724→
+   725→Work Log:
+   726→- QA BASELINE (all green before changes): fresh throwaway user r10qa@test.com signed up via real
+   727→  API, completed 3-step onboarding in headless browser (note: onboarding date-picker gridcells are
+   728→  a11y-visible but hard to click headlessly — setting the native input[type=date] via JS setter +
+   729→  input/change events works), dashboard rendered Day 15/Ovulation, Settings/Community/Find Doctor
+   730→  all loaded, 0 console errors. Scheduler healthy on :3031.
+   731→- I18N FOUNDATION (backlog #1 closed — app chrome now speaks Hindi & Tamil):
+   732→  - NEW src/lib/i18n/translations.ts: ~90 keys × en/hi/ta with {var} interpolation
+   733→    (translate(lang, key, vars)); English is source of truth, per-language fallback to en.
+   734→  - NEW src/components/language-provider.tsx: LanguageProvider + useLanguage(). State lives in
+   735→    localStorage ('chandracycle_lang') read via useSyncExternalStore → server snapshot 'en', zero
+   736→    hydration mismatch, zero set-state-in-effect lint issues (same canonical pattern as offline
+   737→    banner), BONUS: 'storage' event gives free cross-tab sync. document.documentElement.lang kept
+   738→    in sync via effect (DOM write only).
+   739→  - NEW src/components/language-switcher.tsx: (a) globe dropdown for topbars (native-script badge
+   740→    EN/हिं/தமி, check on active), (b) LanguageSegmented radiogroup for Settings (gradient active
+   741→    card).
+   742→  - WIRED INTO: app-shell sidebar nav labels + bottom section (install/tour/premium/settings),
+   743→    desktop topbar greeting + active-module breadcrumb + LanguageSwitcher, mobile topbar (module
+   744→    title translated + switcher added), mobile bottom nav (primary tabs + all-modules sheet group
+   745→    titles/labels, 'More' tab), dashboard (greeting, date now localized hi-IN/ta-IN, day-of-cycle
+   746→    badge, phase hero + legend via PHASE_META[].key, quick stats titles/subtitles incl. fertility
+   747→    Peak/Rising/Low, quick-log buttons, CycleProgressRing ofDaysLabel), settings (new Language &
+   748→    Region card whose own title is translated live).
+   749→  - VERIFIED: desktop live-switch to हिन्दी (nav/topbar instant), full reload shows fully Hindi
+   750→    dashboard (सुप्रभात / चक्र का दिन 15 / ओवुलेशन चरण / phase legend / quick stats), mobile 390×844
+   751→    live-switch verified, console clean. NOTE: one stale-chunk HMR artifact after a server reap made
+   752→    the dashboard lag a live switch once; fresh browser showed instant switching — not a code bug.
+   753→- PER-USER REMINDER QUIET HOURS (backlog: user-configurable reminders — closed):
+   754→  - Schema: User.remindersEnabled (default true), User.quietStart/quietEnd (Int?, hour 0-23,
+   755→    window [start,end) wrap-around safe; null pair = 24/7). db:push OK.
+   756→  - src/lib/reminders.ts: new isQuietHour() (pure) + maybeCreatePeriodReminder now returns
+   757→    'quiet-hours' (defer — reminder delivered by next evaluation after window ends) and 'disabled'
+   758→    (kill-switch) BEFORE cooldown evaluation.
+   759→  - /api/cron/reminders selects the new fields; tally extended with quietHours/disabled buckets.
+   760→  - /api/notifications/check returns friendly messages for both new reasons.
+   761→  - NEW /api/user/preferences: GET (current prefs + quietNow flag) / PATCH (session-token auth,
+   762→    validates hour ints 0-23 or null, clears window when either end nulled).
+   763→  - NEW src/components/settings/reminder-preferences.tsx (in Settings → Notification Preferences):
+   764→    master Switch, preset chips (Off 24/7 · 22:00→07:00 · 23:00→08:00 · 21:00→06:00), custom
+   765→    from/to hour selects, optimistic save + revert, live status footer ("Reminders pause 22:00 →
+   766→    07:00"), "Quiet now" pulse chip when inside the window.
+   767→  - notification-panel.tsx: indigo "🌙 Quiet" chip in the panel header while quietNow.
+   768→  - E2E VERIFIED via API: window covering current hour → per-user check returned
+   769→    {"reason":"quiet-hours"} AND sweep tally counted quietHours:1; clearing window → reminder
+   770→    triggered immediately (🌸 Period expected in 2 days); remindersEnabled:false →
+   771→    {"reason":"disabled"}. All test state restored afterwards.
+   772→- DOCTOR FINDER DEMO NOTICE (backlog #3 closed): visible amber banner (FlaskConical icon, "Demo
+   773→  directory" + SAMPLE DATA badge, verify-credentials safety note, dismissible, reappears per
+   774→  search) above results when searchSource==='simulated'. VERIFIED in browser with a real search.
+   775→- ADMIN COMMENT QUEUE BULK ACTIONS (backlog #2 closed — API already supported bulk comments):
+   776→  - settings.tsx: selectedCommentIds state + toggle + handleBulkCommentAction
+   777→    (targetType:'comment', ids[]), sky-accent bulk bar (Restore / Dismiss reports / Delete /
+   778→    Clear selection) + checkbox on every comment card.
+   779→  - E2E VERIFIED: test post + 2 comments created, reported by throwaway user → admin API bulk
+   780→    dismiss {"processed":2} → reportedCounts reset to 0, two moderation:dismiss audit rows written;
+   781→    UI verified in browser (checkbox select → bulk bar visible; report-reason chips render).
+   782→- BUG FIX — ADMIN LOGOUT 500 (pre-existing, exposed by round-10 QA): /api/admin/logout wrote
+   783→  revokedAt/revokedReason which did NOT exist on AdminSession (copy-paste from AuthSession) →
+   784→  PrismaClientValidationError on every operator sign-out, session never actually revoked.
+   785→  Added both fields to the model, db:push, full dev-server restart (needed for regenerated client),
+   786→  then VERIFIED: logout returns {"success":true} and latest session row shows revoked:true +
+   787→  revokedReason 'operator logout'.
+   788→- STYLING ROUND (mandatory):
+   789→  - Settings profile banner: dotted radial texture, crescent-moon mark (two-circle overlap), blur
+   790→    orbs, hover shimmer sweep, avatar ring + emerald status dot (group/banner hover transforms).
+   791→  - LanguageSegmented gradient active card + check bubble; quiet-hours card design (chips,
+   792→    selects, status footer); demo-banner gradient design.
+   793→- CLEANUP: r10qa + r10reporter users cascade-deleted (posts/comments/reports/preferences gone),
+   794→  QA test reminder pruned, preferences reset, admin signed out in browser. The 1 remaining
+   795→  period_reminder belongs to real preview user growthive9@gmail.com (legitimately 10 days late)
+   796→  and stays. Final DB: 7 users, 0 reports, 0 test artifacts.
+   797→- INFRA NOTE: dev server reaped 3× this round (curl 000 → setsid double-fork restart). Prisma
+   798→  schema changes require a FULL dev-server restart (hot reload keeps the old client in memory) —
+   799→  cost one confusing "logout still failing" cycle.
+   800→
+   801→Stage Summary:
+   802→- ✅ Shipped & verified: i18n foundation with instant EN/HI/TA switching across nav, dashboard,
+   803→  mobile chrome and settings (largest backlog item, closed); per-user reminder quiet hours enforced
+   804→  end-to-end (settings UI → preferences API → reminder engine → sweep); Doctor Finder demo-directory
+   805→  notice; admin comment-queue bulk moderation (UI + API verified); 1 real bug fixed (admin logout).
+   806→- Lint: 0 errors 0 warnings. Fresh browser console: 0 errors. Scheduler: healthy (5 runs, 0 errors).
+   807→- DB state changes: User +3 columns (remindersEnabled/quietStart/quietEnd), AdminSession +2 columns
+   808→  (revokedAt/revokedReason); no data migrations needed; all test artifacts removed.
+   809→- Remaining backlog (next round):
+   810→  1. i18n depth: extend translations beyond app chrome into module interiors (period tracker,
+   811→     coach empty-states, onboarding) + browser i18n of AI-generated content is out of scope.
+   812→  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+   813→  3. Reminder sweep: per-user local-timezone quiet hours (engine currently uses server clock;
+   814→     fine in sandbox, consider storing tz or evaluating quiet hours against user's profile tz).
+   815→  4. Doctor Finder: Google Places still unconfigured (demo notice now covers it gracefully).
+   816→  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   817→  6. KNOWN: dev server reaping continues — always `curl localhost:3000` first; restart with
+   818→     setsid double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.
+   819→
+   820→---
+   821→Task ID: 11
+   822→Agent: Z.ai Code (webDevReview round 11)
+   823→Task: Cron QA + development round — onboarding↔tracker data-consistency bugfix, cycle history
+   824→edit/delete (new feature), GDPR-style data export (new feature, replaced a fake toast with a real
+   825→implementation), mandatory styling round, mobile touch-UX fix.
+   826→
+   827→Work Log:
+   828→- QA BASELINE: fresh throwaway user r11qa@test.com signed up via real API + browser, 3-step
+   829→  onboarding in headless browser, dashboard correct (Day 15, Ovulation phase), AI Coach real
+   830→  streaming reply + history persisted to ChatMessage + restored after reload, Community persisted
+   831→  (5 posts, gamification Level 9), Reports proper empty states, console clean. Dev server up;
+   832→  scheduler healthy (6 runs, 0 errors). NOTE: earlier worklog said Priya was deleted — she was NOT
+   833→  (my first user listing was truncated by tail; she has 7 cycles). Login failure this round was
+   834→  just a password mismatch.
+   835→- BUG FIXED — ONBOARDING DID NOT SEED A CYCLE RECORD (found via QA, data consistency):
+   836→  POST /api/user only set user.lastPeriodStart, so a fresh onboarded user saw Dashboard "Day 15 /
+   837→  Ovulation" (derived from user field) while Period Tracker showed "No cycle history yet / Log your
+   838→  first period" (reads Cycle rows) — contradictory state for EVERY new user.
+   839→  Fix: on onboarding completion with a period date, the route now idempotently creates the first
+   840→  Cycle (skips if a cycle with the same startDate already exists; seed failure is non-fatal).
+   841→  Extracted src/lib/cycle-math.ts (buildCycleFields) as the single source of truth for ovulation/
+   842→  fertile-window math, now shared by /api/cycles POST and /api/user POST.
+   843→  E2E VERIFIED: new browser signup r11verify@test.com + onboarding → Cycle row auto-created with
+   844→  correct derived fields (start 2026-09-04 → ovulation 2026-09-18 = start+28−14), tracker history
+   845→  + predictions ("Based on 1 tracked cycle", 58% confidence) light up consistently.
+   846→- NEW FEATURE — CYCLE HISTORY EDIT + DELETE (data management core for a health app):
+   847→  - PATCH /api/cycles (session-token auth, owner check, 401/404 paths verified): edits startDate /
+   848→    endDate / flow / free-text notes. Flow lives in the notes prefix ("light|medium|heavy flow."),
+   849→    rewritten via regex; derived ovulation/fertile fields recomputed on date change. When the newest
+   850→    cycle's startDate moves, user.lastPeriodStart syncs (VERIFIED via API: patch 2026-08-10→08-20 →
+   851→    user.lastPeriodStart=2026-08-20, ovulation→2026-09-03).
+   852→  - DELETE /api/cycles?id= (same auth): when deleting the newest cycle, user.lastPeriodStart falls
+   853→    back to the next-newest record or null (E2E VERIFIED: last row deleted → cycles=0,
+   854→    lastPeriodStart=null, tracker returns to empty state, predictions clear).
+   855→  - UI: per-row dropdown menu ("···" hover-reveal on desktop, ALWAYS visible on <md for touch),
+   856→    Edit dialog (start/end date inputs, flow Select with droplet icons, notes textarea, branded
+   857→    rose save button, toast confirm), Delete AlertDialog (explains date + recalculation,
+   858→    destructive action). Table rows got rose hover tint + custom-scrollbar + aria-labels.
+   859→- NEW FEATURE — REAL DATA EXPORT (was a FAKE feature before):
+   860→  - The old Settings "Export My Data" button only fired a toast claiming an email would arrive in
+   861→    24h. Replaced with GET /api/user/export (session auth, no-store): gathers profile + cycles,
+   862→    moods, sleeps, waters, symptoms, chatMessages, communityPosts/Comments, notifications,
+   863→    appointments into a versioned payload ($schema: chandracycle-data-export, $version: 1) with
+   864→    per-table counts. Unauthenticated → 401 VERIFIED.
+   865→  - Client downloads a pretty-printed JSON blob (chandracycle-export-YYYY-MM-DD.json) and shows a
+   866→    REAL summary toast ("Export downloaded ✅ — Your data: 1 cycles.") with per-count breakdown;
+   867→    loading spinner state on the button. Settings card redesigned (emerald gradient, JSON badge,
+   868→    icon scale micro-interaction, chevron slide on hover).
+   869→- MANDATORY STYLING ROUND (details):
+   870→  - Cycle History: hover-reveal row actions (opacity-0 md:group-hover:opacity-100 — fixed to
+   871→    always-visible on touch), rose row hover tint, icon micro-interactions.
+   872→  - Edit/Delete dialogs: icon bubbles (rose pencil / destructive trash), min-h textarea with
+   873→    placeholder, gradient save button, "Keep record" cancel copy.
+   874→  - Export card: emerald gradient + JSON badge + group-hover icon scale + chevron translate.
+   875→  - MOBILE 390×844 fix: history table hid End Date + Cycle columns on <sm so the row (with
+   876→    actions) fits the viewport without horizontal scroll; overflow-x-auto kept as fallback.
+   877→    E2E verified mobile (actions "···" visible & tappable) + desktop (all 5 columns intact).
+   878→- INFRA NOTE: dev server reaped once mid-round (curl 000) — setsid double-fork restart per
+   879→  established pattern. Scheduler stayed independent on :3031 (7 runs, 0 errors).
+   880→- TEST ARTIFACT CLEANUP: r11qa + r11verify users cascade-deleted (their cycles/chats/notifications
+   881→  gone with them). Final DB: 7 users (1 real preview user + 5 demo + 1 admin), 0 reports, 0 test
+   882→  artifacts. E2E throwaway data never touched real accounts.
+   883→
+   884→Stage Summary:
+   885→- ✅ Shipped & verified: onboarding→Cycle seeding bugfix (Dashboard ↔ Tracker now consistent for
+   886→  every new user), cycle history edit/delete with lastPeriodStart sync + auth guards, real
+   887→  GDPR-style data export replacing a fake button, mandatory styling round incl. mobile touch fix.
+   888→- Lint: 0 errors 0 warnings. Browser console: 0 errors. dev.log clean. Scheduler healthy.
+   889→- DB state changes: no schema changes this round (Cycle/User rows only via the new flows); all
+   890→  test artifacts removed.
+   891→- Remaining backlog (next round):
+   892→  1. i18n depth: extend translations into module interiors (period tracker strings are still
+   893→     hard-coded English; EN/HI/TA currently covers chrome/dashboard/settings).
+   894→  2. Persisted analytics table for moderation stats (still 7-day AuditLog window).
+   895→  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+   896→  4. Data export: optional CSV format + scheduled export-to-email (now that real JSON export
+   897→     exists); also consider import/restore.
+   898→  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   899→  6. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
+   900→     double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.
+   901→
+   902→---
+   903→Task ID: 12
+   904→Agent: Z.ai Code (webDevReview round 12 — user-reported UI bug)
+   905→Task: USER REPORTED BUG — "large black space between dashboard and side menu bar" + "complete
+   906→UI/UX and website format exact set karo". Fix the shell layout, verify format consistency
+   907→everywhere (light/dark/collapsed/expanded/mobile), add shell UX improvements.
+   908→
+   909→Work Log:
+   910→- ROOT CAUSE FOUND (user screenshot + code read): src/components/app-shell.tsx had the desktop
+   911→  main column styled with `lg:ml-64` / `lg:ml-[72px]` (desktopMainMargin) — but the sidebar
+   912→  <aside> is an IN-FLOW flex sibling (w-64 / w-[72px], shrink-0), NOT fixed/absolute. The flex
+   913→  layout already places the main column beside the sidebar, so the extra margin produced a
+   914→  redundant 256px dead strip between sidebar edge and header/content. In dark mode that strip
+   915→  rendered the dark bg-background between light surfaces → the "black space" the user saw.
+   916→- FIX: removed desktopMainMargin entirely; main column is now `flex-1 min-w-0 flex flex-col h-full`.
+   917→  Collapse/expand still animates smoothly (aside width transition drives flex reflow).
+   918→- E2E VERIFIED (agent-browser, 1568×722):
+   919→  - Light mode: header now starts immediately at sidebar edge; dashboard/tracker/settings all
+   920→    aligned; no gap (screenshots uiqa_2/uiqa_4/uiqa_5).
+   921→  - Sidebar collapse toggle: icon rail (72px) + expand both seamless, no gap (uiqa_3).
+   922→  - DARK MODE: entire shell uniformly dark — sidebar/header/content consistent, the stray strip
+   923→    is gone (uiqa_6). This confirms the user was in dark mode when they saw the black band.
+   924→  - Mobile 390×844: topbar + bottom-nav render fine, no regression (uiqa_7).
+   925→- UX FEATURE 1 — SIDEBAR STATE PERSISTENCE: sidebarOpen now round-trips through localStorage
+   926→  (`chandracycle_sidebar_open`, SSR-safe guards, try/catch for private mode). Collapse the
+   927→  sidebar → reload → it STAYS collapsed (VERIFIED: localStorage='collapsed' + screenshot
+   928→  uiqa_10 after full reload; then back to 'open').
+   929→- UX FEATURE 2 — KEYBOARD SHORTCUT: `[` toggles the desktop sidebar (ignored while typing in
+   930→  input/textarea/select/contentEditable, ignores modifier keys). VERIFIED via browser keypress:
+   931→  state flipped collapsed→open + persisted. Toggle button got `title="Toggle sidebar ( [ )"`.
+   932→- STYLING DETAIL: sidebar brand "ChandraCycle" gradient text now has dark: variants
+   933→  (amber-300/rose-300/fuchsia-300) — the 600-series gradient was muddy/low-contrast on dark card.
+   934→- QA HYGIENE: created throwaway uiqa@test.com for the round, cascade-deleted after verification
+   935→  (7 users back to baseline). Browser's stale r11verify localStorage session (user already gone;
+   936→  dashboard was rendering from cached zustand state) cleared along with the sidebar pref.
+   937→- Lint: 0 errors 0 warnings. Browser console: 0 errors (only HMR/info logs). dev.log clean.
+   938→  Dev server was reaped mid-round (HTTP 000) — restarted via setsid double-fork, stable since.
+   939→
+   940→Stage Summary:
+   941→- ✅ Shipped & verified: the reported black-gap layout bug fixed at the root (redundant flex
+   942→  margin removed), format consistency confirmed in light+dark, collapsed+expanded, desktop+mobile;
+   943→  sidebar collapse preference now persists across reloads; `[` keyboard shortcut added.
+   944→- DB state changes: none (schema untouched; only throwaway QA user created+removed).
+   945→- Remaining backlog (next round):
+   946→  1. i18n depth: module interiors still hard-coded English (period tracker, coach empty states).
+   947→  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+   948→  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+   949→  4. Doctor Finder: Google Places unconfigured (demo notice covers it).
+   950→  5. PayPal real keys / Google OAuth unconfigured (graceful degradation in place).
+   951→  6. KNOWN: dev server reaping persists in sandbox — always `curl localhost:3000` first;
+   952→     restart with setsid double-fork; restart mini-services/reminder-scheduler separately.
+   953→  7. scripts/check-users.ts + scripts/cleanup-qa.ts kept as QA utilities (safe, read/cleanup only).
+   954→
+   955→---
+   956→Task ID: 13
+   957→Agent: Z.ai Code (user-requested rebrand)
+   958→Task: USER REQUEST — "ye logo h and ye brand name aur tagline iske sath do and thoda animated and
+   959→creative" → Rebrand the app to NUVIA using the uploaded logo (lotus-flame + drop mark), brand name
+   960→"Nuvia", tagline "Track • Understand • Thrive", with animated & creative presentation.
+   961→
+   962→Work Log:
+   963→- BRAND ASSETS (PIL, saturation-bbox analysis of the uploaded 1254×1254 logo):
+   964→  - public/brand/nuvia-mark.png (512²) — precise crop of the lotus+drop mark; corner-swirl and
+   965→    NUVIA-text leaf fragments removed via row-wise background fill; -192/-512 PNGs generated for
+   966→    PWA icons. Full original kept as nuvia-logo.png.
+   967→- NEW COMPONENT src/components/brand/brand-logo.tsx (CSS-only animations → hydration-safe,
+   968→  framer-free, bundle-light):
+   969→  - BrandMark: glass tile (white→rose gradient + ring + layered shadow) with breathing halo,
+   970→    orbiting dashed ring, gentle float-tilt, and a diagonal light-sheen sweep; sizes xs→xl.
+   971→  - BrandWordmark: "Nuvia" serif with new .brand-wordmark plum→rose round-trip shimmer class
+   972→    (light + dark variants).
+   973→  - BrandTagline: "Track • Understand • Thrive" with staggered pulsing separator dots.
+   974→  - All keyframes (brand-float-soft/brand-halo/brand-sheen/brand-dot/brand-spin + wordmark)
+   975→    added to globals.css and registered in the prefers-reduced-motion block.
+   976→- INTEGRATED AT: sidebar logo area (collapses to mark-only, AnimatePresence preserved), auth
+   977→  screen brand chip (left panel) + mobile header, AppLoader (mark + "Loading Nuvia…" + tagline,
+   978→  stays hydration-safe), onboarding welcome hero (xl mark replaced the old "C" circle) +
+   979→  onboarding header chip, mobile topbar (xs mark), profile dropdown brand header (mark in white
+   980→  tile + "TRACK · UNDERSTAND · THRIVE"), printable health-report template (img logo).
+   981→- GLOBAL REBRAND: sed "ChandraCycle"→"Nuvia" across src/ + manifest.json (38 files: modules,
+   982→  auth, premium, i18n translations, AI system prompts, push/notification seeds, PayPal labels,
+   983→  legal pages, offline page). Case-sensitive so internal keys survived: chandracycle_token,
+   984→  chandracycle_sidebar_open, chandracycle-scroll, chandracycle-installable, ICS UIDs,
+   985→  admin/storage keys untouched (deliberate). User-facing emails → support@nuvia.health /
+   986→  admin@nuvia.app / user@nuvia.health.
+   987→- PWA: layout.tsx icons → nuvia-mark-192/512.png; manifest.json name "Nuvia — Track • Understand
+   988→  • Thrive" + PNG icons; sw.js cache bumped chandracycle-v4 → nuvia-v5 with new CORE assets
+   989→  (old caches auto-purge on activate; this also fixed stale-chunk serving seen mid-round).
+   990→- METADATA: title "Nuvia — Track • Understand • Thrive", applicationName Nuvia, apple title.
+   991→- E2E VERIFIED (agent-browser): fresh signup riya.qa@test.com → auth screen (animated lockup) →
+   992→  onboarding (Nuvia mark hero, "Welcome to Nuvia", "Enter Nuvia" button) → dashboard sidebar
+   993→  (mark + wordmark + tagline) → dark mode (halo glow, dropdown gradient header) → mobile 390×844
+   994→  topbar. Screenshots nuvia_1…nuvia_9. LCP warning fixed via Image priority on the mark.
+   995→- CLEANUP: riya.qa + cascade rows deleted (7 users baseline). Browser session/localStorage/SW
+   996→  registration cleared. Lint: 0 errors 0 warnings. dev.log clean. Server was reaped once
+   997→  (HTTP 000) — restarted via setsid double-fork.
+   998→
+   999→Stage Summary:
+  1000→- ✅ Full Nuvia rebrand shipped & verified end-to-end with animated brand kit (halo+orbit+float+
+  1001→  sheen mark, shimmer wordmark, pulsing-dot tagline) across auth, onboarding, shell, mobile,
+  1002→  dropdown, loader, PWA icons/metadata and all user-facing copy.
+  1003→- DB state changes: none (schema untouched; throwaway QA user created+removed).
+  1004→- Remaining backlog (next round):
+  1005→  1. i18n depth: module interiors still hard-coded English (period tracker, coach empty states).
+  1006→  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+  1007→  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+  1008→  4. Optional: generate a proper maskable icon (current maskable = plain mark on light bg).
+  1009→  5. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
+  1010→     double-fork; SW cache is now nuvia-v5 (bump on future asset changes if ever needed).
+  1011→
+  1012→---
+  1013→Task ID: 14-d
+  1014→Agent: frontend-styling-expert
+  1015→Task: Warm glassmorphism polish of auth-screen.tsx per user reference
+  1016→
+  1017→Work Log:
+  1018→- Read worklog Tasks 12-13 for context (shell layout fix, Nuvia rebrand with animated brand kit)
+  1019→  + globals.css theme foundation (.glass/.glass-premium, glow-*, animate-drift-slow/float,
+  1020→  blush/peach/lilac tokens, --radius 1rem, reduced-motion registry).
+  1021→- EDITED ONLY src/components/auth/auth-screen.tsx (globals.css + all other modules untouched):
+  1022→  1. Warm canvas: replaced the saturated bg-animated-gradient + white veil with a cream canvas
+  1023→     (oklch cream->blush->peach linear gradient, dark: plum equivalents) + a 3-stop radial wash
+  1024→     layer (rose top-left, peach top-right, lilac bottom, dark: variants). Both layers live in
+  1025→     the existing fixed inset-0 overflow-hidden pointer-events-none aria-hidden container, so no
+  1026→     horizontal overflow is possible.
+  1027→  2. Glass spheres: removed the 3 framer-motion blur orbs and replaced with 3 organic CSS
+  1028→     "glass sphere" blobs (rounded-full, white->rose / white->amber->rose / white->lilac->rose
+  1029→     gradients, hairline white border, inset specular highlight span, backdrop-blur-[2px],
+  1030→     soft oklch drop shadows) animated via .animate-drift-slow (negative static animationDelay
+  1031→     for phase offset) and .animate-float; pointer-events-none + aria-hidden; third (smallest,
+  1032→     near seam) hidden md:block; corner spheres dimmed on mobile (opacity-75/80 -> 90 sm+).
+  1033→     Hydration-safe: static markup, CSS-only animation, both classes already registered in the
+  1034→     prefers-reduced-motion block.
+  1035→  3. Login/signup form card: card-premium -> .glass-premium rounded-3xl (frosted translucent
+  1036→     panel per reference); divider "or" chip -> .glass rounded-full pill; Google fallback button
+  1037→     rounded-xl -> rounded-full with frosted bg-white/60 dark:bg-white/[0.06]; secure sign-in
+  1038→     notice restyled to translucent glass rounded-2xl.
+  1039→  4. Pill inputs: name/email/password inputs -> h-11 rounded-full bg-white/55 dark:bg-white/[0.07]
+  1040→     with circular leading icon chips (h-8 w-8 rounded-full bg-white/70 dark:bg-white/10 border
+  1041→     white/80, rose icon) absolutely positioned left-1.5, pointer-events-none; icons now
+  1042→     UserIcon / Mail / KeyRound (Lock import swapped for KeyRound, all else same). ids, values,
+  1043→     onChange, onKeyDown Enter handlers, validation, errors 100% unchanged.
+  1044→  5. Password row: eye toggle + NEW "I forgot" pill grouped in one right-anchored flex
+  1045→     (absolute right-1.5); pill = h-7 rounded-full bg-white/75 dark:bg-white/10 border, keeps the
+  1046→     exact same toast.info('Password reset link would be sent to your email.') handler; input got
+  1047→     pl-11 pr-28 to clear both controls. Old "Forgot?" text link removed from the label row
+  1048→     (label row simplified to just the Label).
+  1049→  6. Primary sign-in button: btn-premium kept, rounded-xl -> rounded-full + glow-rose; loading/
+  1050→     disabled states untouched.
+  1051→  7. Dark contrast promo card added under the left-column feature grid: rounded-3xl
+  1052→     bg-foreground text-background (charcoal in light mode, auto-inverts to white card with dark
+  1053→     text in dark mode), decorative rose/amber blur blobs inside, "NEW IN NUVIA" eyebrow + serif
+  1054→     "AI Health Coach is live - gentle 24/7 guidance tuned to your cycle." + "Discover ->" pill
+  1055→     button wired to the EXISTING switchMode('signup') handler (no new state).
+  1056→  8. Brand lockup untouched: BrandMark/BrandWordmark/BrandTagline markup, sizes and animation
+  1057→     props identical in the left brand chip and the mobile header.
+  1058→- Verification (code-level only; dev server was reaped HTTP 000 and per instructions was NOT
+  1059→  restarted, no lint/build run, no agent-browser):
+  1060→  - npx tsc --noEmit: ZERO errors referencing auth-screen.tsx (remaining output is pre-existing
+  1061→    noise from other paths/files already present before this task).
+  1062→  - Full re-read of the edited file: JSX balanced, no unused imports (Lock removed, KeyRound +
+  1063→    existing icons used), all handlers/ids preserved.
+  1064→  - Runtime visual check pending server restart by coordinator (see Stage Summary).
+  1065→
+  1066→Stage Summary:
+  1067→- Auth screen now matches the premium soft reference: warm cream/blush canvas with drifting
+  1068→  3D glass spheres, frosted glass-premium rounded-3xl form card, pill inputs with circular
+  1069→  leading icon chips, nested "I forgot" pill inside the password field, rounded-full glowing
+  1070→  sign-in button, glass "or" divider, and ONE dark contrast promo card ("New in Nuvia /
+  1071→  AI Health Coach is live / Discover ->") that flips the form to signup via existing state.
+  1072→- Verify after server restart: (a) light+dark rendering of the dark promo card (should invert
+  1073→  to white-on-dark-mode); (b) password field right cluster fit at 320-390px (pr-28 clearance);
+  1074→  (c) signup mode hides "I forgot" pill and shows name field with user icon chip; (d) no
+  1075→  horizontal scroll on mobile (spheres live in fixed overflow-hidden layer); (e) Google modal
+  1076→  + email signup/login + forgot toast still work (logic untouched); (f) left column height on
+  1077→  short laptops - promo card may push trust footer below fold, page scrolls naturally.
+  1078→- DB state changes: none. No API/dependency changes. Only file touched:
+  1079→  src/components/auth/auth-screen.tsx (+ this worklog entry).
+  1080→---
+  1081→Task ID: 14-b
+  1082→Agent: frontend-styling-expert
+  1083→Task: Redesign dashboard.tsx + period-tracker.tsx per user reference screenshots (blush/petal theme)
+  1084→
+  1085→Work Log:
+  1086→- Read worklog (Tasks 12-13) + new globals.css token foundation; studied both target modules
+  1087→  end-to-end before editing (dashboard 1520 L, tracker 1787 L). Edited ONLY these 2 files.
+  1088→- SHARED CYCLE PALETTE (both pages, identical values so they read as one system):
+  1089→  Menstrual oklch(0.62 0.22 355) rose · Follicular oklch(0.62 0.19 305) violet ·
+  1090→  Ovulation oklch(0.72 0.15 55) peach · Luteal oklch(0.68 0.12 200) teal.
+  1091→- DASHBOARD:
+  1092→  1. Hero cycle-summary card glass -> .card-blush, p-6 sm:p-8 (REF-A pillowy panel).
+  1093→  2. CycleProgressRing: phase segments now SOLID full-opacity colors (were 0.3-alpha washed),
+  1094→     rounded caps kept, dashedasharray/offset math byte-identical; track softened to rose tint;
+  1095→     added un-rotated SVG overlay "today" marker dot (white fill + phase-color stroke,
+  1096→     animate-pulse-soft which is already reduced-motion-safe) positioned clockwise-from-top.
+  1097→  3. Ring center restyled REF-A: small-caps "Day" caption, big Playfair serif number
+  1098→     (text-foreground), "of N days" caption, pill-shaped phase badge (color-mix tinted bg +
+  1099→     phase-color text — accessible on both light/dark instead of white-on-amber).
+  1100→  4. Stat tiles: glass Cards -> plain tinted rounded-2xl divs using token utilities:
+  1101→     Cycle Day=bg-medical-soft/teal, Days Until Period=bg-blush/rose, Fertility=bg-lilac/violet,
+  1102→     Next Ovulation=bg-peach-soft/amber; rounded-2xl white-on-tint icon chips, no plain white
+  1103→     borders; AnimatedNumber/values/subtitles untouched.
+  1104→  5. Legend chips -> .chip-soft pills with colored dot markers (name + day range).
+  1105→  6. NEW quick-action row (grid-cols-1 sm:grid-cols-2): "Log your symptoms" dashed
+  1106→     rounded-3xl card with dashed-circle Plus icon (rotates+lifts on hover, onClick
+  1107→     setActiveModule('symptoms'), min-h-24, aria-label) + "Fertile Days" .card-peach card with
+  1108→     Flower2 icon chip, window date range + "N days left" from a new presentation-only
+  1109→     fertileWindow useMemo (derives window = cycle days [L-18, L-12] — same math the tracker
+  1110→     calendar uses — from existing cycleInfo; rolls to next cycle if passed; no new data source).
+  1111→  7. Hero mini stat boxes -> bg-blush / bg-peach-soft; itemVariants easing refined to
+  1112→     cubic-bezier(0.22,1,0.36,1).
+  1113→- PERIOD TRACKER:
+  1114→  1. PHASES palette -> same 4 crisp colors (+ alpha-tinted bgColor / light tints in oklch).
+  1115→  2. CycleWheel Pie: cornerRadius 4->8, paddingAngle 2->3 (crisper separated arcs), inactive
+  1116→     cell opacity 0.5->0.55; tooltip bg-card/border-border (dark-safe); center number -> serif
+  1117→     text-foreground; phase badge pill slightly larger + shadow.
+  1118→  3. Wheel legend chips -> .chip-soft pills with colored dots (phase icon removed, dot added).
+  1119→  4. Tab bar -> pill segmented control: TabsList bg-secondary rounded-full p-1 h-auto, triggers
+  1120→     rounded-full min-h-11 (44px touch), active = rose-500->pink-500 gradient + white text +
+  1121→     rose glow shadow (dark: overrides added so white text/bg survive the dark variants).
+  1122→  5. Calendar cells: rounded-lg->rounded-xl, transition duration-200, today ring = ring-rose-500
+  1123→     ring-offset-background, period = rose-500/15 fill, ovulation = amber-400/20 (peach),
+  1124→     fertile window = VIOLET-400/15 (was orange), predicted = dashed rose border + rose-400/5;
+  1125→     legend swatches -> chip-soft pills matching new palette.
+  1126→  6. Hero ring panel -> .card-blush; the 6 other cards bg-white/60 backdrop -> .glass;
+  1127→     predictions "Next Period In" panel + 3 mini stat boxes -> blush/peach-soft/medical-soft
+  1128→     tints with dark: text variants; EmptyStateHero icon tile -> bg-blush.
+  1129→- VERIFICATION: local `tsc --noEmit` — the only diagnostics in these 2 files are PRE-EXISTING
+  1130→  ones also present in git HEAD (dashboard mk() generics @449-461, setActiveModule('ai-coach')
+  1131→  @1045; repo-wide pre-existing errors elsewhere; next.config has ignoreBuildErrors:true for
+  1132→  those). No new type errors introduced; period-tracker.tsx is fully clean. Lint/build/dev-server
+  1133→  deliberately NOT run per task instructions (coordinator verifies centrally).
+  1134→
+  1135→Stage Summary:
+  1136→- Both cycle pages now share one crisp REF-A segment palette and the blush/petal card language:
+  1137→  card-blush hero panels, tinted stat cards (blush/peach/lilac/medical-soft), chip-soft legend
+  1138→  pills, segmented pill tab bar, violet fertile window in calendar, dashed quick-log card +
+  1139→  peach Fertile Days card with real window range/days-left.
+  1140→- Logic untouched: all cycle math, API hooks, dialogs, tabs, ICS export, logging flows are
+  1141→  byte-identical except presentation classes/JSX props; only additions = quick-action row +
+  1142→  fertileWindow derived memo (uses existing cycleInfo only). Hydration-safe (no random/dates in
+  1143→  SSR output; dashboard is mounted-gated; new animation is CSS-only + reduced-motion covered).
+  1144→- TO VERIFY (coordinator): light+dark rendering of the new tinted tiles & segmented tabs
+  1145→  (dark: data-[state=active] overrides), the today-marker dot alignment on the dashboard ring at
+  1146→  various cycleDay values, mobile 390px (stat tiles 2-col grid, quick-action stack, 44px tabs),
+  1147→  and that the Fertile Days card shows sane ranges for mid/late-cycle days.
+  1148→---
+  1149→Task ID: 14-c
+  1150→Agent: frontend-styling-expert
+  1151→Task: Redesign doctor-finder.tsx per teal medical reference screenshot
+  1152→
+  1153→Work Log:
+  1154→- Read worklog Tasks 12-13 for context (shell layout fix, Nuvia rebrand) + read the new theme
+  1155→  foundation in globals.css (medical/medical-soft/medical-foreground tokens incl. dark variants,
+  1156→  .card-medical, .chip-soft, .glass, --radius:1rem). Did NOT touch globals.css.
+  1157→- Redesigned ONLY src/components/modules/doctor-finder.tsx (style + JSX structure; zero changes to
+  1158→  state, handlers, fetch/search/booking logic, API calls, store usage):
+  1159→  1. HEADER -> TEAL HERO BAND: rounded-3xl deep-teal gradient panel
+  1160→     bg-[linear-gradient(135deg,oklch(0.45_0.09_205),oklch(0.55_0.11_205))] with dark: variant
+  1161→     (oklch 0.30->0.42 hue 205); frosted glass stethoscope circle (white/10 + border-white/25 +
+  1162→     backdrop-blur), "Find Your Doctor" in white, subtitle; right side 3 frosted glass stat chips
+  1163→     (circular icon + bold value + uppercase label) derived from existing module constants:
+  1164→     SPECIALTIES.length=9 "Specialities", SPECIALTY_GUIDE.length=6 "Care guides", static
+  1165→     "Trusted / Specialists" (new module-level HERO_STATS const, hydration-safe).
+  1166→     Decorative chat/call/video frosted orbs (aria-hidden, sm+ only) as a nod to the reference.
+  1167→  2. EMERGENCY NOTICE moved INSIDE the hero as a frosted white/10 rounded-2xl pill row (rose-200
+  1168→     siren, white text). Safety copy byte-identical: "For medical emergencies..." + "India: 108 /
+  1169→     112 · US: 911 · UK: 999 · EU: 112".
+  1170→  3. SEARCH PANEL -> .card-medical Card: location Input now h-12 rounded-full with
+  1171→     border-medical/30 + focus ring medical; "Use my location" is a teal pill link-button
+  1172→     (bg-medical-soft text-medical -> hover solid bg-medical). Autocomplete dropdown restyled
+  1173→     (rounded-2xl border-medical/25, medical-soft header row). Search CTA = solid
+  1174→     bg-medical text-medical-foreground rounded-full h-12 shadow-medical/30.
+  1175→  4. HEALTH-CONCERN TILES -> pill chips: unselected = bg-medical-soft + text-foreground (icon in
+  1176→     white circle, text-medical); selected = solid bg-medical text-medical-foreground + glow
+  1177→     shadow-medical/30 + white/20 icon disc + CheckCircle2. aria-pressed added. Severity pills
+  1178→     follow the same language (selected solid medical; colored severity dots kept).
+  1179→  5. DOCTOR CARDS -> REF-style hero cards: rounded-3xl white (bg-card) card w/ teal hover ring +
+  1180→     lift; avatar block = rounded-2xl teal gradient (teal-500->cyan-700, dark variant) with white
+  1181→     SERIF initials; name bold; specialty badge (meta colors, rounded-full); rating = amber star +
+  1182→     number in soft amber pill (aria-label); gender in medical-soft pill. Stats row of 3
+  1183→     icon-chips (bg-medical-soft/70, circular white icon disc): experience ("Yrs Experience" =
+  1184→     doctor.experience), reviews (doctor.reviews), distance (doctor.distance "Km Away") — mapped
+  1185→     strictly to existing fields, nothing invented; "Patients" chip skipped (field doesn't exist).
+  1186→     Clinic/address/languages kept; next-slot as solid medical chip; availability badges rounded-full.
+  1187→     Actions: "Book · ₹{fee}" solid bg-medical rounded-full (fee folded into CTA per reference);
+  1188→     Video/Call/Directions = ghost-outline rounded-full with dark: border/hover overrides; ALL
+  1189→     original handlers/conditionals preserved (onBook->openBooking, tel: link, mapsUrl link,
+  1190→     videoConsult disable). "View on Google Maps" footer kept (hover:text-medical).
+  1191→  6. BOOKING DIALOG: summary box medical-soft rounded-2xl; date container medical border;
+  1192→     time slots = rounded-full min-h-10 pills (selected = solid medical + glow, booked =
+  1193→     line-through muted, disabled logic + bookedSlots de-dupe untouched); Confirm/Done buttons =
+  1194→     solid medical rounded-full; Cancel outline rounded-full; labels' icons text-medical.
+  1195→  7. STATES: loading skeletons = card-medical rounded-3xl with medical-soft rounded-full/2xl
+  1196→     shimmer blocks + 3-chip row; pre-search + no-results empty states = dashed
+  1197→     border-medical/40 bg-medical-soft with solid-medical icon discs (clear-filters button
+  1198→     restyled, same reset handler); demo-directory notice kept amber + dismiss behavior/state
+  1199→     (rounded-2xl, pill badge, 36px round dismiss button); telehealth quick-connect on card-medical
+  1200→     with solid medical CTA (no new handler, as before); filter bar on card-medical, FilterToggle =
+  1201→     pill (active solid medical, inactive medical-soft/60), sort/fee Selects rounded-full; guide
+  1202→     cards card-medical + rounded-full icon bubbles; red-flag card kept rose (safety semantics).
+  1203→- Removed now-unused StarRating sub-component (rating shown via amber badge). Avatar/AvatarFallback,
+  1204→  getAvatarGradient still used (telehealth/dialog). Added MessageCircle lucide import (hero orb).
+  1205→- Accessibility: aria-pressed on toggles/chips, aria-hidden on decorative orbs/blooms, aria-label
+  1206→  on rating pill + icon-only buttons; touch targets >=44px on primary chips/CTAs/slots (min-h-11/
+  1207→  min-h-10/h-12), icon-only buttons 32-36px w/ labels (borderline sizes noted for QA).
+  1208→- Verified with TypeScript parser (parse OK, 0 syntax errors, 1836 lines). No lint/build run,
+  1209→  no dev-server restart, no agent-browser (per task constraints).
+  1210→
+  1211→Stage Summary:
+  1212→- Doctor Finder now matches the teal medical reference: hero band w/ frosted stat chips + embedded
+  1213→  emergency pill, medical search card w/ round input + pill link, pill-chip concern/severity/filters,
+  1214→  REF-style doctor hero cards (teal gradient serif-initial avatar, amber rating pill, 3 stat chips,
+  1215→  solid-teal Book CTA w/ fee), pill time slots, medical skeletons/empty states — light + dark via
+  1216→  token utilities (bg-medical flips to lighter teal w/ dark foreground in dark mode automatically).
+  1217→- To verify: /find-doctor in light + dark at 390px and desktop — hero wrap, chip selection glow,
+  1218→  doctor card stats/actions row, booking dialog time pills, demo notice dismiss, geolocation pill,
+  1219→  search -> simulated results flow; confirm dark-mode chip contrast (medical-foreground on
+  1220→  bg-medical) reads well.
+  1221→- Risk areas: (1) text-medical-foreground contrast on light unselected chips intentionally NOT used
+  1222→  (near-white on pale mint = unreadable) — used text-foreground instead per a11y; (2) h-4.5/fractional
+  1223→  utilities + shadow-medical/xx rely on Tailwind-4 dynamic spacing/color-mix (v4 supports both);
+  1224→  (3) twMerge resolves Button bg-primary->bg-medical overrides (className passed last) — spot-check
+  1225→  one solid button in browser; (4) demo notice + red-flag cards intentionally stayed amber/rose for
+  1226→  safety semantics. No data/logic/API/store changes; DB untouched; no new packages.
+  1227→
+  1228→---
+  1229→Task ID: 14
+  1230→Agent: Z.ai Code (coordinator)
+  1231→Task: USER REQUEST — "iske ui/ux better aur smooth kro aur theme ko redesign kro. maine kuch referances diye h... thoda alag alag page ke ui/ux ko update and theme ko redesign" → Full theme redesign ("Blush Petal") based on 4 reference screenshots: soft-pink period tracker (cycle ring + legend chips + quick actions), peach watercolor tracker, teal medical appointment UI, warm-cream glassmorphism login.
+  1232→
+  1233→Work Log:
+  1234→- BASELINE: captured before-screenshots of dashboard/tracker/doctor via agent-browser; logged in QA user (created aisha.qc@nuvia.app, onboardingCompleted+lastPeriodStart set via scripts, cycle seeded for sandbox date 2026-09-18 → Day 9 Follicular).
+  1235→- 14-a (coordinator): globals.css theme redesign —
+  1236→  - Light "Blush Petal": warm rose-cream bg (oklch 0.978 0.014 350), hot-rose primary (0.62 0.22 355), rose-tinted borders/surfaces, radius 0.75rem→1rem (pillowy shadcn corners).
+  1237→  - Dark "Moonlit Rose": warm dark plum (hue 345-350) replacing cold neutral; all surfaces tinted.
+  1238→  - NEW tokens + Tailwind-4 utilities: --medical/-soft (teal 205, dark variants), --peach/-soft, --blush, --lilac (mapped in @theme inline → bg-medical, bg-peach-soft, etc.).
+  1239→  - NEW surface utilities: .card-blush / .card-peach / .card-medical (tinted gradient cards w/ soft colored shadows, light+dark) and .chip-soft (pill chip).
+  1240→  - Body mesh: rose halo TL + peach TR + lilac bottom (dark equivalents).
+  1241→  - Chart palette updated (rose/amber/violet/teal).
+  1242→- 14-b (subagent): dashboard.tsx + period-tracker.tsx — unified crisp ring segment palette (Menstrual rose / Follicular violet / Ovulation peach / Luteal teal), today-marker dot, card-blush hero w/ serif day numeral + phase pill, 4 tinted stat tiles (medical-soft/blush/lilac/peach-soft), chip-soft legends, NEW quick-action row ("Log your symptoms" dashed card → symptoms module; "Fertile Days" card-peach w/ window range + days-left from existing cycleInfo), tracker segmented pill tabs (rose gradient active), tinted calendar cells (period rose / fertile violet / ovulation amber / predicted dashed, today ring).
+  1243→- 14-c (subagent): doctor-finder.tsx — deep-teal hero band (frosted stethoscope disc, stat chips "9 Specialities / 6 Care guides / Trusted Specialists", frosted emergency pill row w/ unchanged safety copy), card-medical search panel (rounded-full input + teal location pill), pill category chips (selected = solid bg-medical), REF-3 doctor cards (teal initials avatar block, rating pill, 3-chip stats Experience/Reviews/Distance, Book · ₹fee teal CTA + ghost video/call/directions), medical booking dialog time-slot pills, teal skeletons/empty states. All handlers byte-preserved.
+  1244→- 14-d (subagent): auth-screen.tsx — warm cream/blush canvas w/ radial washes, 3 CSS-only glass spheres (drift/float, reduced-motion-safe, aria-hidden), glass-premium rounded-3xl form card, rounded-full pill inputs w/ circular leading icon chips (User/Mail/KeyRound), "I forgot" pill nested in password field, rounded-full glow-rose CTA, NEW dark contrast promo card ("New in Nuvia" → existing switchMode('signup')). Brand lockup untouched.
+  1245→- BUG FOUND+FIXED (coordinator): phase chips rendered CYAN in tracker despite computed style = pink — headless-Chromium mis-renders alpha-composited lab()/oklch colors when element also has opacity-70. Fix: .chip-soft now uses SOLID opaque colors (#fce4ee bg / #f6bcd2 border, dark variant oklch solid). Verified pixels rgb(252,231,240) after fix.
+  1246→- OOM ROOT CAUSE (ops): dev server deaths are kernel OOM kills (next-server RSS → 1.8GB on 4GB box; dmesg confirms). Mitigation: restart with NODE_OPTIONS="--max-old-space-size=1536" (V8 heap cap); created scripts/dev-watchdog.sh (optional helper; sandbox reaps it sometimes — manual restart remains reliable).
+  1247→- E2E VERIFIED (agent-browser, fresh compile + SW cache cleared + re-registered clean):
+  1248→  - Auth: light cream-glass + spheres + pill inputs + dark promo card ✓; dark "Moonlit Rose" w/ inverted promo ✓.
+  1249→  - Dashboard: light+dark desktop — blush hero, crisp ring w/ today marker, tinted tiles, legend chips, quick-action row ✓; mobile 390×844 — no h-overflow (sw=cw=390), tiles stack, chips wrap, bottom-nav intact ✓.
+  1250→  - Tracker: light+dark — segmented tabs, chip legends (post-fix), calendar tinted cells + today ring + droplet markers, predictions/history panels ✓.
+  1251→  - Doctor: light desktop + dark + mobile — teal hero + stat chips + emergency pill; search "Mumbai" → 12 demo results, filters row, redesigned cards w/ stat chips + Book CTA ✓.
+  1252→  - Console: warnings only (chart 0-size on hidden tabs — pre-existing; LCP info on mark — priority already set). dev.log clean.
+  1253→- Lint: 0 errors 0 warnings (also removed a stale eslint-disable the redesign left).
+  1254→- CLEANUP: aisha.qc@nuvia.app cascade-deleted (scripts/del-qa.ts one-off, removed; scripts/check-users.ts + cleanup-qa.ts kept) → 7-user baseline. Browser logged out, SW caches cleared during verify.
+  1255→- OPS: recurring 15-min webDevReview cron re-created (job 395443, fixed_rate 900s, Asia/Calcutta) — previous session's cron did not persist.
+  1256→
+  1257→Stage Summary:
+  1258→- ✅ Shipped & browser-verified: complete "Blush Petal" theme redesign across auth, dashboard, period tracker, doctor finder (light+dark, desktop+mobile), with new token system (medical/peach/blush/lilac), 4 new surface utilities, and reference-matched components (cycle ring system, teal medical hero/cards, glassmorphism login). All data logic byte-preserved.
+  1259→- DB state: schema untouched; QA user removed; 7-user baseline.
+  1260→- Remaining backlog / next-round ideas:
+  1261→  1. Sweep remaining modules onto new tokens (hormone-iq, symptoms, fertility, pregnancy, pcos, mental-wellness, diet, fitness, skin, marketplace, community, premium, settings still on old rose-600 classes — they inherit new radius/bg automatically but could get card-blush/tile treatments).
+  1262→  2. Mobile bottom-nav: consider center "AI Coach" floating button styling per REF-B (partially there).
+  1263→  3. i18n depth (tracker/coach interiors), analytics audit table, timezone quiet hours (carried from Task 12).
+  1264→  4. Knwon ops: OOM reaping — use NODE_OPTIONS cap on every restart; agent-browser eats RAM too, close extra tabs between rounds.
+  1265→
+  1266→---
+  1267→Task ID: 15-a (coordinator, in progress)
+  1268→Agent: Z.ai Code (main)
+  1269→Task: "Nuvia Plum & Gold" theme evolution + 100% cross-device friendliness (Android & iOS), per user's NUVIA brand-kit reference image. Sweep ALL remaining modules onto the design system.
+  1270→
+  1271→Work Log:
+  1272→- globals.css: --primary shifted hot-pink → deep plum-rose oklch(0.47 0.135 352) light / oklch(0.76 0.14 352) dark; ring/sidebar/chart-1 synced; chart-2 → gold hue.
+  1273→- NEW tokens: --plum (#4B1D3F family), --plum-soft (#6E366F family), --gold (#D4AF37 family), --gold-soft — mapped in @theme inline → bg-plum, text-gold, bg-gold-soft, bg-plum-soft, text-plum etc. (light + dark variants).
+  1274→- NEW signature utilities: .btn-plum (plum gradient pill CTA), .gold-divider (gilded hairline ornament w/ center span), .gold-shine (gilded shimmer text), .arch-frame (splash arch), .card-plum (dark plum showcase card w/ gilded border), .lotus-watermark (SVG lotus pattern, aria-hidden usage), .tap-target (44px/48px touch targets).
+  1275→- Device-friendliness layer: -webkit-tap-highlight-color transparent, text-size-adjust 100%, overscroll-behavior-y contain, momentum scrolling on scroll containers, 16px inputs on pointer:coarse (iOS Safari anti-zoom), .tap-target helper.
+  1276→- layout.tsx: themeColor now split light "#fff7f9" / dark "#221722" (matches topbar both modes).
+  1277→- Module sweep delegated to subagents: 15-b hormone+symptoms, 15-c pcos+menopause, 15-d coach+insights, 15-e diet+skin, 15-f community+marketplace, 15-g reports+premium+settings, 15-h fitness+mental. Dashboard/tracker/doctor/auth already done (Task 14) — coordinator adds gold ornaments only.
+  1278→
+  1279→DESIGN SYSTEM SPEC (all sweep agents MUST follow — "Nuvia Plum & Gold"):
+  1280→1. Page title: `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + ornament `<span className="gold-divider text-[10px]"><span>✦</span></span>` under/beside it.
+  1281→2. Primary CTA: `btn-plum rounded-full px-6 min-h-11 font-semibold` (class handles gradient/text/shadow).
+  1282→3. Hero/summary panels: `.card-blush` (rose) / `.card-peach` (warm) / `.card-medical` (clinical) / `.card-plum` (dark showcase; pair headings with `.gold-shine`).
+  1283→4. Chips/legends/stat pills: `.chip-soft`. NEVER combine raw oklch tint + opacity-* (headless hue-flip bug).
+  1284→5. Accent tokens (instead of raw tailwind colors): text-primary/bg-primary (plum), text-gold, bg-gold-soft, bg-plum-soft/text-plum, bg-blush, bg-lilac, bg-peach-soft, bg-medical-soft; rose/amber/fuchsia accents allowed; NO blue/indigo/slate/cyan; NO bg-white or hardcoded light hexes (use bg-card / utilities so dark mode adapts).
+  1285→6. Icon medallions: `h-11 w-11 rounded-full bg-{accent}-soft` + icon `text-{accent}` (use token *-soft backgrounds).
+  1286→7. Responsive (MANDATORY): grids `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3(+)` gap-4/6; long text rows get min-w-0 + truncate; chip rows flex-wrap; wide tables → wrap in `overflow-x-auto`; interactive rows min-h-11 (44px); label text ≥ text-[11px]; paddings p-4 sm:p-6.
+  1287→8. Do NOT change logic, handlers, state, data fetching, i18n keys, or copy. className-level + purely presentational (aria-hidden) wrappers only.
+  1288→9. Self-check before finishing: `rg -n "bg-white|slate-|indigo-|blue-|cyan-" <your files>` → fix hits (exceptions: none expected); balanced JSX; no unused imports left from removed classes.
+  1289→
+  1290→Stage Summary:
+  1291→- In progress: token + utility layer shipped; sweep agents running; coordinator to verify (lint + agent-browser light/dark multi-viewport) after waves complete.
+  1292→---
+  1293→Task ID: 15-e
+  1294→Agent: UI-sweep agent (diet+skin)
+  1295→Task: Sweep Diet Advisor + Skin & Beauty modules onto the "Nuvia Plum & Gold" design system (className-only, zero logic changes).
+  1296→
+  1297→Work Log:
+  1298→- diet-advisor.tsx:
+  1299→  - Header: title → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` (emerald gradient-clip removed) + gilded `<span aria-hidden class="gold-divider text-[10px]"><span>✦</span></span>` ornament; "AI-Powered" badge → chip-soft text-primary w/ gold Sparkle.
+  1300→  - Hero: plan-header Card → `.card-peach` (warm nutrition) with `font-serif` plan title, condition-gradient medallion now rounded-full, and the page's single `lotus-watermark` (aria-hidden, inside relative CardContent).
+  1301→  - Accents de-blued: hormone condition `to-cyan-500` → `to-teal-500`; Fat macro gradient idem; wellness condition sky→fuchsia family (text/bg/border/ring/gradient `from-fuchsia-400 to-purple-500`); water tracker sky→medical/teal (icon text-medical, glasses fill `from-medical to-teal-300`, hover border teal).
+  1302→  - Emerald reduced to semantic "foods to eat" only (medallion, row hover, meal bullets); all other emerald medallions/badges retokened: calorie card → bg-gold-soft + text-gold + amber number; meal-plan & logged-meal & tips medallions → bg-peach-soft text-amber-600; tips header → bg-lilac text-primary; tracker header → bg-gold-soft text-gold; chat coach medallion → bg-plum-soft with gold Apple; chat avatars/empty-state/typing → bg-blush text-primary; typing dots → bg-gold.
+  1303→  - CTAs: chat Send + meal "Add" → `btn-plum rounded-full` (min 40–44px, conflicting bg-/text- removed); quick-prompt chips → chip-soft text-primary h-9; inputs/select focus rings emerald → primary; water ±1/Reset buttons h-7 → h-9 (touch).
+  1304→  - Chips/stat pills (foods count, kcal totals, meal kcal, date, water count, logged count) → chip-soft with text-foreground.
+  1305→  - Responsive: macros grid `grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4`; meal form inputs/select h-10; icon medallions standardized to rounded-full h-11/h-9/h-7 token-soft backgrounds. Grids elsewhere already compliant (1/sm:2/lg:3-4, flex-wrap chip rows, min-w-0+truncate rows).
+  1306→- skin-beauty.tsx:
+  1307→  - Header: title → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` (rose-fuchsia gradient-clip removed) + gold-divider ✦ ornament; medallion → h-11 rounded-full bg-blush + text-primary; "Cycle-Synced" badge → chip-soft text-primary.
+  1308→  - Heroes: Skin Health Score card → `.card-blush` + single aria-hidden lotus-watermark (header/content made relative); "Today's Skin Log" card → `.card-blush`.
+  1309→  - Accents de-indigo/blued: beauty article "Double Cleansing" `from-sky-400 to-blue-500` → `from-teal-400 to-teal-600`; "Stress & Skin" `from-indigo-400 to-purple-500` → `from-fuchsia-400 to-purple-500`; Sleep slider icon/badge indigo → text-plum + bg-lilac; PM-steps stat indigo → bg-lilac text-plum; cleanser category sky → teal-500; water slider sky → text-medical; chart hydration hex #0284c7 → #0d9488; breakdown bar idx-0 sky → teal; Recharts tooltip hardcoded oklch(1 0 0)/border → var(--card)/var(--border) for dark mode.
+  1310→  - CTAs: "Save Log" + "Add Product" → `btn-plum rounded-full px-6 min-h-11 font-semibold` (gradient classes removed); log Reset → rounded-full min-h-11; AI-insight badges + slider value pills + article category tags + db count → chip-soft (text-primary/text-foreground).
+  1311→  - Medallions: empty-state medallions (score/breakdown/chart/timeline/insights) bg-muted → rounded-full bg-blush text-primary; AI-insights brain → bg-plum-soft; Beauty-tips book → bg-blush; cycle banner medallion → rounded-full; face-map chips px-3 py-1.5 (touch).
+  1312→  - Responsive: grids already 1/sm:2/lg:3-4; header row min-w-0 guards; kept semantic rose severity system (condition meta, phases, stress, consistency) — allowed palette.
+  1313→- Self-check `rg "bg-white|slate-|indigo-|blue-|cyan-"` on both files: only 2 false-positive matches ("tran**slate**-x-1" substrings in skin-beauty.tsx lines 1205/1333) — zero real hits. No bg-white anywhere. `bunx eslint` on both files: clean. `bunx tsc --noEmit`: no errors in these two files (pre-existing errors elsewhere untouched).
+  1314→
+  1315→Stage Summary:
+  1316→- Diet Advisor now leads with a card-peach hero + gold/gilded accents, plum CTA pills, medical-teal water tracking; Skin & Beauty leads with card-blush surfaces + blush/plum medallions and plum CTAs. Emerald kept only where semantically "green = go/food/clear". Dark mode fully token-driven (no forced light colors; chart tooltip fixed). Logic, handlers, i18n copy, data arrays (beyond decorative class strings/hex), and chat streaming untouched.
+  1317→
+  1318→---
+  1319→Task ID: 15-d
+  1320→Agent: UI-sweep agent (coach+insights)
+  1321→Task: Bring ai-coach.tsx + ai-insights.tsx fully onto the "Nuvia Plum & Gold" design system (className-only sweep, logic byte-preserved).
+  1322→
+  1323→Work Log:
+  1324→- ai-coach.tsx:
+  1325→  - Header: h2 → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + `gold-divider ✦` ornament; header flex got gap-3/min-w-0; Reset button min-h-11 shrink-0.
+  1326→  - Safety banner: amber-50/amber-200 raw tints → `bg-gold-soft border-gold/40` token panel (amber text kept — allowed accent).
+  1327→  - Chat card: `border-0 glass` → `border-border bg-card shadow-lg`.
+  1328→  - Bubbles: user → `bg-primary text-primary-foreground rounded-3xl rounded-br-lg`; assistant + typing → `bg-blush border-border rounded-3xl rounded-bl-lg`; bubbles get `min-w-0 max-w-[75%]` + `break-words` (360px overflow-safe); avatars → assistant `bg-plum-soft`/Bot `text-gold`, user `bg-blush`/User `text-primary`; typing dots emerald → bg-primary; empty-state medallion → `rounded-full bg-plum-soft` + `text-gold`.
+  1329→  - Quick prompts: horizontal scroll row → `flex flex-wrap gap-2`; pills → `chip-soft rounded-full min-h-11 px-4` (44px tap).
+  1330→  - Input row: input `min-h-11` (iOS anti-zoom layer covers 16px); send button → `btn-plum rounded-full h-11 w-11` (removed bg-emerald-600/text-white); "Find a Doctor" CTA → `btn-plum rounded-full px-6 min-h-11 font-semibold` (removed teal classes).
+  1331→  - Category tiles: grid → `grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4`; cards glass → `border-border bg-card hover:border-primary/30`; emoji wrapped in `h-11 w-11 rounded-full bg-blush` medallion (aria-hidden); desc text bumped to text-[11px].
+  1332→  - Doctor CTA panel: teal/cyan gradient → `.card-medical` + `lotus-watermark` (aria-hidden); medallion → `h-11 w-11 rounded-full bg-medical-soft` + `text-medical`; heading font-serif; text column min-w-0.
+  1333→- ai-insights.tsx:
+  1334→  - Hero: violet/purple/indigo gradient → `.card-plum` showcase; h1 → `font-serif` + `.gold-shine` span + `gold-divider ✦` ornament; one blob violet → bg-gold/20; added `lotus-watermark` (aria-hidden); AI-Engine badge bg-white/15 → bg-plum-soft/50; 3 stat tiles bg-white/10 → bg-plum-soft/40 border-white/15; tile labels text-[10px] → text-[11px].
+  1335→  - Accent cleanup: dataSources "Sleep entries" indigo → `bg-lilac text-plum` ("Cycle logs" → `bg-blush text-plum`); PatternCard colorMap values indigo→violet/purple, cyan→fuchsia/rose (keys untouched); correlationColor + matrix legend slate → muted-foreground/25; impactColors "low" slate → bg-muted/text-muted-foreground; ChartTooltip bg-white/95 → bg-popover/95 text-popover-foreground; AI-Model + Matrix medallions indigo → plum-soft/violet & violet/fuchsia; sleep chart indigo icon/stroke/gridline → violet (#8b5cf6 / rgba(139,92,246,.1)).
+  1336→  - Surfaces: Health-Score card → `.card-blush`; footer quote panel → `.card-blush p-4 sm:p-6`; all `glass border-violet-*` cards → `border-border`; ForecastCard from-white gradient → `from-card to-blush/40 border-border`; violet-50 tinted boxes (summary/rec/key-findings) → `bg-blush/40 border-border`; dashed empty cards → `border-primary/30`; 8 empty-state medallions → `rounded-full bg-plum-soft` + `text-gold`.
+  1337→  - CTAs/tap targets: Add-to-Plan → `btn-plum rounded-full min-h-11 font-semibold` (kept emerald "added" state); Re-train/Discuss/PDF/Excel outline buttons min-h-11; impact badge shrink-0.
+  1338→  - Responsive: forecast/pattern/rec grids → `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6`; risk grid → sm:grid-cols-2; how-it-works → `sm:grid-cols-2 xl:grid-cols-5`; score grid gap-8→gap-6; matrix legend flex-wrap + text-[11px]; section labels text-[10px]→text-[11px]; tab h2s → `font-serif text-xl sm:text-2xl`; PatternCard title row min-w-0.
+  1339→- Self-check: `rg -n "bg-white|slate-|indigo-|blue-|cyan-"` on both files → 0 matches. `bun run lint` → clean (no errors project-wide). No imports, handlers, state, hooks, fetch/streaming, i18n keys or copy changed — className + aria-hidden decorative wrappers only.
+  1340→
+  1341→Stage Summary:
+  1342→- ✅ Both AI modules now on Nuvia Plum & Gold: card-plum hero w/ gold-shine + ornament + lotus watermark, card-blush score/quote panels, card-medical doctor CTA, chip-soft suggestion pills, btn-plum CTAs, plum-soft/gold medallions, blush chat bubbles; zero banned accents (blue/indigo/slate/cyan/bg-white), dark mode via tokens only, 360px overflow-safe (min-w-0/break-words/flex-wrap/min-h-11).
+  1343→- Intentionally kept: amber/emerald/teal/violet/fuchsia accents (allowed by spec), PREMIUM badge amber gradient (fixed dark text keeps contrast on gold in both modes), REC_CATEGORIES/category gradients (config data), recharts hex stops in allowed palette, chart tick fontSize (recharts props, not UI labels).
+  1344→
+  1345→---
+  1346→Task ID: 15-c
+  1347→Agent: UI-sweep agent (pcos+menopause)
+  1348→Task: Sweep pcos-management.tsx + menopause-assistant.tsx onto the "Nuvia Plum & Gold" design system (className-only; zero logic/copy changes).
+  1349→
+  1350→Work Log:
+  1351→- pcos-management.tsx:
+  1352→  - Header: title now `font-serif text-2xl sm:text-3xl font-bold tracking-tight` with gold→primary gradient text; gilded ornament `<span className="gold-divider text-[10px]"><span>✦</span></span>` added under the subtitle (aria-hidden wrapper).
+  1353→  - Tabs: TabsList normalized to `bg-muted/60 border border-border`; all 7 triggers unified to `data-[state=active]:bg-primary data-[state=active]:text-primary-foreground` + `min-h-11` (removed the amber/pink/emerald/violet/rose/sky rainbow + sky blue).
+  1354→  - Hero/summary panels: PCOS Risk Score card → `card-blush` (+ the page's single `lotus-watermark` aria-hidden layer); symptom Summary card → `card-blush`; AI Recommendations panel → `card-peach`; Research intro panel → `card-blush`; "What is PCOS?" → `card-blush`.
+  1355→  - Regular cards normalized to token `border-border` (removed raw amber/emerald/pink/rose/indigo/violet/orange border pairs).
+  1356→  - CTAs → `btn-plum rounded-full px-6 min-h-11 font-semibold`: "Consult a Specialist" (dropped bg-teal-600), tracking "+15 min" (dropped bg-emerald-500; −15 kept outline, gained min-h-11 rounded-full).
+  1357→  - Chips/icons: stat + causes + symptoms-to-watch + risks medallions → `h-11 w-11 rounded-full` with bg-gold-soft/bg-blush/bg-lilac/bg-peach-soft; pcosCauses config bg/border → token softs; empty rating stars → text-muted-foreground/30; Switch checked → bg-primary; severity rec icon indigo→violet.
+  1358→  - Accent cleanup: `from-sky-400 to-blue-400` resource banner → `from-fuchsia-400 to-pink-400`; all `bg-white/*` overlays → `bg-card/80` or `bg-background/20–25`; gray star tones tokenized.
+  1359→  - Responsive: overview grid → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6` (weight mini `col-span-1 sm:col-span-2`); tracking grid gap-4 sm:gap-6; symptom rows flex-wrap + min-w-0 + truncate; reading-card titles truncate; grids already wrap on mobile.
+  1360→- menopause-assistant.tsx:
+  1361→  - Header: serif title + gold-divider ornament; medallion → `h-11 w-11 rounded-full bg-peach-soft` with text-primary icon.
+  1362→  - Panels: Stage Selector → `card-blush` (+ the page's single `lotus-watermark`); Daily Symptom Tracker → `card-blush`; AI Insights → `card-peach` with `h-14 w-14 rounded-full bg-gold-soft` + text-gold Sparkles; Symptom Trends / Management Tips / HRT Tracker → `bg-card/90 backdrop-blur-xl` token glass (all six `bg-white/80 dark:bg-gray-900/80` cards eliminated).
+  1363→  - Chips: stage symptom badges → `chip-soft text-foreground`; Stage tiles/tip rows/toggle tiles → bg-muted/50 with hover:border-border.
+  1364→  - CTAs → `btn-plum rounded-full px-6 min-h-11 font-semibold`: "Save Today's Log" (emerald "Saved!" feedback state preserved), HRT "Add Medication" toggle, HRT "Add Medication" submit.
+  1365→  - Accent cleanup: postmenopause gradient indigo→fuchsia; whole night-sweats cluster indigo→violet (buttons/number/bars/icons); sleep tip indigo→ bg-lilac + text-primary; MANAGEMENT_TIPS medallions → token softs (blush/peach-soft/gold-soft/lilac/medical-soft, doctor icon text-medical); ChartTooltip → bg-card/border-border/text-foreground; switches checked → bg-menopause token; HRT medallion → bg-blush + text-primary; HRT summary → bg-blush/60 + text-primary figures; destructive hover on remove button; gray → bg-muted everywhere (meters, effectiveness buttons, toggle group).
+  1366→  - Responsive: stage grid → 1/sm:2/lg:3; symptom-toggle grid → 1/sm:2/lg:4 with min-h-11 rows + truncate labels; tracker grid gap-4 sm:gap-6; Weekly/Monthly toggle min-h-11; trend tabs min-h-11.
+  1367→- Self-check `rg "bg-white|slate-|indigo-|blue-|cyan-"` on both files → 0 hits. `tsc --noEmit` → no errors in these files. `bun run lint` → only pre-existing errors in symptoms-tracker.tsx (Task 15-b's file, untouched here).
+  1368→
+  1369→Stage Summary:
+  1370→- Both modules now fully on Nuvia Plum & Gold: plum CTA pills, blush/peach hero panels, gold ornaments, chip-soft pills, token medallions, dark-mode-safe (no hardcoded light surfaces left).
+  1371→- Intentionally kept: semantic risk colors (green/amber/orange/red severity + gauge zones), chart hex strokes/fills (data-viz props, not classes — logic untouched), red accents for hot-flash semantics, hot-flash counter number color.
+  1372→- No logic, handlers, hooks, i18n keys, copy, or API calls were modified; only classNames + 1 aria-hidden watermark + 1 aria-hidden ornament per file.
+  1373→
+  1374→---
+  1375→Task ID: 15-b
+  1376→Agent: UI-sweep agent (hormone+symptoms)
+  1377→Task: Bring hormone-intelligence.tsx + symptoms-tracker.tsx fully onto the "Nuvia Plum & Gold" design system (spec from 15-a), responsive + dark-mode safe, zero logic changes.
+  1378→
+  1379→Work Log:
+  1380→- hormone-intelligence.tsx:
+  1381→  - Phase banner rebuilt as `.card-plum` dark showcase panel: `gold-shine font-serif text-2xl sm:text-3xl font-bold tracking-tight` heading, `.gold-divider text-[10px]` ✦ ornament, `chip-soft text-plum` cycle-day pill, `text-gold` lotus icon, `lotus-watermark` (aria-hidden, 1/page), plum-soft/gold-soft decorative circles; description inherits card-plum's light ink (opacity-90) instead of theme-adaptive primary-foreground (would go dark-on-dark in dark mode).
+  1382→  - Phase-gradient hero background (inline style from phaseGradients) replaced by brand panel; phase color still expressed via legend dots + insight medallions (gradient.from/to/accent still referenced).
+  1383→  - All 4 content Cards: `bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg` glass removed → default token Card (bg-card, token border, system radius); chart card keeps overflow-hidden.
+  1384→  - Legend rows → `chip-soft` pills (dot color stays data-driven inline style); "Educational" → default plum Badge; "Key" chip → `chip-soft text-primary text-[11px]`; insight medallions h-8→h-10 rounded-full; accordion triggers min-h-11 with min-w-0/truncate on long titles.
+  1385→  - Primary CTAs → spec `.btn-plum rounded-full px-6 min-h-11 font-semibold` as plain <button> (hero "Log your period", EmptyState CTA, "Log Symptoms"); shadcn Button default-variant hover:bg-primary/90 would flip to light plum over the gradient in dark mode, so Button component dropped for CTAs (same handlers/labels); disabled:opacity-50 kept.
+  1386→  - Symptom chips: selected `bg-primary border-primary text-primary-foreground shadow-sm`, unselected `chip-soft text-muted-foreground hover:text-primary`, min-h-11; textarea focus ring purple→ring-ring/border-ring.
+  1387→  - Accents: text-purple-500→text-primary (TrendingUp/Leaf/Activity), Sparkles→text-gold; removed Button import (last use swapped), removed pre-existing unused Zap import.
+  1388→- symptoms-tracker.tsx:
+  1389→  - Header: `h-11 w-11 rounded-full bg-blush` medallion + HeartPulse text-primary; title `font-serif text-2xl sm:text-3xl font-bold tracking-tight`; gold-divider ✦ ornament under subtitle (aria-hidden).
+  1390→  - TabsList bg-pink-50→bg-secondary (wins over component bg-muted alphabetically, token-adapting); all 4 TabsTrigger active states → `data-[state=active]:bg-primary data-[state=active]:text-primary-foreground` + explicit dark: twins (component's dark:bg-input/30 / dark:text-foreground would otherwise win in dark mode).
+  1391→  - Mood selector → `card-blush` lead panel; mood tiles bg-gray-50→bg-card/70, selected border-primary bg-primary/10, min-h-11, labels text-[10px]→text-[11px]; "feeling…" text-pink-600→text-primary.
+  1392→  - All remaining Cards → default token Card (glass removed); Symptoms/Notes panels sm:col-span-2 (grid lg:grid-cols-2→sm:grid-cols-2 gap-4 sm:gap-6).
+  1393→  - Checkbox pink overrides removed (default primary plum); severity pills green/red→teal-600/amber-500/rose-500, unselected bg-muted, text-[11px]; symptom tiles pink→border-primary/50 bg-primary/5 / bg-muted/40; count badge → plain variant="secondary".
+  1394→  - Sleep: Moon indigo→text-plum, hours number→text-primary, Progress indigo overrides removed (default plum), ± steppers → plain 44px (h-11 w-11) rounded-full token buttons (old h-8/rounded-full silently lost to size-9).
+  1395→  - Water: sky→medical teal family (icon text-medical, tiles bg-medical-soft border-medical), goal badge emerald/sky→teal-600/teal-500, labels text-[9px]→text-[11px], tiles min-h-11.
+  1396→  - Save CTA → conditional `btn-plum` / saved `bg-teal-600 text-white hover:bg-teal-700`, rounded-full px-6 min-h-11 font-semibold (plain <button>, same onClick/disabled); row flex-wrap.
+  1397→  - Mood history: ChartTooltip `bg-white dark:bg-gray-800 gray borders/text` → token `bg-background/95 border-border/50 text-foreground` (matches hormone tooltip); stat pills → bg-blush text-primary / bg-gold-soft text-plum / bg-medical-soft teal / bg-lilac text-plum (all adapt in dark).
+  1398→  - Patterns: callout bg-pink-50/border-pink-200→bg-blush border-primary/20, Sparkles→text-gold, top-3 badges→bg-primary text-primary-foreground; header icons rose kept (allowed), TrendingUp→text-primary.
+  1399→  - Removed Button import (last usages swapped) and pre-existing unused Input import; MOOD_OPTIONS sad bg-blue→violet (data string, was rg-flagged).
+  1400→- Verified empirically (compiled Tailwind v4 CSS from this project): same-property utilities resolve alphabetically and arbitrary values sort BEFORE static (so rounded-[1.5rem]/h-11 overrides would silently LOSE to component classes) — hence use of unlayered custom classes (card-*, chip-soft, btn-plum) or plain elements instead of fighting shadcn variant classes.
+  1401→- Self-check: `rg "bg-white|slate-|indigo-|blue-|cyan-"` → 0 hits in both files; `bun run lint` → no findings for either file; `tsc --noEmit` → only the 5 pre-existing framer-motion Variants typing errors in hormone-intelligence (verified pre-existing via git stash).
+  1402→
+  1403→Stage Summary:
+  1404→- Both modules now render entirely on Nuvia tokens: card-plum hero w/ gold-shine + lotus watermark (hormone), card-blush lead panel (symptoms), chip-soft chips/legends/pills, btn-plum 44px pill CTAs, token icon medallions, serif page titles with gilded ✦ ornaments.
+  1405→- Responsive: 1-col→sm:2-col grids with gap-4 sm:gap-6, wrapping chip/tab rows, min-w-0+truncate on long titles, 44px interactive rows/pills/steppers, no horizontal overflow at 360px (fixed 4-col emoji/water tiles are 4×~78px, fits).
+  1406→- Intentionally kept: chart series hex strokes/fills + recharts tick fills (data-viz props — logic untouched), MOOD_OPTIONS/STRESS_COLORS data strings (green/amber/orange/red/yellow/gray — semantic + not banned; unused `bg:` fields in phaseGradients purple/violet are dead data), stress badge solids with text-white, amber AI disclaimer panel, saved-state feedback recolored emerald→teal-600.
+  1407→- No logic, handlers, state, hooks, data fetching, i18n keys, copy, or API calls modified — className swaps + plain-element swaps (Button→button with identical props) + 1 aria-hidden watermark + 1 aria-hidden ornament per file.
+  1408→

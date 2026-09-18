@@ -18,7 +18,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -38,7 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -47,12 +45,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion'
 import { cn } from '@/lib/utils'
 import {
   Dumbbell,
@@ -66,13 +58,11 @@ import {
   Calendar,
   TrendingUp,
   Target,
-  Award,
   Trophy,
   Activity,
   Zap,
   Search,
   ChevronDown,
-  ChevronRight,
   CheckCircle2,
   Sparkles,
   Timer,
@@ -83,18 +73,15 @@ import {
   Plus,
   X,
   Star,
-  Timer as TimerIcon,
   Medal,
   Layers,
   Filter,
-  ArrowRight,
   Flower2,
   Sun,
   Moon,
   RefreshCw,
   PartyPopper,
   HandHeart,
-  Droplet,
   MoonStar,
 } from 'lucide-react'
 
@@ -624,7 +611,7 @@ const WORKOUT_LIBRARY: Workout[] = [
     intensity: 'Low',
     muscleGroups: ['Connective Tissue', 'Joints', 'Flexibility'],
     description: 'Deep, slow stretches held for minutes to release connective tissue.',
-    gradient: 'from-indigo-500 to-purple-500',
+    gradient: 'from-violet-500 to-purple-500',
     icon: Moon,
     phases: ['menstrual', 'luteal'],
     exercises: [
@@ -824,7 +811,7 @@ const WORKOUT_LIBRARY: Workout[] = [
     intensity: 'Low',
     muscleGroups: ['Full Body', 'Nervous System'],
     description: 'Calming stretches to release the day and prepare for restful sleep.',
-    gradient: 'from-indigo-400 to-purple-400',
+    gradient: 'from-fuchsia-400 to-purple-400',
     icon: Moon,
     phases: ['menstrual', 'luteal'],
     exercises: [
@@ -1066,43 +1053,43 @@ function WorkoutPlayer({
     const minutes = Math.floor(elapsedSec / 60)
     const seconds = elapsedSec % 60
     return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-orange-500 via-rose-500 to-purple-600 p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-[#4B1D3F] via-[#3a1631] to-[#26101f] p-4">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-          className="w-full max-w-md rounded-3xl bg-white/95 backdrop-blur-xl p-8 text-center shadow-2xl"
+          className="w-full max-w-md rounded-3xl bg-card/95 backdrop-blur-xl border border-border p-8 text-center shadow-2xl"
         >
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
-            className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-rose-500 shadow-lg"
+            className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary to-fuchsia-500 shadow-lg"
           >
-            <PartyPopper className="h-12 w-12 text-white" />
+            <PartyPopper className="h-12 w-12 text-gold" />
           </motion.div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Workout Complete!</h2>
-          <p className="text-gray-600 mb-6">Amazing work! You crushed {workout.name}.</p>
+          <h2 className="text-3xl font-bold text-foreground mb-2">Workout Complete!</h2>
+          <p className="text-muted-foreground mb-6">Amazing work! You crushed {workout.name}.</p>
           <div className="grid grid-cols-3 gap-3 mb-8">
-            <div className="rounded-2xl bg-orange-50 p-4">
-              <Flame className="h-6 w-6 mx-auto text-orange-500 mb-1" />
-              <div className="text-2xl font-bold text-gray-900">{workout.calories}</div>
-              <div className="text-xs text-gray-500">Calories</div>
+            <div className="rounded-2xl bg-blush/60 p-4">
+              <Flame className="h-6 w-6 mx-auto text-amber-600 mb-1" />
+              <div className="text-2xl font-bold text-foreground">{workout.calories}</div>
+              <div className="text-xs text-muted-foreground">Calories</div>
             </div>
-            <div className="rounded-2xl bg-rose-50 p-4">
-              <Clock className="h-6 w-6 mx-auto text-rose-500 mb-1" />
-              <div className="text-2xl font-bold text-gray-900">{minutes}:{seconds.toString().padStart(2, '0')}</div>
-              <div className="text-xs text-gray-500">Minutes</div>
+            <div className="rounded-2xl bg-lilac/60 p-4">
+              <Clock className="h-6 w-6 mx-auto text-plum mb-1" />
+              <div className="text-2xl font-bold text-foreground">{minutes}:{seconds.toString().padStart(2, '0')}</div>
+              <div className="text-xs text-muted-foreground">Minutes</div>
             </div>
-            <div className="rounded-2xl bg-purple-50 p-4">
-              <CheckCircle2 className="h-6 w-6 mx-auto text-purple-500 mb-1" />
-              <div className="text-2xl font-bold text-gray-900">{totalExercises}</div>
-              <div className="text-xs text-gray-500">Exercises</div>
+            <div className="rounded-2xl bg-gold-soft p-4">
+              <CheckCircle2 className="h-6 w-6 mx-auto text-gold mb-1" />
+              <div className="text-2xl font-bold text-foreground">{totalExercises}</div>
+              <div className="text-xs text-muted-foreground">Exercises</div>
             </div>
           </div>
           <Button
             onClick={() => onClose(true, elapsedSec, workout.calories)}
-            className="w-full h-12 text-base bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white shadow-lg"
+            className="btn-plum w-full h-12 rounded-full text-base font-semibold"
           >
             Done
           </Button>
@@ -1112,18 +1099,18 @@ function WorkoutPlayer({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-gradient-to-br from-slate-900 via-orange-950 to-rose-950 text-white">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-gradient-to-br from-[#3a1631] via-[#4B1D3F] to-[#26101f] text-white">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div>
-          <p className="text-xs uppercase tracking-wider text-orange-300/80">Now Playing</p>
+          <p className="text-xs uppercase tracking-wider text-gold/90">Now Playing</p>
           <h2 className="text-lg font-semibold">{workout.name}</h2>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onClose(false, elapsedSec, 0)}
-          className="text-white hover:bg-white/10 rounded-full"
+          className="text-gold/90 hover:text-gold hover:bg-gold/10 rounded-full"
         >
           <X className="h-5 w-5" />
         </Button>
@@ -1135,9 +1122,9 @@ function WorkoutPlayer({
           <span>Exercise {state.exerciseIndex + 1} of {totalExercises}</span>
           <span>{Math.round(overallProgress)}% complete</span>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-white/10 overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-plum-soft/60 overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-orange-400 to-rose-400"
+            className="h-full bg-gradient-to-r from-gold to-amber-400"
             animate={{ width: `${overallProgress}%` }}
             transition={{ duration: 0.5 }}
           />
@@ -1153,7 +1140,7 @@ function WorkoutPlayer({
           transition={{ duration: 0.4 }}
           className="text-center w-full max-w-lg"
         >
-          <p className="text-sm uppercase tracking-wider text-orange-300/80 mb-2">
+          <p className="text-sm uppercase tracking-wider text-gold/90 mb-2">
             {currentExercise.muscleGroup}
           </p>
           <h1 className="text-3xl md:text-4xl font-bold mb-6">{currentExercise.name}</h1>
@@ -1176,8 +1163,8 @@ function WorkoutPlayer({
               />
               <defs>
                 <linearGradient id="timerGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stopColor="#fb923c" />
-                  <stop offset="100%" stopColor="#fb7185" />
+                  <stop offset="0%" stopColor="#d4af37" />
+                  <stop offset="100%" stopColor="#f5c96b" />
                 </linearGradient>
               </defs>
             </svg>
@@ -1190,11 +1177,11 @@ function WorkoutPlayer({
           </div>
 
           {/* Description + tips */}
-          <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-4 text-left mb-3">
+          <div className="rounded-2xl bg-plum-soft/30 backdrop-blur-sm border border-gold/20 p-4 text-left mb-3">
             <p className="text-sm text-white/80">{currentExercise.description}</p>
           </div>
-          <div className="rounded-2xl bg-orange-500/10 backdrop-blur-sm border border-orange-400/20 p-4 text-left">
-            <p className="text-xs uppercase tracking-wide text-orange-300 mb-1">Form Tip</p>
+          <div className="rounded-2xl bg-gold/10 backdrop-blur-sm border border-gold/30 p-4 text-left">
+            <p className="text-xs uppercase tracking-wide text-gold mb-1">Form Tip</p>
             <p className="text-sm text-white/90">{currentExercise.tips}</p>
           </div>
         </motion.div>
@@ -1208,13 +1195,13 @@ function WorkoutPlayer({
             size="icon"
             onClick={goPrev}
             disabled={state.exerciseIndex === 0}
-            className="h-14 w-14 rounded-full text-white hover:bg-white/10 disabled:opacity-30"
+            className="h-14 w-14 rounded-full text-gold/90 hover:text-gold hover:bg-gold/10 disabled:opacity-30"
           >
             <SkipBack className="h-6 w-6" />
           </Button>
           <Button
             onClick={togglePlay}
-            className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 text-white shadow-lg shadow-orange-500/30"
+            className="h-20 w-20 rounded-full bg-gold text-plum hover:bg-gold/90 shadow-lg shadow-gold/30"
           >
             {state.isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
           </Button>
@@ -1222,7 +1209,7 @@ function WorkoutPlayer({
             variant="ghost"
             size="icon"
             onClick={goNext}
-            className="h-14 w-14 rounded-full text-white hover:bg-white/10"
+            className="h-14 w-14 rounded-full text-gold/90 hover:text-gold hover:bg-gold/10"
           >
             <SkipForward className="h-6 w-6" />
           </Button>
@@ -1330,22 +1317,26 @@ export default function FitnessModule() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-rose-500 to-purple-600 p-6 md:p-8 text-white shadow-xl"
+        className="card-peach relative overflow-hidden p-6 md:p-8"
       >
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white blur-3xl" />
-          <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-yellow-300 blur-3xl" />
+        <div aria-hidden className="lotus-watermark absolute inset-0" />
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-gold/30 blur-3xl" />
+          <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
         </div>
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur px-3 py-1 text-xs font-medium">
+          <div className="space-y-2 min-w-0">
+            <div className="chip-soft inline-flex items-center gap-2 px-3 py-1 text-xs font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" />
               Cycle-Synced Training
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-orange-100 bg-clip-text text-transparent">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-primary">
               Move &amp; Flow
             </h1>
-            <p className="text-white/90 max-w-xl">
+            <div aria-hidden className="flex">
+              <span className="gold-divider text-[10px]"><span>✦</span></span>
+            </div>
+            <p className="text-foreground/80 max-w-xl">
               Cycle-synced workouts for your body&apos;s natural rhythm. Train smarter by aligning
               your movement with your hormones.
             </p>
@@ -1355,12 +1346,12 @@ export default function FitnessModule() {
               <phasePlan.icon className="h-4 w-4 mr-1.5" />
               {phasePlan.name} · {phasePlan.days}
             </Badge>
-            <div className="text-sm text-white/80">
+            <div className="text-sm text-foreground/70">
               Recommended intensity:{' '}
-              <span className="font-semibold text-white">{phasePlan.intensity}</span>
+              <span className="font-semibold text-foreground">{phasePlan.intensity}</span>
             </div>
-            <div className="text-sm text-white/80">
-              Target duration: <span className="font-semibold text-white">{phasePlan.duration}</span>
+            <div className="text-sm text-foreground/70">
+              Target duration: <span className="font-semibold text-foreground">{phasePlan.duration}</span>
             </div>
           </div>
         </div>
@@ -1370,7 +1361,7 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Flame className="h-5 w-5 text-orange-500" />
+            <Flame className="h-5 w-5 text-gold" />
             Today&apos;s Workout
           </h2>
           <span className="text-xs text-muted-foreground">
@@ -1378,58 +1369,58 @@ export default function FitnessModule() {
           </span>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main workout card */}
-          <motion.div variants={itemVariants} className="lg:col-span-2">
+          <motion.div variants={itemVariants} className="lg:col-span-2 min-w-0">
             <Card className={cn(
               'relative overflow-hidden border-0 bg-gradient-to-br text-white shadow-lg',
               todaysWorkout.gradient
             )}>
               <div className="absolute inset-0 bg-black/10" />
-              <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-              <CardContent className="relative p-6 md:p-8">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <Badge className="bg-white/20 text-white border-0 backdrop-blur mb-2">
+              <div className="absolute top-0 right-0 h-40 w-40 bg-gold/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <CardContent className="relative p-4 sm:p-6 md:p-8">
+                <div className="flex items-start justify-between mb-4 gap-3">
+                  <div className="min-w-0">
+                    <Badge className="bg-plum-soft/60 text-gold border-gold/30 backdrop-blur mb-2">
                       <phasePlan.icon className="h-3 w-3 mr-1" />
                       {phasePlan.name} Phase
                     </Badge>
                     <h3 className="text-2xl md:text-3xl font-bold">{todaysWorkout.name}</h3>
                     <p className="text-white/80 text-sm mt-1 max-w-md">{todaysWorkout.description}</p>
                   </div>
-                  <div className="hidden sm:flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur shrink-0">
+                  <div className="hidden sm:flex h-16 w-16 items-center justify-center rounded-full bg-plum-soft/50 backdrop-blur shrink-0">
                     <todaysWorkout.icon className="h-8 w-8" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+                  <div className="rounded-2xl bg-plum-soft/40 backdrop-blur p-3">
                     <Clock className="h-4 w-4 mb-1 opacity-80" />
                     <div className="text-xl font-bold">{todaysWorkout.duration}</div>
                     <div className="text-xs opacity-80">minutes</div>
                   </div>
-                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+                  <div className="rounded-2xl bg-plum-soft/40 backdrop-blur p-3">
                     <Flame className="h-4 w-4 mb-1 opacity-80" />
                     <div className="text-xl font-bold">{todaysWorkout.calories}</div>
                     <div className="text-xs opacity-80">calories</div>
                   </div>
-                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+                  <div className="rounded-2xl bg-plum-soft/40 backdrop-blur p-3">
                     <Zap className="h-4 w-4 mb-1 opacity-80" />
                     <div className="text-xl font-bold">{todaysWorkout.intensity}</div>
                     <div className="text-xs opacity-80">intensity</div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl bg-white/10 backdrop-blur p-4 mb-5">
+                <div className="rounded-2xl bg-plum-soft/30 backdrop-blur p-4 mb-5">
                   <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Exercise Preview</p>
                   <div className="space-y-1.5">
                     {todaysWorkout.exercises.slice(0, 4).map((ex, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
+                      <div key={i} className="flex items-center gap-2 text-sm min-w-0">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/30 text-xs font-semibold shrink-0">
                           {i + 1}
                         </span>
-                        <span className="flex-1">{ex.name}</span>
-                        <span className="opacity-70 text-xs">{ex.reps ?? `${ex.duration}s`}</span>
+                        <span className="flex-1 truncate">{ex.name}</span>
+                        <span className="opacity-70 text-xs shrink-0">{ex.reps ?? `${ex.duration}s`}</span>
                       </div>
                     ))}
                     {todaysWorkout.exercises.length > 4 && (
@@ -1444,7 +1435,7 @@ export default function FitnessModule() {
                   <Button
                     onClick={() => setActivePlayer(todaysWorkout)}
                     disabled={completedToday}
-                    className="bg-white text-gray-900 hover:bg-white/90 font-semibold"
+                    className="btn-plum rounded-full px-6 min-h-11 font-semibold"
                   >
                     {completedToday ? (
                       <>
@@ -1458,7 +1449,7 @@ export default function FitnessModule() {
                   </Button>
                   <div className="flex flex-wrap gap-1.5">
                     {todaysWorkout.muscleGroups.map((m) => (
-                      <Badge key={m} className="bg-white/15 text-white border-0 text-xs backdrop-blur">
+                      <Badge key={m} className="bg-plum-soft/40 text-white border-0 text-xs backdrop-blur">
                         {m}
                       </Badge>
                     ))}
@@ -1469,8 +1460,8 @@ export default function FitnessModule() {
           </motion.div>
 
           {/* Alternative workout card */}
-          <motion.div variants={itemVariants}>
-            <Card className="h-full border-orange-200/50 dark:border-orange-900/30 bg-white/60 dark:bg-card/60 backdrop-blur-sm">
+          <motion.div variants={itemVariants} className="min-w-0">
+            <Card className="h-full border-border">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base text-muted-foreground">Alternative Option</CardTitle>
@@ -1499,7 +1490,7 @@ export default function FitnessModule() {
                 </div>
                 <Button
                   variant="outline"
-                  className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-400 dark:hover:bg-orange-950/30"
+                  className="w-full rounded-full min-h-11"
                   onClick={() => setActivePlayer(alternativeWorkout)}
                 >
                   Start Alternative
@@ -1514,23 +1505,23 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-orange-500" />
+            <Calendar className="h-5 w-5 text-gold" />
             Cycle-Synced Workout Plan
           </h2>
           <span className="text-xs text-muted-foreground">Tap a phase to expand routines</span>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {PHASE_PLANS.map((plan) => {
             const isActive = currentPhase === plan.id
             const isExpanded = expandedPhase === plan.id
             const Icon = plan.icon
             return (
-              <motion.div key={plan.id} variants={itemVariants}>
+              <motion.div key={plan.id} variants={itemVariants} className="min-w-0">
                 <Card
                   className={cn(
-                    'overflow-hidden border-2 transition-all cursor-pointer backdrop-blur-sm bg-white/60 dark:bg-card/60',
-                    isActive ? plan.borderColor : 'border-transparent',
+                    'overflow-hidden border-2 transition-all cursor-pointer bg-card',
+                    isActive ? plan.borderColor : 'border-border',
                     isExpanded && 'ring-2 ring-offset-2 ring-offset-background'
                   )}
                   onClick={() => {
@@ -1539,23 +1530,23 @@ export default function FitnessModule() {
                   }}
                 >
                   <div className={cn('bg-gradient-to-r p-5 text-white', plan.gradient)}>
-                    <div className="flex items-start justify-between">
-                      <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <Icon className="h-5 w-5" />
-                          <h3 className="font-semibold text-lg">{plan.name}</h3>
+                          <Icon className="h-5 w-5 shrink-0" />
+                          <h3 className="font-semibold text-lg truncate">{plan.name}</h3>
                         </div>
                         <p className="text-white/90 text-sm">{plan.subtitle} · {plan.days}</p>
                       </div>
                       {isActive && (
-                        <Badge className="bg-white/25 text-white border-0 backdrop-blur">Current</Badge>
+                        <Badge className="bg-plum-soft/60 text-gold border-gold/30 backdrop-blur shrink-0">Current</Badge>
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2 mt-3">
-                      <Badge className="bg-white/20 text-white border-0 backdrop-blur text-xs">
+                      <Badge className="bg-plum-soft/50 text-gold border-gold/30 backdrop-blur text-xs">
                         <Clock className="h-3 w-3 mr-1" /> {plan.duration}
                       </Badge>
-                      <Badge className="bg-white/20 text-white border-0 backdrop-blur text-xs">
+                      <Badge className="bg-plum-soft/50 text-gold border-gold/30 backdrop-blur text-xs">
                         <Zap className="h-3 w-3 mr-1" /> {plan.intensity}
                       </Badge>
                     </div>
@@ -1642,7 +1633,7 @@ export default function FitnessModule() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full text-xs"
+                      className="w-full min-h-11 text-xs"
                       onClick={(e) => {
                         e.stopPropagation()
                         setExpandedPhase(isExpanded ? null : plan.id)
@@ -1663,7 +1654,7 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Dumbbell className="h-5 w-5 text-orange-500" />
+            <Dumbbell className="h-5 w-5 text-gold" />
             Workout Library
           </h2>
           <span className="text-xs text-muted-foreground">{WORKOUT_LIBRARY.length} workouts available</span>
@@ -1680,7 +1671,7 @@ export default function FitnessModule() {
                   <TabsTrigger
                     key={cat}
                     value={cat}
-                    className="flex flex-col items-center gap-1 py-2 data-[state=active]:bg-orange-500/10 data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400"
+                    className="flex flex-col items-center gap-1 py-2 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
                   >
                     <Icon className="h-4 w-4" />
                     <span className="text-xs">{meta.label}</span>
@@ -1694,7 +1685,7 @@ export default function FitnessModule() {
               const workouts = WORKOUT_LIBRARY.filter((w) => w.category === cat)
               return (
                 <TabsContent key={cat} value={cat} className="mt-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {workouts.map((w, i) => {
                       const Icon = w.icon
                       return (
@@ -1704,11 +1695,12 @@ export default function FitnessModule() {
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: i * 0.05 }}
                           whileHover={{ y: -3 }}
+                          className="min-w-0"
                         >
-                          <Card className="overflow-hidden border-orange-200/40 dark:border-orange-900/30 bg-white/60 dark:bg-card/60 backdrop-blur-sm hover:shadow-lg transition-shadow">
+                          <Card className="overflow-hidden border-border hover:shadow-lg transition-shadow">
                             <div className={cn('h-28 bg-gradient-to-br p-4 text-white relative', w.gradient)}>
                               <div className="absolute top-2 right-2">
-                                <Badge className="bg-white/25 text-white border-0 backdrop-blur text-xs">
+                                <Badge className="bg-plum-soft/60 text-gold border-gold/30 backdrop-blur text-xs">
                                   {w.difficulty}
                                 </Badge>
                               </div>
@@ -1718,9 +1710,9 @@ export default function FitnessModule() {
                               </p>
                             </div>
                             <CardContent className="p-4">
-                              <h3 className="font-semibold text-base leading-tight">{w.name}</h3>
+                              <h3 className="font-semibold text-base leading-tight truncate">{w.name}</h3>
                               <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{w.description}</p>
-                              <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 text-xs text-muted-foreground">
                                 <span className="flex items-center gap-1">
                                   <Clock className="h-3 w-3" /> {w.duration} min
                                 </span>
@@ -1740,7 +1732,7 @@ export default function FitnessModule() {
                               </div>
                               <Button
                                 size="sm"
-                                className="w-full mt-3 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+                                className="btn-plum w-full mt-3 rounded-full min-h-11 font-semibold"
                                 onClick={() => setActivePlayer(w)}
                               >
                                 <Play className="h-3 w-3 mr-1" /> Start
@@ -1762,19 +1754,19 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Activity className="h-5 w-5 text-orange-500" />
+            <Activity className="h-5 w-5 text-gold" />
             Activity Tracking
           </h2>
-          <Button variant="ghost" size="sm" className="text-xs" onClick={() => showToast('No workouts to sync yet — start one today!')}>
+          <Button variant="ghost" size="sm" className="min-h-11 text-xs" onClick={() => showToast('No workouts to sync yet — start one today!')}>
             <RefreshCw className="h-3 w-3 mr-1" /> Sync
           </Button>
         </motion.div>
 
         {/* Weekly calendar */}
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30">
+          <Card className="border-border">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center justify-between">
+              <CardTitle className="text-base flex flex-wrap items-center justify-between gap-2">
                 <span>This Week</span>
                 <span className="text-xs font-normal text-muted-foreground">
                   {workoutsThisWeek}/7 active days · {activeDaysStreak} day streak
@@ -1782,7 +1774,7 @@ export default function FitnessModule() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-7 gap-2">
+              <div className="grid grid-cols-7 gap-1.5">
                 {ACTIVITY_DATA.map((d, i) => (
                   <motion.div
                     key={d.day}
@@ -1790,16 +1782,16 @@ export default function FitnessModule() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: i * 0.05 }}
                     className={cn(
-                      'rounded-xl p-3 text-center border transition-all',
+                      'rounded-xl p-2 sm:p-3 text-center border transition-all',
                       d.completed
-                        ? 'bg-gradient-to-br from-orange-500/15 to-rose-500/10 border-orange-300/50 dark:border-orange-800/50'
+                        ? 'bg-blush/60 border-primary/30'
                         : 'bg-muted/30 border-transparent'
                     )}
                   >
-                    <div className="text-xs font-medium text-muted-foreground mb-1">{d.day}</div>
+                    <div className="text-[11px] font-medium text-muted-foreground mb-1 truncate">{d.day}</div>
                     <div className={cn(
                       'mx-auto flex h-8 w-8 items-center justify-center rounded-full mb-1',
-                      d.completed ? 'bg-gradient-to-br from-orange-500 to-rose-500 text-white' : 'bg-muted-foreground/15 text-muted-foreground'
+                      d.completed ? 'bg-primary text-primary-foreground' : 'bg-muted-foreground/15 text-muted-foreground'
                     )}>
                       {d.completed ? <CheckCircle2 className="h-4 w-4" /> : <span className="text-xs">—</span>}
                     </div>
@@ -1814,42 +1806,42 @@ export default function FitnessModule() {
         </motion.div>
 
         {/* Stats cards */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-          <Card className="bg-gradient-to-br from-orange-500/10 to-rose-500/5 border-orange-200/40 dark:border-orange-900/30 backdrop-blur-sm">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-4">
+          <Card className="bg-blush border-primary/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-muted-foreground">Workouts</span>
-                <Dumbbell className="h-4 w-4 text-orange-500" />
+                <Dumbbell className="h-4 w-4 text-primary" />
               </div>
               <div className="text-2xl font-bold">{workoutsThisWeek}</div>
               <div className="text-xs text-muted-foreground">this week</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-rose-500/10 to-pink-500/5 border-rose-200/40 dark:border-rose-900/30 backdrop-blur-sm">
+          <Card className="bg-lilac border-primary/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-muted-foreground">Total Minutes</span>
-                <Clock className="h-4 w-4 text-rose-500" />
+                <Clock className="h-4 w-4 text-plum" />
               </div>
               <div className="text-2xl font-bold">{weeklyMinutesTotal}</div>
               <div className="text-xs text-muted-foreground">min this week</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/5 border-amber-200/40 dark:border-amber-900/30 backdrop-blur-sm">
+          <Card className="bg-peach-soft border-primary/20">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-muted-foreground">Calories</span>
-                <Flame className="h-4 w-4 text-amber-500" />
+                <Flame className="h-4 w-4 text-amber-600" />
               </div>
               <div className="text-2xl font-bold">{caloriesThisWeek}</div>
               <div className="text-xs text-muted-foreground">kcal burned</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-purple-500/10 to-violet-500/5 border-purple-200/40 dark:border-purple-900/30 backdrop-blur-sm">
+          <Card className="bg-gold-soft border-gold/30">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs text-muted-foreground">Active Streak</span>
-                <TrendingUp className="h-4 w-4 text-purple-500" />
+                <TrendingUp className="h-4 w-4 text-gold" />
               </div>
               <div className="text-2xl font-bold">{activeDaysStreak}</div>
               <div className="text-xs text-muted-foreground">days in a row</div>
@@ -1858,8 +1850,8 @@ export default function FitnessModule() {
         </motion.div>
 
         {/* Activity chart + monthly summary */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
-          <Card className="lg:col-span-2 bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30">
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-4">
+          <Card className="lg:col-span-2 border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Activity (Last 7 Days)</CardTitle>
               <CardDescription className="text-xs">Minutes of activity per day</CardDescription>
@@ -1867,8 +1859,8 @@ export default function FitnessModule() {
             <CardContent>
               {workoutsThisWeek === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center h-56">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                    <Activity className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                    <Activity className="h-6 w-6 text-gold" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No activity yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1879,14 +1871,15 @@ export default function FitnessModule() {
                 <div className="h-56">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={ACTIVITY_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(120,120,120,0.15)" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                       <XAxis dataKey="day" tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 12, fill: 'currentColor' }} axisLine={false} tickLine={false} />
                       <RechartsTooltip
-                        cursor={{ fill: 'rgba(251,146,60,0.08)' }}
+                        cursor={{ fill: 'var(--muted)' }}
                         contentStyle={{
-                          background: 'rgba(255,255,255,0.95)',
-                          border: '1px solid rgba(251,146,60,0.3)',
+                          background: 'var(--popover)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--popover-foreground)',
                           borderRadius: 12,
                           fontSize: 12,
                         }}
@@ -1896,7 +1889,7 @@ export default function FitnessModule() {
                         {ACTIVITY_DATA.map((entry, i) => (
                           <Cell
                             key={`cell-${i}`}
-                            fill={entry.completed ? '#fb923c' : 'rgba(120,120,120,0.2)'}
+                            fill={entry.completed ? '#d4af37' : 'var(--muted)'}
                           />
                         ))}
                       </Bar>
@@ -1907,7 +1900,7 @@ export default function FitnessModule() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30">
+          <Card className="border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Monthly Summary</CardTitle>
               <CardDescription className="text-xs">Last 4 weeks</CardDescription>
@@ -1923,7 +1916,7 @@ export default function FitnessModule() {
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <motion.div
-                        className="h-full bg-gradient-to-r from-orange-500 to-rose-500"
+                        className="h-full bg-gradient-to-r from-primary to-fuchsia-500"
                         initial={{ width: 0 }}
                         whileInView={{ width: `${(w.minutes / max) * 100}%` }}
                         viewport={{ once: true }}
@@ -1950,15 +1943,15 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Target className="h-5 w-5 text-orange-500" />
+            <Target className="h-5 w-5 text-gold" />
             Fitness Goals
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Goals progress */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30 h-full">
+          <motion.div variants={itemVariants} className="min-w-0">
+            <Card className="border-border h-full">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Weekly Targets</CardTitle>
                 <CardDescription className="text-xs">Set and track your weekly goals</CardDescription>
@@ -1968,8 +1961,8 @@ export default function FitnessModule() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
-                        <Dumbbell className="h-4 w-4 text-orange-500" />
+                      <div className="h-8 w-8 rounded-full bg-blush flex items-center justify-center">
+                        <Dumbbell className="h-4 w-4 text-primary" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">Workouts / week</p>
@@ -1980,7 +1973,7 @@ export default function FitnessModule() {
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-7 w-7"
+                        className="h-9 w-9 rounded-full"
                         onClick={() => setGoals((g) => ({ ...g, weeklyWorkouts: { ...g.weeklyWorkouts, target: Math.max(1, g.weeklyWorkouts.target - 1) } }))}
                       >
                         <span className="text-xs">−</span>
@@ -1989,14 +1982,14 @@ export default function FitnessModule() {
                       <Button
                         size="icon"
                         variant="outline"
-                        className="h-7 w-7"
+                        className="h-9 w-9 rounded-full"
                         onClick={() => setGoals((g) => ({ ...g, weeklyWorkouts: { ...g.weeklyWorkouts, target: Math.min(14, g.weeklyWorkouts.target + 1) } }))}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                  <Progress value={goalPct(goals.weeklyWorkouts.current, goals.weeklyWorkouts.target)} className="h-2.5 [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:to-rose-500" />
+                  <Progress value={goalPct(goals.weeklyWorkouts.current, goals.weeklyWorkouts.target)} className="h-2.5 [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:to-fuchsia-500" />
                   <p className="text-xs text-muted-foreground mt-1 text-right">{goalPct(goals.weeklyWorkouts.current, goals.weeklyWorkouts.target)}%</p>
                 </div>
 
@@ -2004,8 +1997,8 @@ export default function FitnessModule() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-rose-500/15 flex items-center justify-center">
-                        <Clock className="h-4 w-4 text-rose-500" />
+                      <div className="h-8 w-8 rounded-full bg-lilac flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-plum" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">Active minutes / week</p>
@@ -2013,16 +2006,16 @@ export default function FitnessModule() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setGoals((g) => ({ ...g, weeklyMinutes: { ...g.weeklyMinutes, target: Math.max(30, g.weeklyMinutes.target - 15) } }))}>
+                      <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => setGoals((g) => ({ ...g, weeklyMinutes: { ...g.weeklyMinutes, target: Math.max(30, g.weeklyMinutes.target - 15) } }))}>
                         <span className="text-xs">−</span>
                       </Button>
                       <span className="font-semibold text-sm w-10 text-center">{goals.weeklyMinutes.target}</span>
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setGoals((g) => ({ ...g, weeklyMinutes: { ...g.weeklyMinutes, target: Math.min(600, g.weeklyMinutes.target + 15) } }))}>
+                      <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => setGoals((g) => ({ ...g, weeklyMinutes: { ...g.weeklyMinutes, target: Math.min(600, g.weeklyMinutes.target + 15) } }))}>
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                  <Progress value={goalPct(goals.weeklyMinutes.current, goals.weeklyMinutes.target)} className="h-2.5 [&>div]:bg-gradient-to-r [&>div]:from-rose-500 [&>div]:to-pink-500" />
+                  <Progress value={goalPct(goals.weeklyMinutes.current, goals.weeklyMinutes.target)} className="h-2.5 [&>div]:bg-gradient-to-r [&>div]:from-rose-500 [&>div]:to-fuchsia-500" />
                   <p className="text-xs text-muted-foreground mt-1 text-right">{goalPct(goals.weeklyMinutes.current, goals.weeklyMinutes.target)}%</p>
                 </div>
 
@@ -2030,8 +2023,8 @@ export default function FitnessModule() {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <div className="h-8 w-8 rounded-lg bg-amber-500/15 flex items-center justify-center">
-                        <Flame className="h-4 w-4 text-amber-500" />
+                      <div className="h-8 w-8 rounded-full bg-peach-soft flex items-center justify-center">
+                        <Flame className="h-4 w-4 text-amber-600" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">Calories to burn / week</p>
@@ -2039,11 +2032,11 @@ export default function FitnessModule() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1">
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setGoals((g) => ({ ...g, weeklyCalories: { ...g.weeklyCalories, target: Math.max(500, g.weeklyCalories.target - 100) } }))}>
+                      <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => setGoals((g) => ({ ...g, weeklyCalories: { ...g.weeklyCalories, target: Math.max(500, g.weeklyCalories.target - 100) } }))}>
                         <span className="text-xs">−</span>
                       </Button>
                       <span className="font-semibold text-sm w-12 text-center">{goals.weeklyCalories.target}</span>
-                      <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => setGoals((g) => ({ ...g, weeklyCalories: { ...g.weeklyCalories, target: Math.min(5000, g.weeklyCalories.target + 100) } }))}>
+                      <Button size="icon" variant="outline" className="h-9 w-9 rounded-full" onClick={() => setGoals((g) => ({ ...g, weeklyCalories: { ...g.weeklyCalories, target: Math.min(5000, g.weeklyCalories.target + 100) } }))}>
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
@@ -2056,11 +2049,11 @@ export default function FitnessModule() {
           </motion.div>
 
           {/* Achievements */}
-          <motion.div variants={itemVariants}>
-            <Card className="bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30 h-full">
+          <motion.div variants={itemVariants} className="min-w-0">
+            <Card className="border-border h-full">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Trophy className="h-4 w-4 text-amber-500" />
+                  <Trophy className="h-4 w-4 text-gold" />
                   Achievement Badges
                 </CardTitle>
                 <CardDescription className="text-xs">
@@ -2081,7 +2074,7 @@ export default function FitnessModule() {
                           className={cn(
                             'rounded-2xl p-3 border transition-all',
                             a.unlocked
-                              ? 'bg-white dark:bg-card border-orange-200/60 dark:border-orange-900/40 shadow-sm'
+                              ? 'bg-card border-primary/30 shadow-sm'
                               : 'bg-muted/30 border-transparent opacity-60'
                           )}
                         >
@@ -2091,12 +2084,12 @@ export default function FitnessModule() {
                           )}>
                             <Icon className="h-5 w-5" />
                           </div>
-                          <p className="text-xs font-semibold text-center leading-tight">{a.name}</p>
-                          <p className="text-[10px] text-muted-foreground text-center mt-0.5 line-clamp-2">{a.description}</p>
+                          <p className="text-[11px] font-semibold text-center leading-tight">{a.name}</p>
+                          <p className="text-[11px] text-muted-foreground text-center mt-0.5 line-clamp-2">{a.description}</p>
                           {!a.unlocked && a.progress !== undefined && (
                             <div className="mt-1.5">
-                              <Progress value={a.progress} className="h-1 [&>div]:bg-orange-500" />
-                              <p className="text-[9px] text-muted-foreground text-center mt-0.5">{a.progress}%</p>
+                              <Progress value={a.progress} className="h-1 [&>div]:bg-primary" />
+                              <p className="text-[11px] text-muted-foreground text-center mt-0.5">{a.progress}%</p>
                             </div>
                           )}
                           {a.unlocked && (
@@ -2120,18 +2113,18 @@ export default function FitnessModule() {
       <motion.section variants={containerVariants} initial="hidden" animate="visible">
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Layers className="h-5 w-5 text-orange-500" />
+            <Layers className="h-5 w-5 text-gold" />
             Exercise Database
           </h2>
           <span className="text-xs text-muted-foreground">{filteredExercises.length} of {EXERCISE_DATABASE.length} exercises</span>
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-card/60 backdrop-blur-sm border-orange-200/40 dark:border-orange-900/30">
+          <Card className="border-border">
             <CardContent className="p-4 space-y-3">
               {/* Search + filters */}
               <div className="flex flex-col md:flex-row gap-2">
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search exercises by name..."
@@ -2206,7 +2199,7 @@ export default function FitnessModule() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 text-xs"
+                    className="h-9 text-xs"
                     onClick={() => { setSearch(''); setFilterMuscle('all'); setFilterEquipment('all'); setFilterDifficulty('all') }}
                   >
                     Clear all
@@ -2216,7 +2209,7 @@ export default function FitnessModule() {
 
               {/* Exercise list */}
               <ScrollArea className="max-h-[600px] pr-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <AnimatePresence mode="popLayout">
                     {filteredExercises.map((ex, i) => (
                       <motion.div
@@ -2226,7 +2219,7 @@ export default function FitnessModule() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                        className="rounded-xl border border-orange-200/40 dark:border-orange-900/30 bg-white/70 dark:bg-card/60 p-3 hover:shadow-sm transition-shadow"
+                        className="rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow"
                       >
                         <div className="flex items-start justify-between mb-1">
                           <h4 className="font-semibold text-sm leading-tight">{ex.name}</h4>
@@ -2243,8 +2236,8 @@ export default function FitnessModule() {
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">{ex.instructions}</p>
-                        <div className="mt-2 rounded-lg bg-orange-500/5 dark:bg-orange-500/10 border border-orange-200/40 dark:border-orange-800/30 p-2">
-                          <p className="text-[10px] uppercase tracking-wide text-orange-600 dark:text-orange-400 font-semibold mb-0.5 flex items-center gap-1">
+                        <div className="mt-2 rounded-lg bg-gold-soft/60 border border-gold/30 p-2">
+                          <p className="text-[11px] uppercase tracking-wide text-gold font-semibold mb-0.5 flex items-center gap-1">
                             <Sparkles className="h-2.5 w-2.5" /> Tip
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">{ex.tips}</p>
@@ -2260,7 +2253,7 @@ export default function FitnessModule() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="mt-2 text-xs"
+                      className="mt-2 h-9 text-xs"
                       onClick={() => { setSearch(''); setFilterMuscle('all'); setFilterEquipment('all'); setFilterDifficulty('all') }}
                     >
                       Clear filters
@@ -2296,7 +2289,7 @@ export default function FitnessModule() {
             initial={{ opacity: 0, y: 20, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
-            className="fixed bottom-6 left-1/2 z-[200] flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-rose-500 px-5 py-2.5 text-white shadow-lg"
+            className="fixed bottom-6 left-1/2 z-[200] flex items-center gap-2 rounded-full bg-primary text-primary-foreground border border-gold/30 px-5 py-2.5 shadow-lg"
           >
             <CheckCircle2 className="h-4 w-4" />
             <span className="text-sm font-medium">{toast}</span>

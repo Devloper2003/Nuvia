@@ -20,7 +20,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -29,7 +28,6 @@ import { Slider } from '@/components/ui/slider'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Dialog,
   DialogContent,
@@ -176,9 +174,9 @@ const MOODS: Mood[] = [
     label: 'Low',
     emoji: '😔',
     score: 2,
-    color: '#6366f1',
-    bgGradient: 'from-indigo-400 to-blue-500',
-    ringClass: 'ring-indigo-400',
+    color: '#c026d3',
+    bgGradient: 'from-fuchsia-400 to-violet-500',
+    ringClass: 'ring-fuchsia-400',
     message: 'It is okay to feel low. Be gentle with yourself today.',
     suggestion: 'Self Compassion meditation can soothe what feels heavy.',
   },
@@ -230,7 +228,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 18,
     description: 'Find peace in transition',
     category: 'Cycle Sync',
-    gradient: 'from-indigo-500 via-violet-500 to-purple-500',
+    gradient: 'from-fuchsia-500 via-violet-500 to-purple-500',
     icon: 'moon',
   },
   // Stress & Anxiety
@@ -240,7 +238,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 5,
     description: 'Reset your nervous system in minutes',
     category: 'Stress & Anxiety',
-    gradient: 'from-sky-500 via-cyan-500 to-teal-500',
+    gradient: 'from-medical via-teal-500 to-teal-700',
     icon: 'wind',
   },
   {
@@ -258,7 +256,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 20,
     description: 'Reconnect with every part of you',
     category: 'Stress & Anxiety',
-    gradient: 'from-blue-500 via-indigo-500 to-violet-500',
+    gradient: 'from-fuchsia-500 via-purple-500 to-violet-500',
     icon: 'heart',
   },
   {
@@ -267,7 +265,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 15,
     description: 'Release tension head to toe',
     category: 'Stress & Anxiety',
-    gradient: 'from-cyan-500 via-sky-500 to-blue-500',
+    gradient: 'from-teal-400 via-teal-600 to-teal-800',
     icon: 'wind',
   },
   // Sleep
@@ -277,7 +275,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 25,
     description: 'Drift into deep, restful sleep',
     category: 'Sleep',
-    gradient: 'from-indigo-600 via-violet-700 to-purple-800',
+    gradient: 'from-violet-700 via-purple-800 to-fuchsia-900',
     icon: 'moon',
   },
   {
@@ -286,7 +284,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 10,
     description: 'Transition from day to night',
     category: 'Sleep',
-    gradient: 'from-slate-600 via-indigo-600 to-violet-700',
+    gradient: 'from-plum-soft via-violet-800 to-purple-900',
     icon: 'moon',
   },
   {
@@ -295,7 +293,7 @@ const MEDITATIONS: Meditation[] = [
     duration: 15,
     description: 'Find your way back to sleep',
     category: 'Sleep',
-    gradient: 'from-purple-700 via-violet-800 to-indigo-900',
+    gradient: 'from-plum via-plum-soft to-purple-950',
     icon: 'moon',
   },
   // Self-Love
@@ -569,44 +567,48 @@ function HeaderSection() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-6 md:p-10 text-white shadow-xl shadow-violet-500/20"
+      className="card-plum relative overflow-hidden p-6 md:p-10"
     >
-      {/* Decorative blurred orbs */}
-      <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+      {/* Decorative lotus watermark + blurred orbs */}
+      <div aria-hidden className="lotus-watermark absolute inset-0" />
+      <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-gold/20 blur-3xl" />
       <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-fuchsia-400/20 blur-3xl" />
       <div className="absolute top-8 right-8 hidden md:block">
         <motion.div
           animate={{ y: [0, -8, 0], rotate: [0, 5, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <Flower2 className="h-20 w-20 text-white/20" />
+          <Flower2 className="h-20 w-20 text-gold/30" />
         </motion.div>
       </div>
 
       <div className="relative">
         <div className="flex items-center gap-2 mb-3">
-          <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/20">
+          <Badge className="bg-plum-soft/50 text-gold border-gold/40 hover:bg-plum-soft/50">
             <Sparkles className="h-3 w-3 mr-1" />
             Mental Wellness
           </Badge>
-          <span className="text-xs text-white/70">{today}</span>
+          <span className="text-xs text-gold/80">{today}</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-gradient-to-r from-white via-violet-50 to-fuchsia-100 bg-clip-text text-transparent">
+        <h1 className="gold-shine font-serif text-2xl sm:text-3xl font-bold tracking-tight">
           Mind &amp; Soul
         </h1>
-        <p className="mt-3 text-base md:text-lg text-violet-100/90 max-w-2xl">
+        <div aria-hidden className="mt-3 flex">
+          <span className="gold-divider text-[10px]"><span>✦</span></span>
+        </div>
+        <p className="mt-3 text-base md:text-lg opacity-90 max-w-2xl">
           Nurture your mental wellness through every phase
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-full bg-plum-soft/40 border border-white/10 px-3 py-1.5 backdrop-blur-sm">
             <Brain className="h-4 w-4" />
             <span>5-min check-in</span>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-full bg-plum-soft/40 border border-white/10 px-3 py-1.5 backdrop-blur-sm">
             <Heart className="h-4 w-4" />
             <span>14 guided meditations</span>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 backdrop-blur-sm">
+          <div className="flex items-center gap-2 rounded-full bg-plum-soft/40 border border-white/10 px-3 py-1.5 backdrop-blur-sm">
             <Wind className="h-4 w-4" />
             <span>3 breathing techniques</span>
           </div>
@@ -637,11 +639,11 @@ function MoodCheckIn() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.05 }}
     >
-      <Card className="glass border-violet-200/50 overflow-hidden">
+      <Card className="card-blush overflow-hidden border-0">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <SmilePlus className="h-5 w-5" />
                 Daily Mood Check-in
               </CardTitle>
@@ -649,7 +651,7 @@ function MoodCheckIn() {
                 How are you feeling right now? Take a moment to listen.
               </CardDescription>
             </div>
-            <Badge variant="outline" className="border-violet-300 text-violet-600">
+            <Badge variant="outline" className="border-primary/40 text-primary">
               <Clock className="h-3 w-3 mr-1" />
               2 min
             </Badge>
@@ -673,7 +675,7 @@ function MoodCheckIn() {
                       'relative flex flex-col items-center gap-2 rounded-2xl border-2 p-3 md:p-4 transition-all',
                       isSelected
                         ? cn('border-transparent bg-gradient-to-br text-white shadow-lg', mood.bgGradient, 'ring-4', mood.ringClass, 'ring-offset-2')
-                        : 'border-border bg-card hover:border-violet-300'
+                        : 'border-border bg-card hover:border-primary/40'
                     )}
                   >
                     <span className="text-3xl md:text-4xl select-none">{mood.emoji}</span>
@@ -686,9 +688,9 @@ function MoodCheckIn() {
                     {isSelected && (
                       <motion.div
                         layoutId="mood-check"
-                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-white flex items-center justify-center shadow"
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary flex items-center justify-center shadow"
                       >
-                        <CheckCircle2 className="h-4 w-4 text-violet-600" />
+                        <CheckCircle2 className="h-4 w-4 text-primary-foreground" />
                       </motion.div>
                     )}
                   </motion.button>
@@ -758,19 +760,19 @@ function MoodCheckIn() {
               placeholder="What's on your mind? Anything you'd like to remember about today..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="min-h-[80px] resize-none border-violet-200 focus-visible:ring-violet-400"
+              className="min-h-[80px] resize-none border-border focus-visible:ring-ring"
             />
           </div>
 
           {/* Save */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs text-muted-foreground">
               {selectedMood ? 'Ready to save your check-in' : 'Pick a mood to begin'}
             </p>
             <Button
               onClick={handleSave}
               disabled={!selectedMood}
-              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+              className="btn-plum rounded-full px-6 min-h-11 font-semibold"
             >
               <AnimatePresence mode="wait">
                 {saved ? (
@@ -860,21 +862,21 @@ function NowPlayingView({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Decorative orbs */}
-        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full bg-gold/15 blur-3xl" />
         <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 blur-3xl" />
 
         {/* Close button */}
         <Button
           variant="ghost"
           size="icon"
-          className="absolute top-4 right-4 text-white/80 hover:text-white hover:bg-white/10 z-10"
+          className="absolute top-4 right-4 text-gold/90 hover:text-gold hover:bg-gold/10 z-10"
           onClick={onClose}
         >
           <X className="h-5 w-5" />
         </Button>
 
         <div className="relative text-center">
-          <Badge className="mb-4 bg-white/20 text-white border-white/30">
+          <Badge className="mb-4 bg-plum-soft/50 text-gold border-gold/40">
             <Music2 className="h-3 w-3 mr-1" />
             Now Playing
           </Badge>
@@ -895,7 +897,7 @@ function NowPlayingView({
                 cy="140"
                 r={radius}
                 fill="none"
-                stroke="white"
+                stroke="var(--gold)"
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={circumference}
@@ -911,13 +913,13 @@ function NowPlayingView({
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               className="absolute flex flex-col items-center justify-center"
             >
-              <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3">
+              <div className="h-20 w-20 rounded-full bg-plum-soft/50 backdrop-blur-sm flex items-center justify-center mb-3">
                 <MeditationIcon icon={meditation.icon} className="h-10 w-10 text-white" />
               </div>
               <div className="text-4xl font-mono font-semibold tabular-nums">
                 {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
               </div>
-              <div className="text-xs text-white/80 mt-1">
+              <div className="text-xs text-gold/80 mt-1">
                 {isComplete ? 'Session complete' : isPlaying ? 'Breathe deeply' : 'Paused'}
               </div>
             </motion.div>
@@ -931,7 +933,7 @@ function NowPlayingView({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full h-12 w-12"
+              className="text-gold/90 hover:text-gold hover:bg-gold/10 rounded-full h-12 w-12"
               onClick={() => setElapsed(Math.max(0, elapsed - 15))}
               aria-label="Rewind 15 seconds"
             >
@@ -939,7 +941,7 @@ function NowPlayingView({
             </Button>
             <Button
               size="icon"
-              className="bg-white text-violet-700 hover:bg-white/90 rounded-full h-16 w-16 shadow-lg"
+              className="bg-gold text-plum hover:bg-gold/90 rounded-full h-16 w-16 shadow-lg"
               onClick={() => setIsPlaying(!isPlaying)}
               aria-label={isPlaying ? 'Pause' : 'Play'}
               disabled={isComplete}
@@ -953,7 +955,7 @@ function NowPlayingView({
             <Button
               variant="ghost"
               size="icon"
-              className="text-white/80 hover:text-white hover:bg-white/10 rounded-full h-12 w-12"
+              className="text-gold/90 hover:text-gold hover:bg-gold/10 rounded-full h-12 w-12"
               onClick={() => setElapsed(Math.min(totalSeconds, elapsed + 15))}
               aria-label="Forward 15 seconds"
             >
@@ -967,9 +969,9 @@ function NowPlayingView({
               <span>{Math.floor(elapsed / 60)}:{String(elapsed % 60).padStart(2, '0')}</span>
               <span>{meditation.duration}:00</span>
             </div>
-            <div className="h-1.5 w-full rounded-full bg-white/20 overflow-hidden">
+            <div className="h-1.5 w-full rounded-full bg-plum-soft/60 overflow-hidden">
               <motion.div
-                className="h-full bg-white rounded-full"
+                className="h-full bg-gold rounded-full"
                 animate={{ width: `${progress}%` }}
                 transition={{ duration: 0.3 }}
               />
@@ -980,7 +982,7 @@ function NowPlayingView({
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 rounded-xl bg-white/20 backdrop-blur-sm p-3 text-sm"
+              className="mt-4 rounded-xl bg-plum-soft/50 backdrop-blur-sm p-3 text-sm"
             >
               <p className="font-medium flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4" />
@@ -1011,11 +1013,11 @@ function MeditationLibrary() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <Card className="glass border-violet-200/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+              <CardTitle className="flex items-center gap-2 text-primary">
                 <Flower2 className="h-5 w-5" />
                 Meditation Library
               </CardTitle>
@@ -1031,8 +1033,8 @@ function MeditationLibrary() {
                   size="sm"
                   onClick={() => setActiveCategory(cat)}
                   className={cn(
-                    'h-7 text-xs',
-                    activeCategory === cat && 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700'
+                    'h-9 rounded-full text-xs',
+                    activeCategory === cat && 'bg-primary text-primary-foreground hover:bg-primary/90'
                   )}
                 >
                   {cat}
@@ -1058,14 +1060,14 @@ function MeditationLibrary() {
               >
                 <div className={cn('relative h-44 bg-gradient-to-br p-5 flex flex-col justify-between', med.gradient)}>
                   {/* Decorative orbs */}
-                  <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-white/10 blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                  <div className="absolute -top-6 -right-6 h-24 w-24 rounded-full bg-gold/15 blur-2xl group-hover:scale-150 transition-transform duration-700" />
                   <div className="absolute -bottom-8 -left-4 h-20 w-20 rounded-full bg-black/10 blur-2xl" />
 
                   <div className="relative flex items-start justify-between">
-                    <div className="h-11 w-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <div className="h-11 w-11 rounded-full bg-plum-soft/50 backdrop-blur-sm flex items-center justify-center">
                       <MeditationIcon icon={med.icon} className="h-6 w-6 text-white" />
                     </div>
-                    <Badge className="bg-white/25 text-white border-white/30 backdrop-blur-sm text-[10px]">
+                    <Badge className="bg-plum-soft/60 text-gold border-gold/30 backdrop-blur-sm text-[10px]">
                       {med.category}
                     </Badge>
                   </div>
@@ -1076,7 +1078,7 @@ function MeditationLibrary() {
                       <span className="flex items-center gap-1 text-xs text-white/90">
                         <Clock className="h-3 w-3" /> {med.duration} min
                       </span>
-                      <div className="h-9 w-9 rounded-full bg-white text-violet-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                      <div className="h-9 w-9 rounded-full bg-gold text-plum flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
                         <Play className="h-4 w-4 ml-0.5 fill-current" />
                       </div>
                     </div>
@@ -1155,9 +1157,9 @@ function BreathingExercise() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.15 }}
     >
-      <Card className="glass border-violet-200/50 overflow-hidden">
+      <Card className="border-border overflow-hidden">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Wind className="h-5 w-5" />
             Breathing Exercises
           </CardTitle>
@@ -1171,10 +1173,10 @@ function BreathingExercise() {
                 key={tech.id}
                 onClick={() => handleTechniqueChange(tech.id)}
                 className={cn(
-                  'rounded-xl border-2 p-3 text-left transition-all',
+                  'rounded-xl border-2 p-3 text-left min-h-11 transition-all',
                   activeId === tech.id
-                    ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/40'
-                    : 'border-border hover:border-violet-300'
+                    ? 'border-primary bg-blush'
+                    : 'border-border hover:border-primary/40'
                 )}
               >
                 <div className="font-semibold text-sm">{tech.name}</div>
@@ -1186,15 +1188,15 @@ function BreathingExercise() {
           </div>
 
           {/* Animation area */}
-          <div className="relative rounded-2xl bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/40 dark:via-purple-950/40 dark:to-fuchsia-950/40 overflow-hidden">
+          <div className="relative rounded-2xl bg-blush/70 overflow-hidden">
             {/* Decorative blurred orbs */}
-            <div className="absolute top-4 left-4 h-20 w-20 rounded-full bg-violet-300/30 blur-2xl" />
-            <div className="absolute bottom-4 right-4 h-24 w-24 rounded-full bg-fuchsia-300/30 blur-2xl" />
+            <div className="absolute top-4 left-4 h-20 w-20 rounded-full bg-primary/20 blur-2xl" />
+            <div className="absolute bottom-4 right-4 h-24 w-24 rounded-full bg-gold/20 blur-2xl" />
 
             <div className="relative flex flex-col items-center justify-center py-12 px-4 min-h-[420px]">
               {/* Concentric guide rings */}
-              <div className="absolute h-64 w-64 rounded-full border border-violet-200/60 dark:border-violet-700/40" />
-              <div className="absolute h-80 w-80 rounded-full border border-violet-100/50 dark:border-violet-800/30" />
+              <div className="absolute h-64 w-64 rounded-full border border-primary/20" />
+              <div className="absolute h-80 w-80 rounded-full border border-primary/10" />
 
               {/* Animated breathing circle */}
               <div className="relative flex h-64 w-64 items-center justify-center">
@@ -1204,7 +1206,7 @@ function BreathingExercise() {
                     duration: currentPhase.duration,
                     ease: 'easeInOut',
                   }}
-                  className="absolute h-44 w-44 rounded-full bg-gradient-to-br from-violet-400 via-purple-400 to-fuchsia-400 shadow-2xl shadow-violet-500/40"
+                  className="absolute h-44 w-44 rounded-full bg-gradient-to-br from-primary via-plum-soft to-fuchsia-400 shadow-2xl shadow-primary/40"
                   style={{ opacity: 0.9 }}
                 />
                 <motion.div
@@ -1213,7 +1215,7 @@ function BreathingExercise() {
                     duration: currentPhase.duration,
                     ease: 'easeInOut',
                   }}
-                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-violet-300 to-fuchsia-300 opacity-60 blur-md"
+                  className="absolute h-32 w-32 rounded-full bg-gradient-to-br from-primary to-fuchsia-300 opacity-60 blur-md"
                 />
                 {/* Center label */}
                 <div className="relative z-10 text-center text-white">
@@ -1232,11 +1234,11 @@ function BreathingExercise() {
                   <div key={i} className="flex items-center gap-2">
                     <div className={cn(
                       'h-2 rounded-full transition-all duration-500',
-                      i === phaseIdx ? 'w-10 bg-violet-600' : 'w-4 bg-violet-200 dark:bg-violet-800'
+                      i === phaseIdx ? 'w-10 bg-primary' : 'w-4 bg-primary/25'
                     )} />
                     <span className={cn(
-                      'text-[10px] font-medium',
-                      i === phaseIdx ? 'text-violet-700 dark:text-violet-300' : 'text-muted-foreground'
+                      'text-[11px] font-medium',
+                      i === phaseIdx ? 'text-primary' : 'text-muted-foreground'
                     )}>
                       {p.duration}s
                     </span>
@@ -1249,7 +1251,7 @@ function BreathingExercise() {
 
               {/* Cycles counter */}
               <div className="relative mt-4 flex items-center gap-3 text-sm">
-                <Badge variant="outline" className="border-violet-300 text-violet-600">
+                <Badge variant="outline" className="border-primary/40 text-primary">
                   <Timer className="h-3 w-3 mr-1" />
                   Cycle {cycles + 1}
                 </Badge>
@@ -1269,14 +1271,14 @@ function BreathingExercise() {
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full h-11 w-11 border-violet-300"
+              className="rounded-full h-11 w-11"
               onClick={handleReset}
               aria-label="Reset"
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
             <Button
-              className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 rounded-full h-14 px-8"
+              className="btn-plum rounded-full h-14 px-8 font-semibold"
               onClick={isRunning ? handlePause : handleStart}
             >
               {isRunning ? (
@@ -1344,28 +1346,28 @@ function MoodJournal() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      <Card className="glass border-violet-200/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <BookOpen className="h-5 w-5" />
             Mood Journal
           </CardTitle>
           <CardDescription>Track your emotional landscape over time</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
             {/* Calendar */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-sm flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-violet-500" />
+                  <CalendarDays className="h-4 w-4 text-primary" />
                   {viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                 </h3>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={prevMonth}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={prevMonth}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={nextMonth}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={nextMonth}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1393,7 +1395,7 @@ function MoodJournal() {
                           ? 'text-white shadow-sm hover:scale-105'
                           : 'text-muted-foreground hover:bg-accent',
                         mood && cn('bg-gradient-to-br', mood.bgGradient),
-                        isToday && 'ring-2 ring-violet-500 ring-offset-1'
+                        isToday && 'ring-2 ring-primary ring-offset-1'
                       )}
                       title={entry ? `${getMoodByLevel(entry.mood).label} • Stress ${entry.stress}/10` : ''}
                     >
@@ -1404,7 +1406,7 @@ function MoodJournal() {
                 })}
               </div>
               {/* Legend */}
-              <div className="flex flex-wrap items-center gap-2 mt-4 text-[10px]">
+              <div className="flex flex-wrap items-center gap-2 mt-4 text-[11px]">
                 {MOODS.map(m => (
                   <div key={m.level} className="flex items-center gap-1">
                     <div className={cn('h-3 w-3 rounded-full bg-gradient-to-br', m.bgGradient)} />
@@ -1417,10 +1419,10 @@ function MoodJournal() {
             {/* Today's entry */}
             <div>
               <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
-                <PencilLine className="h-4 w-4 text-violet-500" />
+                <PencilLine className="h-4 w-4 text-primary" />
                 Today's Journal Entry
               </h3>
-              <div className="rounded-xl border border-violet-200 dark:border-violet-800 p-4 space-y-3">
+              <div className="rounded-xl border border-primary/20 bg-blush/40 p-4 space-y-3">
                 {todayEntry ? (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <SmilePlus className="h-4 w-4" />
@@ -1438,11 +1440,11 @@ function MoodJournal() {
                   placeholder="What happened today? How do you feel about it? What are you grateful for?"
                   value={journalText}
                   onChange={(e) => setJournalText(e.target.value)}
-                  className="min-h-[120px] resize-none border-violet-200 focus-visible:ring-violet-400"
+                  className="min-h-[120px] resize-none border-border focus-visible:ring-ring"
                 />
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">{journalText.length} characters</span>
-                  <Button size="sm" className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+                  <Button size="sm" className="btn-plum rounded-full px-5 min-h-11 font-semibold">
                     <Heart className="h-3.5 w-3.5 mr-1" /> Save Entry
                   </Button>
                 </div>
@@ -1453,10 +1455,10 @@ function MoodJournal() {
           {/* Mood trends chart */}
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
-              <TrendingUp className="h-4 w-4 text-violet-500" />
+              <TrendingUp className="h-4 w-4 text-primary" />
               Mood Trends (30 days)
             </h3>
-            <div className="rounded-xl border border-violet-100 dark:border-violet-900/50 p-4 bg-card/50">
+            <div className="rounded-xl border border-border p-4 bg-card/50">
               {hasHistory ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <LineChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -1466,10 +1468,10 @@ function MoodJournal() {
                         <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.02 325)" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                       dataKey="date"
-                      tick={{ fontSize: 10, fill: 'oklch(0.5 0.03 325)' }}
+                      tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                       interval={4}
                       tickLine={false}
                       axisLine={false}
@@ -1477,15 +1479,16 @@ function MoodJournal() {
                     <YAxis
                       domain={[0, 5]}
                       ticks={[1, 2, 3, 4, 5]}
-                      tick={{ fontSize: 10, fill: 'oklch(0.5 0.03 325)' }}
+                      tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <RechartsTooltip
                       contentStyle={{
                         borderRadius: 12,
-                        border: '1px solid oklch(0.91 0.02 325)',
-                        background: 'oklch(1 0 0)',
+                        border: '1px solid var(--border)',
+                        background: 'var(--popover)',
+                        color: 'var(--popover-foreground)',
                         fontSize: 12,
                         padding: '8px 12px',
                       }}
@@ -1498,7 +1501,7 @@ function MoodJournal() {
                       }}
                       labelFormatter={(label) => `Date: ${label}`}
                     />
-                    <ReferenceLine y={3} stroke="oklch(0.7 0.05 325)" strokeDasharray="4 4" />
+                    <ReferenceLine y={3} stroke="var(--border)" strokeDasharray="4 4" />
                     <Line
                       type="monotone"
                       dataKey="mood"
@@ -1521,8 +1524,8 @@ function MoodJournal() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center h-[220px]">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                    <TrendingUp className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                    <TrendingUp className="h-6 w-6 text-gold" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No mood data yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1536,14 +1539,14 @@ function MoodJournal() {
           {/* Past entries */}
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
-              <BookOpen className="h-4 w-4 text-violet-500" />
+              <BookOpen className="h-4 w-4 text-primary" />
               Past Entries
             </h3>
             <div className="space-y-2 max-h-72 overflow-y-auto pr-2">
               {pastEntries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted mb-2">
-                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-plum-soft mb-2">
+                    <BookOpen className="h-5 w-5 text-gold" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No entries yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1557,7 +1560,7 @@ function MoodJournal() {
                     <button
                       key={entry.id}
                       onClick={() => setSelectedEntry(entry)}
-                      className="w-full text-left rounded-xl border border-border hover:border-violet-300 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 p-3 transition-all flex items-center gap-3"
+                      className="w-full min-h-11 text-left rounded-xl border border-border hover:border-primary/40 hover:bg-blush/40 p-3 transition-all flex items-center gap-3"
                     >
                       <div className={cn(
                         'h-10 w-10 rounded-full bg-gradient-to-br flex items-center justify-center text-lg shrink-0',
@@ -1605,7 +1608,7 @@ function MoodJournal() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-lg bg-muted/50 p-3">
                   <div className="text-xs text-muted-foreground">Mood Score</div>
-                  <div className="text-2xl font-bold text-violet-600">{selectedEntry.moodScore}/5</div>
+                  <div className="text-2xl font-bold text-primary">{selectedEntry.moodScore}/5</div>
                 </div>
                 <div className="rounded-lg bg-muted/50 p-3">
                   <div className="text-xs text-muted-foreground">Stress Level</div>
@@ -1614,7 +1617,7 @@ function MoodJournal() {
               </div>
               <div>
                 <div className="text-xs font-medium text-muted-foreground mb-2">Journal Note</div>
-                <div className="rounded-lg border border-violet-100 dark:border-violet-900 p-3 text-sm min-h-[80px]">
+                <div className="rounded-lg border border-border p-3 text-sm min-h-[80px]">
                   {selectedEntry.note || <span className="italic text-muted-foreground">No notes for this day.</span>}
                 </div>
               </div>
@@ -1656,7 +1659,7 @@ function AffirmationsWall() {
     'Self-love': 'from-rose-400 to-pink-500',
     'Body positivity': 'from-fuchsia-400 to-purple-500',
     'Strength': 'from-amber-400 to-orange-500',
-    'Peace': 'from-sky-400 to-cyan-500',
+    'Peace': 'from-teal-400 to-teal-600',
     'Healing': 'from-emerald-400 to-teal-500',
   }
 
@@ -1666,9 +1669,9 @@ function AffirmationsWall() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.25 }}
     >
-      <Card className="glass border-violet-200/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Quote className="h-5 w-5" />
             Daily Affirmations
           </CardTitle>
@@ -1679,36 +1682,36 @@ function AffirmationsWall() {
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 p-6 md:p-8 text-white shadow-lg"
+            className="card-plum relative p-6 md:p-8"
           >
-            <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-fuchsia-300/20 blur-2xl" />
+            <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-gold/20 blur-2xl" />
+            <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-fuchsia-400/15 blur-2xl" />
             <div className="relative">
               <div className="flex items-center justify-between mb-3">
-                <Badge className="bg-white/20 text-white border-white/30">
+                <Badge className="bg-plum-soft/50 text-gold border-gold/40">
                   <Sparkles className="h-3 w-3 mr-1" />
                   Today's Affirmation
                 </Badge>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-white hover:bg-white/20 rounded-full h-9 w-9"
+                  className="text-gold/90 hover:bg-gold/10 hover:text-gold rounded-full h-9 w-9"
                   onClick={() => toggleFavorite(daily.id)}
                 >
                   {favorites.has(daily.id) ? (
-                    <Star className="h-5 w-5 fill-yellow-300 text-yellow-300" />
+                    <Star className="h-5 w-5 fill-gold text-gold" />
                   ) : (
                     <Star className="h-5 w-5" />
                   )}
                 </Button>
               </div>
-              <Quote className="h-8 w-8 text-white/40 mb-2" />
+              <Quote className="h-8 w-8 text-gold/60 mb-2" />
               <p className="text-xl md:text-2xl font-medium leading-snug">
                 {daily.text}
               </p>
-              <div className="mt-4 flex items-center gap-3 text-xs text-white/80">
+              <div className="mt-4 flex items-center gap-3 text-xs opacity-80">
                 <span>Category:</span>
-                <Badge variant="outline" className="border-white/30 text-white">{daily.category}</Badge>
+                <Badge variant="outline" className="border-gold/40 text-gold">{daily.category}</Badge>
               </div>
             </div>
           </motion.div>
@@ -1722,8 +1725,8 @@ function AffirmationsWall() {
                 size="sm"
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  'h-7 text-xs',
-                  activeCategory === cat && 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700'
+                  'h-9 rounded-full text-xs',
+                  activeCategory === cat && 'bg-primary text-primary-foreground hover:bg-primary/90'
                 )}
               >
                 {cat}
@@ -1741,7 +1744,7 @@ function AffirmationsWall() {
             variants={staggerContainer}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
           >
             {filtered.map(aff => (
               <motion.div
@@ -1753,20 +1756,20 @@ function AffirmationsWall() {
                   categoryColors[aff.category]
                 )}
               >
-                <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/15 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <Quote className="h-5 w-5 text-white/40 mb-1" />
+                <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-gold/15 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Quote className="h-5 w-5 text-gold/50 mb-1" />
                 <p className="text-sm font-medium leading-snug relative flex-1">{aff.text}</p>
                 <div className="flex items-center justify-between mt-3 relative">
-                  <Badge className="bg-white/25 text-white border-white/30 text-[10px]">
+                  <Badge className="bg-plum-soft/60 text-gold border-gold/30 text-[10px]">
                     {aff.category}
                   </Badge>
                   <button
                     onClick={() => toggleFavorite(aff.id)}
-                    className="text-white/80 hover:text-white transition-colors"
+                    className="text-gold/80 hover:text-gold transition-colors"
                     aria-label={favorites.has(aff.id) ? 'Remove favorite' : 'Add favorite'}
                   >
                     {favorites.has(aff.id) ? (
-                      <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
+                      <Star className="h-4 w-4 fill-gold text-gold" />
                     ) : (
                       <Star className="h-4 w-4" />
                     )}
@@ -1778,7 +1781,7 @@ function AffirmationsWall() {
 
           {/* Favorites counter */}
           <div className="text-center text-xs text-muted-foreground">
-            <Star className="inline h-3.5 w-3.5 mr-1 fill-violet-400 text-violet-400" />
+            <Star className="inline h-3.5 w-3.5 mr-1 fill-gold text-gold" />
             You've favorited {favorites.size} affirmation{favorites.size === 1 ? '' : 's'}
           </div>
         </CardContent>
@@ -1818,12 +1821,12 @@ function QuizRunner({
 
   const accentClasses = accentColor === 'violet'
     ? {
-        bg: 'bg-violet-600',
-        bgHover: 'hover:bg-violet-700',
-        bgSoft: 'bg-violet-50 dark:bg-violet-950/40',
-        border: 'border-violet-300',
-        text: 'text-violet-600',
-        ring: 'ring-violet-400',
+        bg: 'bg-primary',
+        bgHover: 'hover:bg-primary/90',
+        bgSoft: 'bg-blush/60',
+        border: 'border-primary/40',
+        text: 'text-primary',
+        ring: 'ring-primary',
       }
     : {
         bg: 'bg-rose-600',
@@ -1875,10 +1878,10 @@ function QuizRunner({
                         key={opt.label}
                         onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.value }))}
                         className={cn(
-                          'text-left text-xs rounded-lg border px-2.5 py-2 transition-all',
+                          'text-left text-xs rounded-lg border px-2.5 py-2 min-h-11 flex items-center transition-all',
                           isSelected
                             ? cn(accentClasses.bg, 'text-white border-transparent')
-                            : 'border-border hover:border-violet-300 text-muted-foreground'
+                            : 'border-border hover:border-primary/40 text-muted-foreground'
                         )}
                       >
                         {opt.label}
@@ -1914,7 +1917,7 @@ function QuizRunner({
             <div className="text-xs uppercase tracking-wide opacity-90 mb-1">Your Score</div>
             <div className="text-5xl font-bold mb-1">{score}</div>
             <div className="text-sm opacity-90 mb-2">out of {total * 3}</div>
-            <div className="inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
+            <div className="inline-block rounded-full bg-background/25 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
               {result.label}
             </div>
           </div>
@@ -1942,7 +1945,7 @@ function QuizRunner({
             </Button>
           </div>
 
-          <p className="text-[10px] text-muted-foreground text-center">
+          <p className="text-[11px] text-muted-foreground text-center">
             This screening tool is for educational purposes only and is not a diagnosis. Please consult a healthcare professional for proper evaluation.
           </p>
         </motion.div>
@@ -1961,9 +1964,9 @@ function TherapySupport() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
     >
-      <Card className="glass border-violet-200/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <LifeBuoy className="h-5 w-5" />
             Therapy &amp; Support
           </CardTitle>
@@ -1971,22 +1974,22 @@ function TherapySupport() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Therapist CTA */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 p-5 md:p-6 text-white shadow-md">
-            <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="card-plum relative p-5 md:p-6">
+            <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gold/20 blur-2xl" />
             <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <Badge className="bg-white/20 text-white border-white/30 mb-2">
+                <Badge className="bg-plum-soft/50 text-gold border-gold/40 mb-2">
                   <Stethoscope className="h-3 w-3 mr-1" />
                   Professional Support
                 </Badge>
                 <h3 className="text-xl md:text-2xl font-bold mb-1">Connect with a Therapist</h3>
-                <p className="text-sm text-white/85 max-w-md">
+                <p className="text-sm opacity-85 max-w-md">
                   Find licensed mental health professionals, counselors, and psychologists near you. Telehealth and in-person options available.
                 </p>
               </div>
               <Button
                 onClick={() => setActiveModule('doctors')}
-                className="bg-white text-violet-700 hover:bg-white/90 shrink-0"
+                className="bg-gold text-plum hover:bg-gold/90 rounded-full min-h-11 px-5 font-semibold shrink-0"
               >
                 <Stethoscope className="h-4 w-4 mr-1.5" />
                 Find a Therapist
@@ -2000,7 +2003,7 @@ function TherapySupport() {
               <Siren className="h-4 w-4 text-rose-500" />
               Crisis Support Resources
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <div className="rounded-xl border border-rose-200 bg-rose-50/50 dark:bg-rose-950/20 dark:border-rose-900 p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-9 w-9 rounded-full bg-rose-500 flex items-center justify-center">
@@ -2057,10 +2060,10 @@ function TherapySupport() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-900 p-4">
+              <div className="rounded-xl border border-primary/30 bg-blush/40 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="h-9 w-9 rounded-full bg-violet-500 flex items-center justify-center">
-                    <Siren className="h-4 w-4 text-white" />
+                  <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center">
+                    <Siren className="h-4 w-4 text-primary-foreground" />
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Emergency</div>
@@ -2069,18 +2072,18 @@ function TherapySupport() {
                 </div>
                 <div className="space-y-1 text-sm">
                   <div>
-                    <div className="font-mono font-bold text-violet-600">Emergency: 112</div>
-                    <div className="text-[10px] text-muted-foreground">India (ambulance, police, fire)</div>
+                    <div className="font-mono font-bold text-primary">Emergency: 112</div>
+                    <div className="text-[11px] text-muted-foreground">India (ambulance, police, fire)</div>
                   </div>
                   <Separator className="my-1" />
                   <div>
-                    <div className="font-mono font-bold text-violet-600">Women Helpline: 1091</div>
-                    <div className="text-[10px] text-muted-foreground">24/7</div>
+                    <div className="font-mono font-bold text-primary">Women Helpline: 1091</div>
+                    <div className="text-[11px] text-muted-foreground">24/7</div>
                   </div>
                   <Separator className="my-1" />
                   <div>
-                    <div className="font-mono font-bold text-violet-600">AASRA: 9820466726</div>
-                    <div className="text-[10px] text-muted-foreground">Suicide prevention, 24/7</div>
+                    <div className="font-mono font-bold text-primary">AASRA: 9820466726</div>
+                    <div className="text-[11px] text-muted-foreground">Suicide prevention, 24/7</div>
                   </div>
                 </div>
               </div>
@@ -2096,7 +2099,7 @@ function TherapySupport() {
           {/* Self-assessment quizzes */}
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
-              <Activity className="h-4 w-4 text-violet-500" />
+              <Activity className="h-4 w-4 text-primary" />
               Self-Assessment Quizzes
             </h3>
             <p className="text-xs text-muted-foreground mb-3">
@@ -2104,34 +2107,34 @@ function TherapySupport() {
             </p>
 
             {activeQuiz === 'none' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   onClick={() => setActiveQuiz('phq9')}
-                  className="group text-left rounded-2xl border-2 border-violet-200 dark:border-violet-800 p-4 hover:border-violet-500 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all"
+                  className="group text-left rounded-2xl border-2 border-primary/30 p-4 hover:border-primary hover:bg-blush/40 transition-all min-h-11"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                      <Brain className="h-5 w-5 text-white" />
+                    <div className="h-11 w-11 rounded-full bg-plum-soft flex items-center justify-center">
+                      <Brain className="h-5 w-5 text-gold" />
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                   </div>
                   <div className="font-semibold">PHQ-9</div>
                   <div className="text-xs text-muted-foreground">Depression Screening</div>
-                  <div className="text-[10px] text-muted-foreground mt-2">9 questions • ~3 minutes</div>
+                  <div className="text-[11px] text-muted-foreground mt-2">9 questions • ~3 minutes</div>
                 </button>
                 <button
                   onClick={() => setActiveQuiz('gad7')}
-                  className="group text-left rounded-2xl border-2 border-rose-200 dark:border-rose-800 p-4 hover:border-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all"
+                  className="group text-left rounded-2xl border-2 border-rose-200 dark:border-rose-800 p-4 hover:border-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all min-h-11"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
-                      <HeartPulse className="h-5 w-5 text-white" />
+                    <div className="h-11 w-11 rounded-full bg-blush flex items-center justify-center">
+                      <HeartPulse className="h-5 w-5 text-primary" />
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-rose-500 group-hover:translate-x-1 transition-all" />
                   </div>
                   <div className="font-semibold">GAD-7</div>
                   <div className="text-xs text-muted-foreground">Anxiety Screening</div>
-                  <div className="text-[10px] text-muted-foreground mt-2">7 questions • ~2 minutes</div>
+                  <div className="text-[11px] text-muted-foreground mt-2">7 questions • ~2 minutes</div>
                 </button>
               </div>
             ) : (
@@ -2230,9 +2233,9 @@ function WellnessStats() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.35 }}
     >
-      <Card className="glass border-violet-200/50">
+      <Card className="border-border">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+          <CardTitle className="flex items-center gap-2 text-primary">
             <Award className="h-5 w-5" />
             Your Wellness Journey
           </CardTitle>
@@ -2252,14 +2255,14 @@ function WellnessStats() {
                   stat.gradient
                 )}
               >
-                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-white/15 blur-xl" />
+                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-gold/20 blur-xl" />
                 <div className="relative">
                   <stat.icon className="h-6 w-6 mb-2 opacity-90" />
                   <div className="text-2xl md:text-3xl font-bold">
                     {stat.value}<span className="text-base font-medium opacity-90">{stat.suffix}</span>
                   </div>
-                  <div className="text-[11px] text-white/85 font-medium mt-0.5">{stat.label}</div>
-                  <div className="text-[10px] text-white/70 mt-0.5">{stat.sublabel}</div>
+                  <div className="text-[11px] opacity-85 font-medium mt-0.5">{stat.label}</div>
+                  <div className="text-[11px] opacity-75 mt-0.5">{stat.sublabel}</div>
                 </div>
               </motion.div>
             ))}
@@ -2268,10 +2271,10 @@ function WellnessStats() {
           {/* Weekly meditation minutes chart */}
           <div>
             <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
-              <TrendingUp className="h-4 w-4 text-violet-500" />
+              <TrendingUp className="h-4 w-4 text-primary" />
               Weekly Meditation Minutes
             </h3>
-            <div className="rounded-xl border border-violet-100 dark:border-violet-900/50 p-4 bg-card/50">
+            <div className="rounded-xl border border-border p-4 bg-card/50">
               {meditationsThisWeek > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <BarChart data={WEEKLY_MED_MINUTES} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -2281,24 +2284,25 @@ function WellnessStats() {
                         <stop offset="100%" stopColor="#a855f7" />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.02 325)" vertical={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis
                       dataKey="day"
-                      tick={{ fontSize: 11, fill: 'oklch(0.5 0.03 325)' }}
+                      tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 11, fill: 'oklch(0.5 0.03 325)' }}
+                      tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                       tickLine={false}
                       axisLine={false}
                     />
                     <RechartsTooltip
-                      cursor={{ fill: 'oklch(0.94 0.035 325)' }}
+                      cursor={{ fill: 'var(--muted)' }}
                       contentStyle={{
                         borderRadius: 12,
-                        border: '1px solid oklch(0.91 0.02 325)',
-                        background: 'oklch(1 0 0)',
+                        border: '1px solid var(--border)',
+                        background: 'var(--popover)',
+                        color: 'var(--popover-foreground)',
                         fontSize: 12,
                         padding: '8px 12px',
                       }}
@@ -2314,8 +2318,8 @@ function WellnessStats() {
                 </ResponsiveContainer>
               ) : (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center h-[220px]">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                    <Flower2 className="h-6 w-6 text-muted-foreground" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                    <Flower2 className="h-6 w-6 text-gold" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No meditation minutes yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -2327,16 +2331,16 @@ function WellnessStats() {
           </div>
 
           {/* Encouragement banner */}
-          <div className="rounded-2xl bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 border border-violet-100 dark:border-violet-900 p-4 flex items-center gap-3">
+          <div className="rounded-2xl bg-blush/60 border border-primary/20 p-4 flex items-center gap-3">
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="h-11 w-11 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0"
+              className="h-11 w-11 rounded-full bg-plum-soft flex items-center justify-center shrink-0"
             >
-              <Sparkles className="h-5 w-5 text-white" />
+              <Sparkles className="h-5 w-5 text-gold" />
             </motion.div>
-            <div>
-              <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-primary">
                 {currentStreak > 0
                   ? `${currentStreak}-day streak — you're amazing!`
                   : 'Begin your wellness streak today'}
@@ -2362,7 +2366,7 @@ function QuickMoodBanner() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.15 }}
-      className="flex flex-wrap items-center gap-2 rounded-2xl glass border border-violet-200/50 px-4 py-3"
+      className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/80 px-4 py-3 backdrop-blur"
     >
       <span className="text-sm font-medium text-muted-foreground mr-2">Quick check-in:</span>
       {MOODS.map(mood => (
@@ -2370,7 +2374,7 @@ function QuickMoodBanner() {
           key={mood.level}
           onClick={() => setQuickMood(mood.level)}
           className={cn(
-            'h-10 w-10 rounded-full text-xl flex items-center justify-center transition-all hover:scale-110',
+            'h-11 w-11 rounded-full text-xl flex items-center justify-center transition-all hover:scale-110',
             quickMood === mood.level && cn('ring-2 ring-offset-2', mood.ringClass)
           )}
           title={mood.label}
@@ -2384,7 +2388,7 @@ function QuickMoodBanner() {
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0 }}
-            className="text-sm text-violet-700 dark:text-violet-300 font-medium"
+            className="text-sm text-primary font-medium"
           >
             {getMoodByLevel(quickMood).message}
           </motion.span>
@@ -2405,28 +2409,28 @@ export default function MentalWellnessModule() {
       <QuickMoodBanner />
 
       <Tabs defaultValue="meditate" className="w-full">
-        <TabsList className="h-auto flex-wrap bg-violet-50/50 dark:bg-violet-950/30 p-1 gap-1">
-          <TabsTrigger value="meditate" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+        <TabsList className="h-auto flex-wrap bg-muted/60 border border-border p-1 gap-1">
+          <TabsTrigger value="meditate" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Flower2 className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Meditate</span>
           </TabsTrigger>
-          <TabsTrigger value="breathe" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+          <TabsTrigger value="breathe" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Wind className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Breathe</span>
           </TabsTrigger>
-          <TabsTrigger value="journal" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+          <TabsTrigger value="journal" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <BookOpen className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Journal</span>
           </TabsTrigger>
-          <TabsTrigger value="affirm" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+          <TabsTrigger value="affirm" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Quote className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Affirm</span>
           </TabsTrigger>
-          <TabsTrigger value="support" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+          <TabsTrigger value="support" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <LifeBuoy className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Support</span>
           </TabsTrigger>
-          <TabsTrigger value="stats" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+          <TabsTrigger value="stats" className="gap-1.5 min-h-11 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground">
             <Award className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Stats</span>
           </TabsTrigger>

@@ -108,7 +108,7 @@ const STAGES = [
     age: 'Mid 50s+',
     description: 'Years after menopause. Some symptoms ease, but health risks like osteoporosis and heart disease increase.',
     symptoms: ['Decreased symptoms', 'Bone health concerns', 'Heart health risks', 'Weight management'],
-    color: 'from-purple-500 to-indigo-500',
+    color: 'from-purple-500 to-fuchsia-500',
     bgColor: 'bg-purple-50 dark:bg-purple-950/20',
     borderColor: 'border-purple-300 dark:border-purple-800',
     icon: '🌙',
@@ -124,8 +124,8 @@ const MANAGEMENT_TIPS = [
     id: 'diet',
     title: 'Diet & Nutrition',
     icon: Apple,
-    iconColor: 'text-emerald-500',
-    bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
+    iconColor: 'text-primary',
+    bgColor: 'bg-blush',
     tips: [
       'Increase calcium-rich foods: dairy, leafy greens, fortified foods',
       'Add phytoestrogens: soy products, flaxseeds, chickpeas',
@@ -138,8 +138,8 @@ const MANAGEMENT_TIPS = [
     id: 'exercise',
     title: 'Exercise & Movement',
     icon: Dumbbell,
-    iconColor: 'text-orange-500',
-    bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+    iconColor: 'text-primary',
+    bgColor: 'bg-peach-soft',
     tips: [
       'Weight-bearing exercises help maintain bone density',
       'Aim for 150 minutes of moderate aerobic activity per week',
@@ -152,8 +152,8 @@ const MANAGEMENT_TIPS = [
     id: 'stress',
     title: 'Stress Management',
     icon: Leaf,
-    iconColor: 'text-green-500',
-    bgColor: 'bg-green-50 dark:bg-green-950/20',
+    iconColor: 'text-primary',
+    bgColor: 'bg-gold-soft',
     tips: [
       'Practice deep breathing exercises during hot flashes',
       'Meditation for 10-15 minutes daily reduces cortisol levels',
@@ -166,8 +166,8 @@ const MANAGEMENT_TIPS = [
     id: 'sleep',
     title: 'Sleep Hygiene',
     icon: BedDouble,
-    iconColor: 'text-indigo-500',
-    bgColor: 'bg-indigo-50 dark:bg-indigo-950/20',
+    iconColor: 'text-primary',
+    bgColor: 'bg-lilac',
     tips: [
       'Keep bedroom cool (65-68°F) and well-ventilated',
       'Use moisture-wicking bedding and sleepwear',
@@ -180,8 +180,8 @@ const MANAGEMENT_TIPS = [
     id: 'doctor',
     title: 'When to See Your Doctor',
     icon: Stethoscope,
-    iconColor: 'text-red-500',
-    bgColor: 'bg-red-50 dark:bg-red-950/20',
+    iconColor: 'text-medical',
+    bgColor: 'bg-medical-soft',
     tips: [
       'Heavy or prolonged bleeding during perimenopause',
       'Severe hot flashes that disrupt daily life',
@@ -197,8 +197,8 @@ const MANAGEMENT_TIPS = [
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-3 text-xs">
-        <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{label}</p>
+      <div className="bg-card rounded-lg shadow-lg border border-border p-3 text-xs">
+        <p className="font-semibold text-foreground mb-1">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} style={{ color: entry.color }} className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: entry.color }} />
@@ -354,12 +354,15 @@ export default function MenopauseModule() {
         transition={{ duration: 0.4 }}
         className="flex items-center gap-3"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30">
-          <SunDim className="h-5 w-5 text-red-500" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-peach-soft shrink-0">
+          <SunDim className="h-5 w-5 text-primary" />
         </div>
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Menopause Assistant</h2>
+        <div className="min-w-0">
+          <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">Menopause Assistant</h2>
           <p className="text-sm text-muted-foreground">Personalized support for every stage</p>
+          <div className="mt-1.5" aria-hidden="true">
+            <span className="gold-divider text-[10px]"><span>✦</span></span>
+          </div>
         </div>
       </motion.div>
 
@@ -371,7 +374,8 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="card-blush relative overflow-hidden border-0 shadow-sm">
+          <div aria-hidden="true" className="lotus-watermark absolute inset-0" />
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="h-4 w-4 text-red-500" /> Your Menopause Stage
@@ -379,7 +383,7 @@ export default function MenopauseModule() {
             <CardDescription>Select the stage that best describes your current experience</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {STAGES.map((stage) => (
                 <motion.button
                   key={stage.id}
@@ -389,7 +393,7 @@ export default function MenopauseModule() {
                   className={`text-left p-4 rounded-xl border-2 transition-all duration-300 ${
                     selectedStage === stage.id
                       ? `${stage.borderColor} ${stage.bgColor} shadow-md`
-                      : 'border-transparent bg-gray-50 dark:bg-gray-800/40 hover:border-gray-200 dark:hover:border-gray-700'
+                      : 'border-transparent bg-muted/50 hover:border-border'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -405,7 +409,7 @@ export default function MenopauseModule() {
                       <Badge
                         key={symptom}
                         variant="secondary"
-                        className="text-[9px] px-1.5 py-0 h-4 bg-white/60 dark:bg-gray-800/60"
+                        className="chip-soft text-foreground text-[9px] px-2 py-0.5"
                       >
                         {symptom}
                       </Badge>
@@ -436,7 +440,7 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="card-blush border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Thermometer className="h-4 w-4 text-orange-500" /> Daily Symptom Tracker
@@ -444,7 +448,7 @@ export default function MenopauseModule() {
             <CardDescription>Log your symptoms for today</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Hot Flashes Counter */}
               <div className="space-y-3">
                 <Label className="text-sm font-medium flex items-center gap-2">
@@ -487,7 +491,7 @@ export default function MenopauseModule() {
                       className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
                         i < hotFlashes
                           ? i < 3 ? 'bg-amber-400' : i < 6 ? 'bg-orange-500' : 'bg-red-500'
-                          : 'bg-gray-200 dark:bg-gray-700'
+                          : 'bg-muted'
                       }`}
                     />
                   ))}
@@ -507,10 +511,10 @@ export default function MenopauseModule() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10 rounded-full border-indigo-300 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                      className="h-10 w-10 rounded-full border-violet-300 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                       onClick={() => setNightSweats(Math.max(0, nightSweats - 1))}
                     >
-                      <Minus className="h-4 w-4 text-indigo-500" />
+                      <Minus className="h-4 w-4 text-violet-500" />
                     </Button>
                   </motion.div>
                   <motion.div
@@ -519,16 +523,16 @@ export default function MenopauseModule() {
                     animate={{ scale: 1 }}
                     className="flex-1 text-center"
                   >
-                    <span className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">{nightSweats}</span>
+                    <span className="text-4xl font-bold text-violet-600 dark:text-violet-400">{nightSweats}</span>
                   </motion.div>
                   <motion.div whileTap={{ scale: 0.9 }}>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-10 w-10 rounded-full border-indigo-300 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
+                      className="h-10 w-10 rounded-full border-violet-300 dark:border-violet-800 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                       onClick={() => setNightSweats(Math.min(10, nightSweats + 1))}
                     >
-                      <Plus className="h-4 w-4 text-indigo-500" />
+                      <Plus className="h-4 w-4 text-violet-500" />
                     </Button>
                   </motion.div>
                 </div>
@@ -538,8 +542,8 @@ export default function MenopauseModule() {
                       key={i}
                       className={`h-2 flex-1 rounded-full transition-colors duration-300 ${
                         i < nightSweats
-                          ? i < 2 ? 'bg-indigo-300' : i < 5 ? 'bg-indigo-500' : 'bg-indigo-700'
-                          : 'bg-gray-200 dark:bg-gray-700'
+                          ? i < 2 ? 'bg-violet-300' : i < 5 ? 'bg-violet-500' : 'bg-violet-700'
+                          : 'bg-muted'
                       }`}
                     />
                   ))}
@@ -554,7 +558,7 @@ export default function MenopauseModule() {
               {/* Toggle Switches */}
               <div className="md:col-span-2">
                 <Label className="text-sm font-medium mb-3 block">Other Symptoms</Label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   {[
                     { label: 'Mood Changes', icon: '😤', state: moodChanges, setter: setMoodChanges },
                     { label: 'Sleep Issues', icon: '😴', state: sleepIssues, setter: setSleepIssues },
@@ -563,20 +567,20 @@ export default function MenopauseModule() {
                   ].map((item) => (
                     <div
                       key={item.label}
-                      className={`flex items-center justify-between gap-2 p-3 rounded-xl border transition-all duration-200 ${
+                      className={`flex items-center justify-between gap-2 p-3 rounded-xl border transition-all duration-200 min-h-11 ${
                         item.state
                           ? 'border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20'
-                          : 'border-transparent bg-gray-50 dark:bg-gray-800/40'
+                          : 'border-transparent bg-muted/50'
                       }`}
                     >
-                      <span className="text-sm flex items-center gap-1.5">
+                      <span className="text-sm flex items-center gap-1.5 min-w-0">
                         <span>{item.icon}</span>
-                        <span className="text-xs font-medium">{item.label}</span>
+                        <span className="text-xs font-medium truncate">{item.label}</span>
                       </span>
                       <Switch
                         checked={item.state}
                         onCheckedChange={item.setter}
-                        className="data-[state=checked]:bg-red-500"
+                        className="data-[state=checked]:bg-menopause"
                       />
                     </div>
                   ))}
@@ -612,7 +616,7 @@ export default function MenopauseModule() {
                       className={`h-2.5 flex-1 rounded-full transition-colors duration-300 ${
                         level <= anxietyLevel[0]
                           ? level <= 2 ? 'bg-emerald-400' : level <= 3 ? 'bg-amber-400' : 'bg-red-400'
-                          : 'bg-gray-200 dark:bg-gray-700'
+                          : 'bg-muted'
                       }`}
                     />
                   ))}
@@ -655,9 +659,9 @@ export default function MenopauseModule() {
                 <motion.div whileTap={{ scale: 0.95 }}>
                   <Button
                     onClick={handleSave}
-                    className={`gap-2 ${
-                      saved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'
-                    } text-white`}
+                    className={`gap-2 rounded-full px-6 min-h-11 font-semibold ${
+                      saved ? 'bg-emerald-500 hover:bg-emerald-600 text-white' : 'btn-plum'
+                    }`}
                   >
                     {saved ? (
                       <>
@@ -684,21 +688,21 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="border bg-card/90 backdrop-blur-xl shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
+              <div className="min-w-0">
                 <CardTitle className="text-base flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-red-500" /> Symptom Trends
                 </CardTitle>
                 <CardDescription>Visualize your symptoms over time</CardDescription>
               </div>
-              <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+              <div className="flex items-center gap-1 bg-muted rounded-lg p-0.5">
                 <button
                   onClick={() => setTimeRange('weekly')}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  className={`px-3 py-1 min-h-11 rounded-md text-xs font-medium transition-all inline-flex items-center ${
                     timeRange === 'weekly'
-                      ? 'bg-white dark:bg-gray-700 shadow-sm text-red-600 dark:text-red-400'
+                      ? 'bg-card shadow-sm text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -706,9 +710,9 @@ export default function MenopauseModule() {
                 </button>
                 <button
                   onClick={() => setTimeRange('monthly')}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  className={`px-3 py-1 min-h-11 rounded-md text-xs font-medium transition-all inline-flex items-center ${
                     timeRange === 'monthly'
-                      ? 'bg-white dark:bg-gray-700 shadow-sm text-red-600 dark:text-red-400'
+                      ? 'bg-card shadow-sm text-primary'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -719,14 +723,14 @@ export default function MenopauseModule() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="hotflashes" className="space-y-4">
-              <TabsList className="bg-red-50 dark:bg-red-950/30">
-                <TabsTrigger value="hotflashes" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+              <TabsList className="bg-muted/60">
+                <TabsTrigger value="hotflashes" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs min-h-11">
                   🔥 Hot Flashes
                 </TabsTrigger>
-                <TabsTrigger value="sleep" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+                <TabsTrigger value="sleep" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs min-h-11">
                   😴 Sleep Quality
                 </TabsTrigger>
-                <TabsTrigger value="mood" className="data-[state=active]:bg-red-500 data-[state=active]:text-white text-xs">
+                <TabsTrigger value="mood" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-xs min-h-11">
                   😔 Mood Pattern
                 </TabsTrigger>
               </TabsList>
@@ -896,7 +900,7 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="card-peach border-0 shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-500" /> AI-Powered Insights
@@ -905,8 +909,8 @@ export default function MenopauseModule() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                <Sparkles className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold-soft mb-3">
+                <Sparkles className="h-6 w-6 text-gold" />
               </div>
               <p className="text-sm font-medium text-foreground">Personalized insights coming soon</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -933,7 +937,7 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="border bg-card/90 backdrop-blur-xl shadow-sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Heart className="h-4 w-4 text-pink-500" /> Management Tips
@@ -956,7 +960,7 @@ export default function MenopauseModule() {
                 >
                   <AccordionTrigger className="hover:no-underline py-3">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${category.bgColor}`}>
+                      <div className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${category.bgColor}`}>
                         <category.icon className={`h-4 w-4 ${category.iconColor}`} />
                       </div>
                       <span className="text-sm font-medium">{category.title}</span>
@@ -973,7 +977,7 @@ export default function MenopauseModule() {
                           initial={{ opacity: 0, x: -5 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: tipIndex * 0.05 }}
-                          className="flex items-start gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/50"
+                          className="flex items-start gap-2 p-2 rounded-lg bg-muted/50"
                         >
                           <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
                           <p className="text-xs text-muted-foreground leading-relaxed">{tip}</p>
@@ -996,10 +1000,10 @@ export default function MenopauseModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3 }}
       >
-        <Card className="border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl shadow-md">
+        <Card className="border bg-card/90 backdrop-blur-xl shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
+              <div className="min-w-0">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Pill className="h-4 w-4 text-red-500" /> HRT Tracker
                 </CardTitle>
@@ -1008,7 +1012,7 @@ export default function MenopauseModule() {
               <Button
                 onClick={() => setShowHrtForm(!showHrtForm)}
                 size="sm"
-                className="gap-1 bg-red-500 hover:bg-red-600 text-white"
+                className="gap-1 btn-plum rounded-full px-6 min-h-11 font-semibold"
               >
                 {showHrtForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
                 {showHrtForm ? 'Cancel' : 'Add Medication'}
@@ -1078,7 +1082,7 @@ export default function MenopauseModule() {
                             className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
                               newHrt.effectiveness === val
                                 ? `${effectivenessColors[val]} text-white shadow-sm`
-                                : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                                : 'bg-muted text-muted-foreground'
                             }`}
                           >
                             {val}
@@ -1100,7 +1104,7 @@ export default function MenopauseModule() {
                     </div>
                     <Button
                       onClick={addHrtEntry}
-                      className="w-full bg-red-500 hover:bg-red-600 text-white gap-2"
+                      className="w-full btn-plum rounded-full px-6 min-h-11 font-semibold gap-2"
                       disabled={!newHrt.medication || !newHrt.dosage}
                     >
                       <Plus className="h-4 w-4" /> Add Medication
@@ -1125,10 +1129,10 @@ export default function MenopauseModule() {
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 hover:shadow-sm transition-shadow"
+                    className="flex items-start gap-3 sm:gap-4 p-4 rounded-xl border border-border bg-muted/40 hover:shadow-sm transition-shadow"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30 shrink-0">
-                      <Pill className="h-5 w-5 text-red-500" />
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blush shrink-0">
+                      <Pill className="h-5 w-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -1148,7 +1152,7 @@ export default function MenopauseModule() {
                           <span className="text-[10px] font-medium text-muted-foreground">Effectiveness:</span>
                           <span className="text-[10px] font-semibold">{effectivenessLabels[entry.effectiveness]}</span>
                         </div>
-                        <div className="w-full h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full ${effectivenessColors[entry.effectiveness]}`}
                             style={{ width: `${(entry.effectiveness / 5) * 100}%` }}
@@ -1159,7 +1163,7 @@ export default function MenopauseModule() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+                      className="h-11 w-11 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                       onClick={() => removeHrtEntry(entry.id)}
                     >
                       <X className="h-4 w-4" />
@@ -1171,18 +1175,18 @@ export default function MenopauseModule() {
 
             {/* HRT Summary */}
             {hrtEntries.length > 0 && (
-              <div className="mt-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40">
+              <div className="mt-4 p-3 rounded-xl bg-blush/60 border border-border">
                 <div className="flex items-center gap-2 mb-2">
-                  <BarChart3 className="h-4 w-4 text-red-500" />
-                  <span className="text-xs font-semibold text-red-700 dark:text-red-300">HRT Summary</span>
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-semibold text-primary">HRT Summary</span>
                 </div>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <div className="text-lg font-bold text-red-600 dark:text-red-400">{hrtEntries.length}</div>
+                    <div className="text-lg font-bold text-primary">{hrtEntries.length}</div>
                     <div className="text-[10px] text-muted-foreground">Medications</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-red-600 dark:text-red-400">
+                    <div className="text-lg font-bold text-primary">
                       {(hrtEntries.reduce((sum, e) => sum + e.effectiveness, 0) / hrtEntries.length).toFixed(1)}
                     </div>
                     <div className="text-[10px] text-muted-foreground">Avg Effectiveness</div>

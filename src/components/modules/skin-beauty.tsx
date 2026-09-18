@@ -279,7 +279,7 @@ const BEAUTY_ARTICLES = [
     emoji: '💧',
     readTime: '4 min read',
     category: 'Routine',
-    gradient: 'from-sky-400 to-blue-500',
+    gradient: 'from-teal-400 to-teal-600',
   },
   {
     id: 'a5',
@@ -297,7 +297,7 @@ const BEAUTY_ARTICLES = [
     emoji: '🧘‍♀️',
     readTime: '5 min read',
     category: 'Wellness',
-    gradient: 'from-indigo-400 to-purple-500',
+    gradient: 'from-fuchsia-400 to-purple-500',
   },
 ]
 
@@ -397,7 +397,7 @@ function FaceDiagram({ selected, onToggle }: { selected: FaceArea[]; onToggle: (
             key={area.id}
             onClick={() => onToggle(area.id)}
             className={cn(
-              'text-[11px] px-2.5 py-1 rounded-full border transition-all',
+              'text-[11px] px-3 py-1.5 rounded-full border transition-all',
               isSelected(area.id)
                 ? 'bg-rose-500 text-white border-rose-500'
                 : 'bg-muted/50 text-muted-foreground border-border hover:border-rose-300'
@@ -429,16 +429,17 @@ function SkinScoreDashboard() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       {/* Overall Score */}
-      <Card className="lg:col-span-1 overflow-hidden border-rose-200/60 dark:border-rose-900/40">
-        <div className={cn('h-2 bg-gradient-to-r', scoreGradient)} />
-        <CardHeader className="pb-2">
+      <Card className="card-blush lg:col-span-1 relative overflow-hidden">
+        <div aria-hidden className="lotus-watermark absolute inset-0" />
+        <div className={cn('relative h-2 bg-gradient-to-r', scoreGradient)} />
+        <CardHeader className="relative pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-fuchsia-500" />
             Skin Health Score
           </CardTitle>
           <CardDescription>Today&apos;s overall assessment</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center pt-2">
+        <CardContent className="relative flex flex-col items-center pt-2">
           {hasScore && OVERALL_SCORE !== null ? (
             <>
               <motion.div
@@ -474,8 +475,8 @@ function SkinScoreDashboard() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                <Sparkles className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                <Sparkles className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">No score yet</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -516,7 +517,7 @@ function SkinScoreDashboard() {
                         initial={{ width: 0 }}
                         animate={{ width: `${item.value}%` }}
                         transition={{ duration: 0.9, delay: idx * 0.08, ease: 'easeOut' }}
-                        className={cn('h-full rounded-full bg-gradient-to-r', idx === 0 ? 'from-sky-400 to-sky-500' : idx === 1 ? 'from-rose-400 to-rose-500' : idx === 2 ? 'from-amber-400 to-amber-500' : 'from-fuchsia-400 to-fuchsia-500')}
+                        className={cn('h-full rounded-full bg-gradient-to-r', idx === 0 ? 'from-teal-400 to-teal-500' : idx === 1 ? 'from-rose-400 to-rose-500' : idx === 2 ? 'from-amber-400 to-amber-500' : 'from-fuchsia-400 to-fuchsia-500')}
                       />
                     </div>
                   </div>
@@ -530,8 +531,8 @@ function SkinScoreDashboard() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                <Activity className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                <Activity className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">No breakdown yet</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -615,7 +616,7 @@ function DailySkinLog() {
       </Card>
 
       {/* Right: Sliders + Checklist + Notes */}
-      <Card className="lg:col-span-2">
+      <Card className="card-blush lg:col-span-2">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <PenLine className="h-4 w-4 text-fuchsia-500" />
@@ -629,21 +630,21 @@ function DailySkinLog() {
             <div className="space-y-2">
               <Label className="text-xs flex items-center justify-between">
                 <span>New Breakouts</span>
-                <Badge variant="secondary" className="bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{breakouts}</Badge>
+                <Badge variant="secondary" className="chip-soft text-primary">{breakouts}</Badge>
               </Label>
               <Slider value={[breakouts]} onValueChange={(v) => setBreakouts(v[0])} min={0} max={15} step={1} />
             </div>
             <div className="space-y-2">
               <Label className="text-xs flex items-center justify-between">
-                <span className="flex items-center gap-1"><Droplets className="h-3 w-3 text-sky-500" /> Water (glasses)</span>
-                <Badge variant="secondary" className="bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">{water}</Badge>
+                <span className="flex items-center gap-1"><Droplets className="h-3 w-3 text-medical" /> Water (glasses)</span>
+                <Badge variant="secondary" className="chip-soft text-primary">{water}</Badge>
               </Label>
               <Slider value={[water]} onValueChange={(v) => setWater(v[0])} min={0} max={12} step={1} />
             </div>
             <div className="space-y-2">
               <Label className="text-xs flex items-center justify-between">
-                <span className="flex items-center gap-1"><BedDouble className="h-3 w-3 text-indigo-500" /> Sleep (hrs)</span>
-                <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">{sleep}h</Badge>
+                <span className="flex items-center gap-1"><BedDouble className="h-3 w-3 text-plum" /> Sleep (hrs)</span>
+                <Badge variant="secondary" className="bg-lilac text-plum">{sleep}h</Badge>
               </Label>
               <Slider value={[sleep]} onValueChange={(v) => setSleep(v[0])} min={0} max={12} step={1} />
             </div>
@@ -708,10 +709,10 @@ function DailySkinLog() {
           </div>
 
           <div className="flex justify-end gap-2 pt-1">
-            <Button variant="outline" size="sm" onClick={() => { setNotes(''); setAreas([]); setProducts([]) }}>
+            <Button variant="outline" size="sm" className="rounded-full min-h-11 px-5" onClick={() => { setNotes(''); setAreas([]); setProducts([]) }}>
               Reset
             </Button>
-            <Button size="sm" onClick={handleSave} className="bg-gradient-to-r from-rose-500 to-fuchsia-500 hover:opacity-90 text-white">
+            <Button onClick={handleSave} className="btn-plum rounded-full px-6 min-h-11 font-semibold">
               <Check className="h-4 w-4 mr-1.5" /> Save Log
             </Button>
           </div>
@@ -728,7 +729,7 @@ function CycleSkinConnection() {
 
   const metricMeta = {
     breakouts: { label: 'Breakouts', color: '#e11d48', name: 'New Breakouts' },
-    hydration: { label: 'Hydration', color: '#0284c7', name: 'Hydration Level' },
+    hydration: { label: 'Hydration', color: '#0d9488', name: 'Hydration Level' },
     oiliness: { label: 'Oiliness', color: '#d97706', name: 'Oiliness' },
     glow: { label: 'Glow', color: '#c026d3', name: 'Glow / Radiance' },
   }
@@ -747,14 +748,14 @@ function CycleSkinConnection() {
           <div className="bg-card rounded-t-[calc(var(--radius)-2px)]">
             <CardContent className="p-5">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-fuchsia-500 text-white shrink-0">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 to-fuchsia-500 text-white shrink-0">
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <div className="flex-1">
                   {hasData && peakDay ? (
                     <>
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="secondary" className="bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300">AI Insight</Badge>
+                        <Badge variant="secondary" className="chip-soft text-primary">AI Insight</Badge>
                         <span className="text-xs text-muted-foreground">Pattern detected from your logged cycles</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-semibold">
@@ -767,7 +768,7 @@ function CycleSkinConnection() {
                   ) : (
                     <>
                       <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="secondary" className="bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300">AI Insight</Badge>
+                        <Badge variant="secondary" className="chip-soft text-primary">AI Insight</Badge>
                         <span className="text-xs text-muted-foreground">Awaiting data</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-semibold">
@@ -837,8 +838,8 @@ function CycleSkinConnection() {
                     />
                     <RechartsTooltip
                       contentStyle={{
-                        backgroundColor: 'oklch(1 0 0)',
-                        border: '1px solid oklch(0.91 0.02 325)',
+                        backgroundColor: 'var(--card)',
+                        border: '1px solid var(--border)',
                         borderRadius: '8px',
                         fontSize: '12px',
                       }}
@@ -871,8 +872,8 @@ function CycleSkinConnection() {
             </>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 px-4 text-center h-64">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-                <TrendingUp className="h-6 w-6 text-muted-foreground" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                <TrendingUp className="h-6 w-6 text-primary" />
               </div>
               <p className="text-sm font-medium text-foreground">No cycle–skin data yet</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -944,7 +945,7 @@ function SkincareRoutineBuilder() {
   const [activeTab, setActiveTab] = useState<'morning' | 'evening'>('morning')
 
   const categoryMeta: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-    cleanser: { label: 'Cleanser', icon: Droplet, color: 'text-sky-500' },
+    cleanser: { label: 'Cleanser', icon: Droplet, color: 'text-teal-500' },
     toner: { label: 'Toner', icon: Sparkles, color: 'text-purple-500' },
     serum: { label: 'Serum', icon: Heart, color: 'text-rose-500' },
     treatment: { label: 'Treatment', icon: FlaskConical, color: 'text-amber-500' },
@@ -1012,8 +1013,8 @@ function SkincareRoutineBuilder() {
         </Card>
         <Card className="p-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-950/40">
-              <Moon className="h-4 w-4 text-indigo-500" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-lilac">
+              <Moon className="h-4 w-4 text-plum" />
             </div>
             <div>
               <div className="text-lg font-bold">{routine.filter(p => p.timeOfDay === 'evening' || p.timeOfDay === 'both').length}</div>
@@ -1030,7 +1031,7 @@ function SkincareRoutineBuilder() {
               <CardTitle className="text-base">My Skincare Routine</CardTitle>
               <CardDescription>Build and track your daily AM/PM routine</CardDescription>
             </div>
-            <Button size="sm" onClick={() => setShowDatabase(!showDatabase)} className="bg-gradient-to-r from-rose-500 to-fuchsia-500 hover:opacity-90 text-white">
+            <Button onClick={() => setShowDatabase(!showDatabase)} className="btn-plum rounded-full px-6 min-h-11 font-semibold">
               <Plus className="h-4 w-4 mr-1.5" /> Add Product
             </Button>
           </div>
@@ -1058,7 +1059,7 @@ function SkincareRoutineBuilder() {
                   <div className="rounded-xl border border-dashed border-rose-300 dark:border-rose-800 p-3 bg-rose-50/50 dark:bg-rose-950/20">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">Product Database</span>
-                      <Badge variant="secondary" className="text-[10px]">{PRODUCT_DATABASE.length} available</Badge>
+                      <Badge variant="secondary" className="chip-soft text-foreground text-[10px]">{PRODUCT_DATABASE.length} available</Badge>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                       {PRODUCT_DATABASE.map(p => {
@@ -1174,8 +1175,8 @@ function SkinTimeline() {
       <CardContent>
         {SKIN_TIMELINE.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-              <CalendarIcon className="h-6 w-6 text-muted-foreground" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+              <CalendarIcon className="h-6 w-6 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground">No skin logs yet</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1225,8 +1226,8 @@ function AISkinInsights() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-rose-500 text-white">
-          <Brain className="h-4 w-4" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-plum-soft">
+          <Brain className="h-4 w-4 text-white" />
         </div>
         <div>
           <h3 className="text-sm font-semibold">AI Skin Insights</h3>
@@ -1236,8 +1237,8 @@ function AISkinInsights() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {AI_INSIGHTS.length === 0 ? (
           <div className="col-span-full flex flex-col items-center justify-center py-10 px-4 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
-              <Brain className="h-6 w-6 text-muted-foreground" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+              <Brain className="h-6 w-6 text-primary" />
             </div>
             <p className="text-sm font-medium text-foreground">No personalized insights yet</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1298,8 +1299,8 @@ function BeautyTips() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 mb-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white">
-          <BookOpen className="h-4 w-4" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blush">
+          <BookOpen className="h-4 w-4 text-primary" />
         </div>
         <div>
           <h3 className="text-sm font-semibold">Beauty Tips & Articles</h3>
@@ -1321,7 +1322,7 @@ function BeautyTips() {
               </div>
               <CardContent className="p-3.5">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{article.category}</Badge>
+                  <Badge variant="secondary" className="chip-soft text-primary text-[9px] h-4 px-1.5">{article.category}</Badge>
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                     <Clock className="h-2.5 w-2.5" /> {article.readTime}
                   </span>
@@ -1353,18 +1354,19 @@ export default function SkinBeautyModule() {
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 via-fuchsia-500 to-pink-500 text-white shadow-lg shadow-rose-500/30">
-            <Sparkles className="h-6 w-6" />
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blush">
+            <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-rose-500 via-fuchsia-500 to-purple-500 bg-clip-text text-transparent">
+          <div className="min-w-0">
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
               Skin & Beauty
             </h1>
+            <span aria-hidden className="gold-divider text-[10px]"><span>✦</span></span>
             <p className="text-sm text-muted-foreground">Track hormonal acne, sync skincare with your cycle, and uncover your glow</p>
           </div>
         </div>
-        <Badge variant="secondary" className="self-start sm:self-auto bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 gap-1">
+        <Badge variant="secondary" className="self-start sm:self-auto chip-soft text-primary gap-1">
           <Heart className="h-3 w-3" /> Cycle-Synced
         </Badge>
       </motion.div>

@@ -1,0 +1,751 @@
+     1→'use client'
+     2→
+     3→import React, { useState } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  Crown,
+     7→  Sparkles,
+     8→  Check,
+     9→  X,
+    10→  Star,
+    11→  Shield,
+    12→  Lock,
+    13→  Brain,
+    14→  TrendingUp,
+    15→  Salad,
+    16→  Dumbbell,
+    17→  Moon,
+    18→  Sparkle,
+    19→  Stethoscope,
+    20→  FileBarChart,
+    21→  Ban,
+    22→  Headphones,
+    23→  Heart,
+    24→  Quote,
+    25→  ChevronDown,
+    26→  Award,
+    27→  Users,
+    28→  Zap,
+    29→  Gem,
+    30→  ArrowRight,
+    31→  Gift,
+    32→  CreditCard,
+    33→  RefreshCcw,
+    34→} from 'lucide-react'
+    35→import {
+    36→  Card,
+    37→  CardContent,
+    38→  CardDescription,
+    39→  CardHeader,
+    40→  CardTitle,
+    41→  CardFooter,
+    42→} from '@/components/ui/card'
+    43→import { Badge } from '@/components/ui/badge'
+    44→import { Button } from '@/components/ui/button'
+    45→import {
+    46→  Accordion,
+    47→  AccordionContent,
+    48→  AccordionItem,
+    49→  AccordionTrigger,
+    50→} from '@/components/ui/accordion'
+    51→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    52→import { Separator } from '@/components/ui/separator'
+    53→import { cn } from '@/lib/utils'
+    54→import { useAppStore } from '@/lib/store'
+    55→import PaypalCheckoutModal from '@/components/premium/paypal-checkout-modal'
+    56→
+    57→// ─── Types ──────────────────────────────────────────────────────────────────
+    58→
+    59→type BillingCycle = 'monthly' | 'yearly'
+    60→
+    61→interface Plan {
+    62→  id: 'free' | 'premium' | 'plus'
+    63→  name: string
+    64→  tagline: string
+    65→  monthlyPrice: number
+    66→  yearlyPrice: number
+    67→  icon: React.ElementType
+    68→  gradient: string
+    69→  borderColor: string
+    70→  badgeText?: string
+    71→  isPopular?: boolean
+    72→  features: { text: string; included: boolean }[]
+    73→  cta: string
+    74→}
+    75→
+    76→interface Feature {
+    77→  id: string
+    78→  title: string
+    79→  description: string
+    80→  icon: React.ElementType
+    81→  gradient: string
+    82→}
+    83→
+    84→interface FAQItem {
+    85→  id: string
+    86→  question: string
+    87→  answer: string
+    88→}
+    89→
+    90→// ─── Data ───────────────────────────────────────────────────────────────────
+    91→
+    92→const PLANS: Plan[] = [
+    93→  {
+    94→    id: 'free',
+    95→    name: 'Free',
+    96→    tagline: 'Start your wellness journey',
+    97→    monthlyPrice: 0,
+    98→    yearlyPrice: 0,
+    99→    icon: Heart,
+   100→    gradient: 'from-slate-400 to-slate-600',
+   101→    borderColor: 'border-slate-200 dark:border-slate-800',
+   102→    cta: 'Current Plan',
+   103→    features: [
+   104→      { text: 'Basic period tracking', included: true },
+   105→      { text: 'Mood & symptom logging', included: true },
+   106→      { text: 'Community access', included: true },
+   107→      { text: '7-day history', included: true },
+   108→      { text: 'AI Health Coach (3 msgs/day)', included: false },
+   109→      { text: 'Hormone Intelligence', included: false },
+   110→      { text: 'Advanced predictions', included: false },
+   111→      { text: 'Unlimited reports', included: false },
+   112→      { text: 'Ad-free experience', included: false },
+   113→      { text: 'Doctor consultations', included: false },
+   114→    ],
+   115→  },
+   116→  {
+   117→    id: 'premium',
+   118→    name: 'Premium',
+   119→    tagline: 'Unlock AI-powered insights',
+   120→    monthlyPrice: 299,
+   121→    yearlyPrice: 2499,
+   122→    icon: Crown,
+   123→    gradient: 'from-amber-400 via-yellow-500 to-orange-500',
+   124→    borderColor: 'border-amber-400 dark:border-amber-600',
+   125→    badgeText: 'Most Popular',
+   126→    isPopular: true,
+   127→    cta: 'Choose Premium',
+   128→    features: [
+   129→      { text: 'Everything in Free', included: true },
+   130→      { text: 'AI Health Coach (unlimited)', included: true },
+   131→      { text: 'Hormone Intelligence', included: true },
+   132→      { text: 'Advanced cycle & fertility predictions', included: true },
+   133→      { text: 'Unlimited reports & exports', included: true },
+   134→      { text: 'Skin & Beauty tracker', included: true },
+   135→      { text: 'Ad-free experience', included: true },
+   136→      { text: 'Meditation library', included: true },
+   137→      { text: 'Specialist consultations', included: false },
+   138→      { text: 'Personalized diet & workout plans', included: false },
+   139→    ],
+   140→  },
+   141→  {
+   142→    id: 'plus',
+   143→    name: 'Premium Plus',
+   144→    tagline: 'Complete health ecosystem',
+   145→    monthlyPrice: 599,
+   146→    yearlyPrice: 4999,
+   147→    icon: Gem,
+   148→    gradient: 'from-purple-500 via-fuchsia-500 to-pink-500',
+   149→    borderColor: 'border-fuchsia-300 dark:border-fuchsia-700',
+   150→    cta: 'Choose Premium Plus',
+   151→    features: [
+   152→      { text: 'Everything in Premium', included: true },
+   153→      { text: 'Telehealth & video consults', included: true },
+   154→      { text: 'Specialist consultations (4/month)', included: true },
+   155→      { text: 'Personalized diet plans', included: true },
+   156→      { text: 'Custom workout programs', included: true },
+   157→      { text: 'Priority 24/7 support', included: true },
+   158→      { text: 'Lab report analysis', included: true },
+   159→      { text: 'Family sharing (up to 3)', included: true },
+   160→      { text: 'Wearable device integration', included: true },
+   161→      { text: 'Quarterly health reviews', included: true },
+   162→    ],
+   163→  },
+   164→]
+   165→
+   166→const FEATURES: Feature[] = [
+   167→  { id: 'f1', title: 'AI Health Coach', description: 'Unlimited 24/7 personalized guidance from your AI companion', icon: Brain, gradient: 'from-rose-400 to-pink-500' },
+   168→  { id: 'f2', title: 'Advanced Hormone Predictions', description: 'Forecast your cycle, mood, and symptoms with 95% accuracy', icon: TrendingUp, gradient: 'from-amber-400 to-orange-500' },
+   169→  { id: 'f3', title: 'Personalized Diet Plans', description: 'Custom nutrition plans synced to your cycle & conditions', icon: Salad, gradient: 'from-emerald-400 to-teal-500' },
+   170→  { id: 'f4', title: 'Cycle-Synced Workouts', description: 'Exercise routines that adapt to your hormone phases', icon: Dumbbell, gradient: 'from-purple-400 to-violet-500' },
+   171→  { id: 'f5', title: 'Meditation Library', description: '200+ guided sessions for stress, sleep, and hormonal balance', icon: Moon, gradient: 'from-indigo-400 to-blue-500' },
+   172→  { id: 'f6', title: 'Skin & Beauty Tracking', description: 'AI-powered acne tracking with cycle correlation insights', icon: Sparkle, gradient: 'from-fuchsia-400 to-pink-500' },
+   173→  { id: 'f7', title: 'Doctor Consultations', description: 'Video consults with verified gynecologists & specialists', icon: Stethoscope, gradient: 'from-teal-400 to-cyan-500' },
+   174→  { id: 'f8', title: 'Advanced Reports', description: 'Comprehensive health reports you can share with your doctor', icon: FileBarChart, gradient: 'from-sky-400 to-blue-500' },
+   175→  { id: 'f9', title: 'Ad-Free Experience', description: 'Enjoy an uninterrupted, distraction-free wellness journey', icon: Ban, gradient: 'from-slate-400 to-gray-500' },
+   176→  { id: 'f10', title: 'Priority Support', description: '24/7 dedicated support with average 2-minute response', icon: Headphones, gradient: 'from-rose-400 to-red-500' },
+   177→]
+   178→
+   179→// NOTE: Demo / placeholder testimonials were removed so the marketing page no
+   180→// longer shows fabricated member names, ages, locations, or quotes. When real
+   181→// customer testimonials are collected (with consent), populate this array from
+   182→// the API and the Testimonials section below will render them.
+   183→const TESTIMONIALS: {
+   184→  id: string
+   185→  name: string
+   186→  age: number
+   187→  location: string
+   188→  avatar: string
+   189→  initials: string
+   190→  rating: number
+   191→  quote: string
+   192→  condition: string
+   193→  plan: string
+   194→}[] = []
+   195→
+   196→const FAQS: FAQItem[] = [
+   197→  {
+   198→    id: 'faq1',
+   199→    question: 'Can I cancel my subscription anytime?',
+   200→    answer: 'Absolutely. You can cancel anytime from Settings → Subscription. You\'ll keep access to premium features until the end of your billing period, and your account automatically reverts to the Free plan after that — no questions asked, no cancellation fees.',
+   201→  },
+   202→  {
+   203→    id: 'faq2',
+   204→    question: 'What payment methods do you accept?',
+   205→    answer: 'We accept all major credit and debit cards (Visa, Mastercard, RuPay, American Express), UPI (Google Pay, PhonePe, Paytm), net banking from 50+ Indian banks, and Apple Pay / Google Pay. Annual plans can also be paid via EMI on select cards.',
+   206→  },
+   207→  {
+   208→    id: 'faq3',
+   209→    question: 'Is my health data secure and private?',
+   210→    answer: 'Your privacy is our top priority. All data is encrypted end-to-end (AES-256) in transit and at rest. We are HIPAA-compliant, GDPR-compliant, and ISO 27001 certified. We never sell your data to third parties, and you can export or delete all your data anytime.',
+   211→  },
+   212→  {
+   213→    id: 'faq4',
+   214→    question: 'Can I share my subscription with family?',
+   215→    answer: 'Premium Plus subscribers can share their plan with up to 2 additional family members (total 3 users). Each member gets their own private account with separate data — only the subscription is shared. Premium and Free plans are per-user only.',
+   216→  },
+   217→  {
+   218→    id: 'faq5',
+   219→    question: 'What\'s the difference between Premium and Premium Plus?',
+   220→    answer: 'Premium gives you full access to AI features, predictions, reports, and ad-free experience. Premium Plus adds telehealth (video consults with verified doctors), 4 specialist consultations per month, personalized diet & workout plans, lab report analysis, family sharing, and priority support — essentially a complete health ecosystem with human experts.',
+   221→  },
+   222→  {
+   223→    id: 'faq6',
+   224→    question: 'What is your refund policy?',
+   225→    answer: 'We offer a 7-day money-back guarantee on all annual plans. If you\'re not satisfied within the first 7 days, contact support for a full refund — no questions asked. Monthly plans are non-refundable once the billing cycle starts, but you can cancel anytime to prevent renewal.',
+   226→  },
+   227→]
+   228→
+   229→const TRUST_BADGES = [
+   230→  { id: 'b1', label: 'HIPAA Compliant', icon: Shield, description: 'US health privacy standards' },
+   231→  { id: 'b2', label: 'GDPR Certified', icon: Lock, description: 'EU data protection' },
+   232→  { id: 'b3', label: 'End-to-End Encrypted', icon: Lock, description: 'AES-256 encryption' },
+   233→  { id: 'b4', label: 'ISO 27001', icon: Award, description: 'Info security certified' },
+   234→  { id: 'b5', label: 'DPDP Act 2023', icon: Shield, description: 'India data protection' },
+   235→  { id: 'b6', label: 'SOC 2 Type II', icon: Check, description: 'Audited security' },
+   236→]
+   237→
+   238→// ─── Active Subscription Banner ─────────────────────────────────────────────
+   239→
+   240→function PremiumActiveBanner() {
+   241→  return (
+   242→    <motion.div
+   243→      initial={{ opacity: 0, y: -8 }}
+   244→      animate={{ opacity: 1, y: 0 }}
+   245→      className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-3"
+   246→    >
+   247→      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/30">
+   248→        <Check className="h-4 w-4" />
+   249→      </div>
+   250→      <div className="flex-1 min-w-0">
+   251→        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+   252→          Premium is active
+   253→          <Badge className="bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white border-0 text-[9px] h-4 px-1.5">
+   254→            PAYPAL SANDBOX
+   255→          </Badge>
+   256→        </p>
+   257→        <p className="text-xs text-muted-foreground">
+   258→          Your subscription was recorded successfully — premium features are unlocked on every device.
+   259→        </p>
+   260→      </div>
+   261→    </motion.div>
+   262→  )
+   263→}
+   264→
+   265→// ─── Plan Card Component ────────────────────────────────────────────────────
+   266→
+   267→function PlanCard({ plan, billingCycle, onChoosePlan }: { plan: Plan; billingCycle: BillingCycle; onChoosePlan: (plan: Plan) => void }) {
+   268→  const hasPremium = useAppStore((s) => s.hasPremium())
+   269→  const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
+   270→  const isFree = plan.id === 'free'
+   271→  // User is on "free" if they don't have premium; otherwise they're on "premium"
+   272→  const isCurrentPlan = hasPremium ? plan.id === 'premium' : plan.id === 'free'
+   273→  const yearlyPerMonth = plan.yearlyPrice / 12
+   274→  const savings = plan.monthlyPrice > 0 && plan.yearlyPrice > 0
+   275→    ? Math.round(((plan.monthlyPrice * 12 - plan.yearlyPrice) / (plan.monthlyPrice * 12)) * 100)
+   276→    : 0
+   277→
+   278→  return (
+   279→    <motion.div
+   280→      initial={{ opacity: 0, y: 20 }}
+   281→      whileInView={{ opacity: 1, y: 0 }}
+   282→      viewport={{ once: true }}
+   283→      transition={{ duration: 0.4 }}
+   284→      whileHover={{ y: -4 }}
+   285→      className={cn('relative', plan.isPopular && 'lg:-mt-4 lg:mb-0')}
+   286→    >
+   287→      <Card className={cn(
+   288→        'relative h-full overflow-hidden transition-all',
+   289→        plan.isPopular
+   290→          ? 'border-amber-400 dark:border-amber-600 shadow-xl shadow-amber-500/20 ring-2 ring-amber-400/50'
+   291→          : plan.borderColor
+   292→      )}>
+   293→        {/* Popular badge */}
+   294→        {plan.isPopular && (
+   295→          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+   296→            <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500 px-4 py-1.5 text-xs font-bold text-white shadow-lg">
+   297→              <Sparkles className="h-3 w-3" />
+   298→              {plan.badgeText}
+   299→            </div>
+   300→          </div>
+   301→        )}
+   302→
+   303→        {/* Gradient top */}
+   304→        <div className={cn('h-2 bg-gradient-to-r', plan.gradient)} />
+   305→
+   306→        <CardHeader className="pt-5 pb-3">
+   307→          <div className="flex items-center justify-between">
+   308→            <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-md', plan.gradient)}>
+   309→              <plan.icon className="h-5 w-5" />
+   310→            </div>
+   311→            {savings > 0 && billingCycle === 'yearly' && (
+   312→              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 gap-1">
+   313→                <Gift className="h-3 w-3" /> Save {savings}%
+   314→              </Badge>
+   315→            )}
+   316→          </div>
+   317→          <div className="mt-2">
+   318→            <CardTitle className="text-xl">{plan.name}</CardTitle>
+   319→            <CardDescription>{plan.tagline}</CardDescription>
+   320→          </div>
+   321→        </CardHeader>
+   322→
+   323→        <CardContent className="pb-3">
+   324→          {/* Price */}
+   325→          <div className="mb-4">
+   326→            {isFree ? (
+   327→              <div className="flex items-baseline gap-1">
+   328→                <span className="text-4xl font-bold">₹0</span>
+   329→                <span className="text-sm text-muted-foreground">forever</span>
+   330→              </div>
+   331→            ) : (
+   332→              <div>
+   333→                <div className="flex items-baseline gap-1">
+   334→                  <span className="text-4xl font-bold">₹{price.toLocaleString('en-IN')}</span>
+   335→                  <span className="text-sm text-muted-foreground">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+   336→                </div>
+   337→                {billingCycle === 'yearly' && (
+   338→                  <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+   339→                    Just ₹{yearlyPerMonth.toFixed(0)}/month · billed annually
+   340→                  </p>
+   341→                )}
+   342→              </div>
+   343→            )}
+   344→          </div>
+   345→
+   346→          <Separator className="mb-4" />
+   347→
+   348→          {/* Features */}
+   349→          <ul className="space-y-2.5">
+   350→            {plan.features.map((feature) => (
+   351→              <li key={feature.text} className="flex items-start gap-2.5">
+   352→                <div className={cn(
+   353→                  'flex h-4 w-4 items-center justify-center rounded-full shrink-0 mt-0.5',
+   354→                  feature.included
+   355→                    ? plan.isPopular ? 'bg-amber-100 dark:bg-amber-950/50' : 'bg-emerald-100 dark:bg-emerald-950/40'
+   356→                    : 'bg-muted/50'
+   357→                )}>
+   358→                  {feature.included ? (
+   359→                    <Check className={cn('h-3 w-3', plan.isPopular ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')} />
+   360→                  ) : (
+   361→                    <X className="h-2.5 w-2.5 text-muted-foreground" />
+   362→                  )}
+   363→                </div>
+   364→                <span className={cn(
+   365→                  'text-sm leading-snug',
+   366→                  feature.included ? 'text-foreground' : 'text-muted-foreground/60 line-through'
+   367→                )}>
+   368→                  {feature.text}
+   369→                </span>
+   370→              </li>
+   371→            ))}
+   372→          </ul>
+   373→        </CardContent>
+   374→
+   375→        <CardFooter className="pt-0">
+   376→          <Button
+   377→            className={cn(
+   378→              'w-full',
+   379→              isCurrentPlan
+   380→                ? 'bg-muted text-muted-foreground'
+   381→                : plan.isPopular
+   382→                ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:opacity-90 text-white shadow-md shadow-amber-500/30'
+   383→                : plan.id === 'plus'
+   384→                ? 'bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 hover:opacity-90 text-white shadow-md shadow-fuchsia-500/30'
+   385→                : 'bg-foreground text-background hover:bg-foreground/90'
+   386→            )}
+   387→            disabled={isCurrentPlan}
+   388→            onClick={() => {
+   389→              if (isCurrentPlan) return
+   390→              onChoosePlan(plan)
+   391→            }}
+   392→          >
+   393→            {isCurrentPlan ? (
+   394→              <>
+   395→                <Check className="h-4 w-4 mr-1.5" /> Current Plan
+   396→              </>
+   397→            ) : (
+   398→              <>
+   399→                {plan.cta}
+   400→                <ArrowRight className="h-4 w-4 ml-1.5" />
+   401→              </>
+   402→            )}
+   403→          </Button>
+   404→        </CardFooter>
+   405→      </Card>
+   406→    </motion.div>
+   407→  )
+   408→}
+   409→
+   410→// ─── Main Module ────────────────────────────────────────────────────────────
+   411→
+   412→export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void }) {
+   413→  const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
+   414→  const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null)
+   415→  const premiumPlan = PLANS.find(p => p.id === 'premium')
+   416→  const userProfile = useAppStore((s) => s.userProfile)
+   417→  const hasPremium = useAppStore((s) => s.hasPremium())
+   418→
+   419→  // Persist the completed (sandbox) checkout so premium survives page reloads.
+   420→  const persistSubscription = (plan: Plan, transactionId?: string) => {
+   421→    if (!userProfile?.id) return
+   422→    const amount = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
+   423→    const gst = Math.round(amount * 0.18 * 100) / 100
+   424→    void fetch('/api/subscription', {
+   425→      method: 'POST',
+   426→      headers: { 'Content-Type': 'application/json' },
+   427→      body: JSON.stringify({
+   428→        userId: userProfile.id,
+   429→        plan: billingCycle,
+   430→        tier: plan.id === 'plus' ? 'plus' : 'premium',
+   431→        amount,
+   432→        gst,
+   433→        total: Math.round((amount + gst) * 100) / 100,
+   434→        paymentMethod: 'paypal_sandbox',
+   435→        transactionId,
+   436→      }),
+   437→    }).catch(() => {
+   438→      // best-effort — the UI already granted premium
+   439→    })
+   440→  }
+   441→
+   442→  return (
+   443→    <div className="min-h-screen">
+   444→      {/* ─── Active subscription banner ────────────────────────────── */}
+   445→      {hasPremium && <PremiumActiveBanner />}
+   446→
+   447→      {/* ─── Hero ──────────────────────────────────────────────────── */}
+   448→      <motion.section
+   449→        initial={{ opacity: 0 }}
+   450→        animate={{ opacity: 1 }}
+   451→        className="relative overflow-hidden rounded-3xl mb-8"
+   452→      >
+   453→        {/* Gradient background */}
+   454→        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-600" />
+   455→        <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/40 via-fuchsia-500/30 to-pink-500/40" />
+   456→
+   457→        {/* Decorative blurs */}
+   458→        <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-yellow-300/40 blur-3xl" />
+   459→        <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-purple-400/40 blur-3xl" />
+   460→
+   461→        <div className="relative z-10 p-6 sm:p-8 lg:p-12 text-center text-white">
+   462→          <motion.div
+   463→            initial={{ scale: 0, rotate: -180 }}
+   464→            animate={{ scale: 1, rotate: 0 }}
+   465→            transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.2 }}
+   466→            className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-sm font-semibold mb-5 border border-white/30"
+   467→          >
+   468→            <Crown className="h-4 w-4" />
+   469→            Nuvia Premium
+   470→          </motion.div>
+   471→
+   472→          <motion.h1
+   473→            initial={{ opacity: 0, y: 20 }}
+   474→            animate={{ opacity: 1, y: 0 }}
+   475→            transition={{ delay: 0.3 }}
+   476→            className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 drop-shadow-lg"
+   477→          >
+   478→            Unlock Your Full<br />Health Potential
+   479→          </motion.h1>
+   480→
+   481→          <motion.p
+   482→            initial={{ opacity: 0, y: 20 }}
+   483→            animate={{ opacity: 1, y: 0 }}
+   484→            transition={{ delay: 0.4 }}
+   485→            className="text-base sm:text-lg text-white/90 max-w-2xl mx-auto mb-6 leading-relaxed"
+   486→          >
+   487→            Transform your wellbeing with AI-powered cycle intelligence, hormone predictions, and 24/7 expert care.
+   488→          </motion.p>
+   489→
+   490→          <motion.div
+   491→            initial={{ opacity: 0, y: 20 }}
+   492→            animate={{ opacity: 1, y: 0 }}
+   493→            transition={{ delay: 0.5 }}
+   494→            className="flex flex-wrap items-center justify-center gap-6 text-sm text-white/90"
+   495→          >
+   496→            <span className="flex items-center gap-1.5">
+   497→              <Sparkles className="h-4 w-4" />
+   498→              AI-powered cycle intelligence
+   499→            </span>
+   500→            <span className="flex items-center gap-1.5">
+   501→              <Heart className="h-4 w-4" />
+   502→              Built for every phase of your journey
+   503→            </span>
+   504→            <span className="flex items-center gap-1.5">
+   505→              <Shield className="h-4 w-4" />
+   506→              HIPAA secured
+   507→            </span>
+   508→          </motion.div>
+   509→        </div>
+   510→      </motion.section>
+   511→
+   512→      {/* ─── Plan Comparison ───────────────────────────────────────── */}
+   513→      <section className="mb-12">
+   514→        <div className="text-center mb-6">
+   515→          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Choose Your Plan</h2>
+   516→          <p className="text-muted-foreground text-sm">Cancel anytime · 7-day money-back guarantee on annual plans</p>
+   517→        </div>
+   518→
+   519→        {/* Billing toggle */}
+   520→        <div className="flex items-center justify-center mb-8">
+   521→          <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/60 border border-border">
+   522→            <button
+   523→              onClick={() => setBillingCycle('monthly')}
+   524→              className={cn(
+   525→                'px-5 py-2 rounded-full text-sm font-medium transition-all',
+   526→                billingCycle === 'monthly' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+   527→              )}
+   528→            >
+   529→              Monthly
+   530→            </button>
+   531→            <button
+   532→              onClick={() => setBillingCycle('yearly')}
+   533→              className={cn(
+   534→                'px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2',
+   535→                billingCycle === 'yearly' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+   536→              )}
+   537→            >
+   538→              Yearly
+   539→              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] h-4 px-1.5">
+   540→                Save 30%
+   541→              </Badge>
+   542→            </button>
+   543→          </div>
+   544→        </div>
+   545→
+   546→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-5xl mx-auto pt-6">
+   547→          {PLANS.map(plan => (
+   548→            <PlanCard key={plan.id} plan={plan} billingCycle={billingCycle} onChoosePlan={setCheckoutPlan} />
+   549→          ))}
+   550→        </div>
+   551→      </section>
+   552→
+   553→      {/* ─── Feature Showcase ──────────────────────────────────────── */}
+   554→      <section className="mb-12">
+   555→        <div className="text-center mb-8">
+   556→          <Badge variant="secondary" className="mb-2 bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+   557→            <Zap className="h-3 w-3 mr-1" /> Premium Features
+   558→          </Badge>
+   559→          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Everything You Need to Thrive</h2>
+   560→          <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+   561→            A complete women's health ecosystem powered by AI, doctors, and evidence-based science.
+   562→          </p>
+   563→        </div>
+   564→
+   565→        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+   566→          {FEATURES.map((feature, idx) => (
+   567→            <motion.div
+   568→              key={feature.id}
+   569→              initial={{ opacity: 0, y: 15 }}
+   570→              whileInView={{ opacity: 1, y: 0 }}
+   571→              viewport={{ once: true }}
+   572→              transition={{ delay: idx * 0.05 }}
+   573→              whileHover={{ y: -3 }}
+   574→            >
+   575→              <Card className="h-full hover:shadow-md transition-shadow">
+   576→                <CardContent className="p-4">
+   577→                  <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm mb-3', feature.gradient)}>
+   578→                    <feature.icon className="h-5 w-5" />
+   579→                  </div>
+   580→                  <h3 className="text-sm font-semibold mb-1">{feature.title}</h3>
+   581→                  <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+   582→                </CardContent>
+   583→              </Card>
+   584→            </motion.div>
+   585→          ))}
+   586→        </div>
+   587→      </section>
+   588→
+   589→      {/* ─── Testimonials ──────────────────────────────────────────── */}
+   590→      {/* Section intentionally hidden when TESTIMONIALS is empty (no fabricated
+   591→          member names / quotes / ages / locations). Restores automatically once
+   592→          real, consented testimonials are loaded from the API. */}
+   593→      {TESTIMONIALS.length > 0 && (
+   594→      <section className="mb-12">
+   595→        <div className="text-center mb-8">
+   596→          <Badge variant="secondary" className="mb-2 bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+   597→            <Heart className="h-3 w-3 mr-1" /> Loved by Thousands
+   598→          </Badge>
+   599→          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Stories From Our Community</h2>
+   600→          <p className="text-muted-foreground text-sm">Real women, real transformations.</p>
+   601→        </div>
+   602→
+   603→        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+   604→          {TESTIMONIALS.map((t, idx) => (
+   605→            <motion.div
+   606→              key={t.id}
+   607→              initial={{ opacity: 0, y: 20 }}
+   608→              whileInView={{ opacity: 1, y: 0 }}
+   609→              viewport={{ once: true }}
+   610→              transition={{ delay: idx * 0.1 }}
+   611→            >
+   612→              <Card className="h-full overflow-hidden hover:shadow-md transition-shadow">
+   613→                <CardContent className="p-5 flex flex-col h-full">
+   614→                  <Quote className="h-7 w-7 text-amber-400/60 mb-2" />
+   615→                  <div className="flex items-center gap-0.5 mb-3">
+   616→                    {[1, 2, 3, 4, 5].map(i => (
+   617→                      <Star key={i} className={cn('h-3.5 w-3.5', i <= t.rating ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/30')} />
+   618→                    ))}
+   619→                  </div>
+   620→                  <p className="text-sm text-foreground leading-relaxed flex-1 italic">"{t.quote}"</p>
+   621→                  <Separator className="my-4" />
+   622→                  <div className="flex items-center gap-3">
+   623→                    <Avatar className="h-10 w-10 border-2 border-amber-200 dark:border-amber-800">
+   624→                      <AvatarFallback className={cn('text-xs font-semibold bg-gradient-to-br text-white', t.plan === 'Premium Plus' ? 'from-purple-500 to-fuchsia-500' : 'from-amber-400 to-orange-500')}>
+   625→                        {t.initials}
+   626→                      </AvatarFallback>
+   627→                    </Avatar>
+   628→                    <div className="flex-1 min-w-0">
+   629→                      <div className="flex items-center gap-1.5">
+   630→                        <span className="text-sm font-semibold">{t.name}</span>
+   631→                        <Badge variant="secondary" className={cn('text-[9px] h-4 px-1.5 gap-0.5', t.plan === 'Premium Plus' ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300')}>
+   632→                          <Crown className="h-2.5 w-2.5" /> {t.plan}
+   633→                        </Badge>
+   634→                      </div>
+   635→                      <div className="text-xs text-muted-foreground">{t.age} · {t.location} · {t.condition}</div>
+   636→                    </div>
+   637→                  </div>
+   638→                </CardContent>
+   639→              </Card>
+   640→            </motion.div>
+   641→          ))}
+   642→        </div>
+   643→      </section>
+   644→      )}
+   645→
+   646→      {/* ─── FAQ ───────────────────────────────────────────────────── */}
+   647→      <section className="mb-12 max-w-3xl mx-auto">
+   648→        <div className="text-center mb-8">
+   649→          <Badge variant="secondary" className="mb-2 bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+   650→            <Sparkles className="h-3 w-3 mr-1" /> Got Questions?
+   651→          </Badge>
+   652→          <h2 className="text-2xl sm:text-3xl font-bold">Frequently Asked Questions</h2>
+   653→        </div>
+   654→
+   655→        <Card>
+   656→          <CardContent className="p-2">
+   657→            <Accordion type="single" collapsible className="w-full">
+   658→              {FAQS.map(faq => (
+   659→                <AccordionItem key={faq.id} value={faq.id} className="border-b last:border-0">
+   660→                  <AccordionTrigger className="text-sm font-medium hover:no-underline px-3 py-3 text-left">
+   661→                    {faq.question}
+   662→                  </AccordionTrigger>
+   663→                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed px-3 pb-4">
+   664→                    {faq.answer}
+   665→                  </AccordionContent>
+   666→                </AccordionItem>
+   667→              ))}
+   668→            </Accordion>
+   669→          </CardContent>
+   670→        </Card>
+   671→      </section>
+   672→
+   673→      {/* ─── Trust Badges ──────────────────────────────────────────── */}
+   674→      <section className="mb-8">
+   675→        <Card className="overflow-hidden border-amber-200/60 dark:border-amber-900/40">
+   676→          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20">
+   677→            <CardContent className="p-5">
+   678→              <div className="text-center mb-4">
+   679→                <h3 className="text-base font-semibold flex items-center justify-center gap-2">
+   680→                  <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+   681→                  Your Health Data is Protected
+   682→                </h3>
+   683→                <p className="text-xs text-muted-foreground mt-1">Industry-leading security & compliance standards</p>
+   684→              </div>
+   685→              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+   686→                {TRUST_BADGES.map(badge => (
+   687→                  <div key={badge.id} className="flex flex-col items-center text-center p-3 rounded-lg bg-card/60 border border-border/50 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+   688→                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 mb-2">
+   689→                      <badge.icon className="h-4 w-4" />
+   690→                    </div>
+   691→                    <span className="text-xs font-semibold leading-tight">{badge.label}</span>
+   692→                    <span className="text-[10px] text-muted-foreground mt-0.5">{badge.description}</span>
+   693→                  </div>
+   694→                ))}
+   695→              </div>
+   696→            </CardContent>
+   697→          </div>
+   698→        </Card>
+   699→      </section>
+   700→
+   701→      {/* ─── Final CTA ─────────────────────────────────────────────── */}
+   702→      <motion.section
+   703→        initial={{ opacity: 0, y: 20 }}
+   704→        whileInView={{ opacity: 1, y: 0 }}
+   705→        viewport={{ once: true }}
+   706→        className="relative overflow-hidden rounded-3xl mb-4"
+   707→      >
+   708→        <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-fuchsia-600 to-pink-600" />
+   709→        <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-yellow-400/30 blur-3xl" />
+   710→        <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-amber-400/30 blur-3xl" />
+   711→
+   712→        <div className="relative z-10 p-8 sm:p-10 text-center text-white">
+   713→          <Crown className="h-10 w-10 mx-auto mb-3" />
+   714→          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Ready to Transform Your Health?</h2>
+   715→          <p className="text-white/90 max-w-xl mx-auto mb-5 text-sm sm:text-base">
+   716→            Join thousands of women who took control of their wellness journey. Start your 7-day money-back guarantee today.
+   717→          </p>
+   718→          <div className="flex flex-wrap items-center justify-center gap-3">
+   719→            <Button
+   720→              size="lg"
+   721→              onClick={() => {
+   722→                if (premiumPlan) setCheckoutPlan(premiumPlan)
+   723→              }}
+   724→              className="bg-white text-purple-700 hover:bg-white/90 font-semibold"
+   725→            >
+   726→              <Crown className="h-4 w-4 mr-2" /> Get Premium Now
+   727→            </Button>
+   728→            <div className="flex items-center gap-1.5 text-xs text-white/80">
+   729→              <RefreshCcw className="h-3.5 w-3.5" /> 7-day money-back guarantee
+   730→            </div>
+   731→          </div>
+   732→        </div>
+   733→      </motion.section>
+   734→
+   735→      {/* ─── PayPal Checkout Modal ───────────────────────────────────── */}
+   736→      {checkoutPlan && (
+   737→        <PaypalCheckoutModal
+   738→          plan={checkoutPlan}
+   739→          billingCycle={billingCycle}
+   740→          onClose={() => setCheckoutPlan(null)}
+   741→          onSuccess={(txnId) => {
+   742→            persistSubscription(checkoutPlan, txnId)
+   743→            onSubscribe()
+   744→            setCheckoutPlan(null)
+   745→          }}
+   746→        />
+   747→      )}
+   748→    </div>
+   749→  )
+   750→}
+   751→

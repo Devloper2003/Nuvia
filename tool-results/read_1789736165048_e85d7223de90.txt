@@ -1,0 +1,2002 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo, useEffect } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  AreaChart,
+     7→  Area,
+     8→  LineChart,
+     9→  Line,
+    10→  BarChart,
+    11→  Bar,
+    12→  ScatterChart,
+    13→  Scatter,
+    14→  XAxis,
+    15→  YAxis,
+    16→  CartesianGrid,
+    17→  Tooltip,
+    18→  ResponsiveContainer,
+    19→  RadarChart,
+    20→  PolarGrid,
+    21→  PolarAngleAxis,
+    22→  PolarRadiusAxis,
+    23→  Radar,
+    24→  Cell,
+    25→  ReferenceLine,
+    26→} from 'recharts'
+    27→import {
+    28→  Card,
+    29→  CardContent,
+    30→  CardDescription,
+    31→  CardHeader,
+    32→  CardTitle,
+    33→  CardFooter,
+    34→} from '@/components/ui/card'
+    35→import { Badge } from '@/components/ui/badge'
+    36→import { Button } from '@/components/ui/button'
+    37→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    38→import { Progress } from '@/components/ui/progress'
+    39→import { Separator } from '@/components/ui/separator'
+    40→import { cn } from '@/lib/utils'
+    41→import { toast } from 'sonner'
+    42→import {
+    43→  Brain,
+    44→  Sparkles,
+    45→  Crown,
+    46→  Activity,
+    47→  Gauge,
+    48→  Smile,
+    49→  Moon,
+    50→  Zap,
+    51→  Target,
+    52→  Cookie,
+    53→  TrendingUp,
+    54→  TrendingDown,
+    55→  Droplet,
+    56→  Sun,
+    57→  Grid3x3,
+    58→  Network,
+    59→  Link2,
+    60→  LineChart as LineChartIcon,
+    61→  BarChart3,
+    62→  Salad,
+    63→  Dumbbell,
+    64→  Heart,
+    65→  ShieldAlert,
+    66→  AlertTriangle,
+    67→  HeartPulse,
+    68→  Pill,
+    69→  FileText,
+    70→  Download,
+    71→  Calendar,
+    72→  Cpu,
+    73→  Database,
+    74→  GitBranch,
+    75→  Info,
+    76→  Star,
+    77→  Clock,
+    78→  CheckCircle2,
+    79→  ArrowUpRight,
+    80→  ArrowDownRight,
+    81→  Wind,
+    82→  BrainCircuit,
+    83→  CircuitBoard,
+    84→  Layers,
+    85→  Plus,
+    86→  Check,
+    87→  RefreshCw,
+    88→  FileSpreadsheet,
+    89→  Lightbulb,
+    90→  Quote,
+    91→  Flower2,
+    92→  Stethoscope,
+    93→} from 'lucide-react'
+    94→
+    95→// ─── Types ──────────────────────────────────────────────────────────────────
+    96→
+    97→type ImpactLevel = 'high' | 'medium' | 'low'
+    98→type RiskLevel = 'low' | 'medium' | 'high'
+    99→
+   100→interface DailyForecast {
+   101→  day: string
+   102→  date: string
+   103→  value: number
+   104→  label: string
+   105→  emoji?: string
+   106→  detail?: string
+   107→}
+   108→
+   109→interface Prediction {
+   110→  id: string
+   111→  title: string
+   112→  icon: React.ElementType
+   113→  gradient: string
+   114→  accentColor: string
+   115→  confidence: number
+   116→  data: DailyForecast[]
+   117→  summary: string
+   118→  highlights: { type: 'positive' | 'warning' | 'info'; text: string }[]
+   119→  recommendations: string[]
+   120→  chartType: 'emoji' | 'bar' | 'area'
+   121→}
+   122→
+   123→interface PatternInsight {
+   124→  id: string
+   125→  title: string
+   126→  description: string
+   127→  confidence: number
+   128→  delta: string
+   129→  direction: 'up' | 'down'
+   130→  icon: React.ElementType
+   131→  color: string
+   132→  chartData: { label: string; value: number; baseline: number }[]
+   133→  recommendation: string
+   134→}
+   135→
+   136→interface Recommendation {
+   137→  id: string
+   138→  title: string
+   139→  description: string
+   140→  impact: ImpactLevel
+   141→  icon: React.ElementType
+   142→  category: 'nutrition' | 'exercise' | 'lifestyle' | 'selfcare'
+   143→  cyclePhase?: string
+   144→  evidence: string
+   145→}
+   146→
+   147→interface RiskAssessment {
+   148→  id: string
+   149→  condition: string
+   150→  riskScore: number
+   151→  riskLevel: RiskLevel
+   152→  icon: React.ElementType
+   153→  color: string
+   154→  contributingFactors: string[]
+   155→  preventionTips: string[]
+   156→  trend: 'improving' | 'stable' | 'worsening'
+   157→}
+   158→
+   159→// ─── Data ───────────────────────────────────────────────────────────────────
+   160→// NOTE: All demo / placeholder AI insight data was removed so a brand-new user
+   161→// starts with empty states ("Insights appear after you log some data"). The
+   162→// constants below are intentionally empty. When a real AI backend is wired up,
+   163→// fetch predictions / patterns / recommendations / risk assessments from the
+   164→// API and populate these arrays (or replace them with state). The UI shell
+   165→// below already gates every section on `length === 0` to render an empty
+   166→// state, so populating any one of these will automatically render its card.
+   167→
+   168→// Health Predictability Score (0 = no data yet; AI computes from logged history)
+   169→const PREDICTABILITY_SCORE = 0
+   170→
+   171→const SCORE_BREAKDOWN: { label: string; value: number; color: string; icon: React.ElementType }[] = []
+   172→
+   173→// 7-Day Forecasts — empty until AI backend returns predictions.
+   174→const PREDICTIONS: Prediction[] = []
+   175→
+   176→// Pattern Detection — empty until AI backend returns discovered patterns.
+   177→const PATTERNS: PatternInsight[] = []
+   178→
+   179→// Correlation Matrix — empty until AI backend returns real correlations.
+   180→const MATRIX_VARIABLES: string[] = []
+   181→const CORRELATION_MATRIX: number[][] = []
+   182→const KEY_CORRELATIONS: { pair: string; value: number; insight: string }[] = []
+   183→
+   184→// 90-Day Trends — empty until user has 90+ days of logs.
+   185→const MOOD_TREND_90: { date: string; day: number; value: number }[] = []
+   186→const SYMPTOM_TREND_90: { date: string; day: number; value: number }[] = []
+   187→const SLEEP_TREND_90: { date: string; day: number; value: number }[] = []
+   188→const CYCLE_REGULARITY_12: { month: string; length: number; variance: number }[] = []
+   189→const SLEEP_MOOD_SCATTER: { sleep: number; mood: number }[] = []
+   190→
+   191→// Recommendations — empty until AI backend returns personalized recs.
+   192→const RECOMMENDATIONS: Recommendation[] = []
+   193→
+   194→// Recommendation category config (UI shell — labels, icons, gradients).
+   195→// This is configuration, NOT demo data: it defines the 4 category tabs.
+   196→const REC_CATEGORIES = [
+   197→  { id: 'nutrition' as const, label: 'Nutrition', icon: Salad, color: 'emerald', gradient: 'from-emerald-500 to-teal-500' },
+   198→  { id: 'exercise' as const, label: 'Exercise', icon: Dumbbell, color: 'orange', gradient: 'from-orange-500 to-amber-500' },
+   199→  { id: 'lifestyle' as const, label: 'Lifestyle', icon: Sun, color: 'violet', gradient: 'from-violet-500 to-purple-500' },
+   200→  { id: 'selfcare' as const, label: 'Self-Care', icon: Heart, color: 'rose', gradient: 'from-rose-500 to-pink-500' },
+   201→]
+   202→
+   203→// Risk Assessments — empty until AI backend returns risk scores.
+   204→const RISK_ASSESSMENTS: RiskAssessment[] = []
+   205→
+   206→// Monthly Report — null until the user has at least one full month of data.
+   207→const MONTHLY_REPORT: {
+   208→  month: string
+   209→  keyFindings: string[]
+   210→  improvements: { metric: string; delta: string; from: number; to: number }[]
+   211→  concerns: string[]
+   212→  goals: string[]
+   213→} | null = null
+   214→
+   215→// AI Model Confidence — config/reference content (howItWorks steps, data
+   216→// source labels) is KEPT because it's product info explaining how the AI
+   217→// works. The dynamic stats (dataPoints, accuracy, lastUpdated, per-source
+   218→// counts) are zeroed out for a brand-new user and will populate from the API.
+   219→const AI_MODEL_INFO = {
+   220→  dataPoints: 0,
+   221→  accuracy: 0,
+   222→  lastUpdated: '—',
+   223→  nextUpdate: '—',
+   224→  dataSources: [
+   225→    { label: 'Cycle logs', count: 0, icon: Calendar, classes: 'bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400' },
+   226→    { label: 'Mood entries', count: 0, icon: Smile, classes: 'bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400' },
+   227→    { label: 'Sleep entries', count: 0, icon: Moon, classes: 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' },
+   228→    { label: 'Symptom logs', count: 0, icon: Activity, classes: 'bg-violet-100 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400' },
+   229→    { label: 'Nutrition logs', count: 0, icon: Salad, classes: 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' },
+   230→    { label: 'Exercise logs', count: 0, icon: Dumbbell, classes: 'bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400' },
+   231→  ],
+   232→  howItWorks: [
+   233→    {
+   234→      step: 1,
+   235→      title: 'Data Collection',
+   236→      description: 'We aggregate your cycle, mood, sleep, symptoms, nutrition, and exercise data points across all Nuvia modules.',
+   237→    },
+   238→    {
+   239→      step: 2,
+   240→      title: 'Pattern Recognition',
+   241→      description: 'Our ML models (XGBoost + LSTM ensemble) identify recurring patterns across your cycle phases and behaviors.',
+   242→    },
+   243→    {
+   244→      step: 3,
+   245→      title: 'Correlation Analysis',
+   246→      description: 'Pearson and Spearman correlations reveal how your habits interact — e.g., water intake ↔ cramp intensity.',
+   247→    },
+   248→    {
+   249→      step: 4,
+   250→      title: 'Predictive Modeling',
+   251→      description: '7-day forecasts use your historical patterns + current cycle phase to predict mood, energy, sleep, stress, and cravings.',
+   252→    },
+   253→    {
+   254→      step: 5,
+   255→      title: 'Personalized Insights',
+   256→      description: 'Each insight is ranked by confidence score and translated into actionable recommendations you can add to your plan.',
+   257→    },
+   258→  ],
+   259→}
+   260→
+   261→// ─── Helpers ─────────────────────────────────────────────────────────────────
+   262→
+   263→function correlationColor(value: number): string {
+   264→  if (value >= 0.7) return 'bg-emerald-500'
+   265→  if (value >= 0.4) return 'bg-emerald-400/70'
+   266→  if (value >= 0.2) return 'bg-yellow-400/60'
+   267→  if (value > -0.2) return 'bg-slate-300/50'
+   268→  if (value > -0.4) return 'bg-orange-400/60'
+   269→  if (value > -0.7) return 'bg-rose-400/70'
+   270→  return 'bg-rose-500'
+   271→}
+   272→
+   273→function correlationText(value: number): string {
+   274→  const abs = Math.abs(value)
+   275→  const direction = value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral'
+   276→  let strength = 'weak'
+   277→  if (abs >= 0.7) strength = 'very strong'
+   278→  else if (abs >= 0.4) strength = 'moderate'
+   279→  else if (abs >= 0.2) strength = 'mild'
+   280→  return `${strength} ${direction}`
+   281→}
+   282→
+   283→const impactColors: Record<ImpactLevel, { bg: string; text: string; label: string }> = {
+   284→  high: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300', label: 'High Impact' },
+   285→  medium: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300', label: 'Medium Impact' },
+   286→  low: { bg: 'bg-slate-100 dark:bg-slate-800/50', text: 'text-slate-600 dark:text-slate-300', label: 'Low Impact' },
+   287→}
+   288→
+   289→const riskColors: Record<RiskLevel, { bg: string; text: string; ring: string; gradient: string }> = {
+   290→  low: {
+   291→    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+   292→    text: 'text-emerald-700 dark:text-emerald-300',
+   293→    ring: 'ring-emerald-200 dark:ring-emerald-800',
+   294→    gradient: 'from-emerald-400 to-teal-500',
+   295→  },
+   296→  medium: {
+   297→    bg: 'bg-amber-50 dark:bg-amber-950/30',
+   298→    text: 'text-amber-700 dark:text-amber-300',
+   299→    ring: 'ring-amber-200 dark:ring-amber-800',
+   300→    gradient: 'from-amber-400 to-orange-500',
+   301→  },
+   302→  high: {
+   303→    bg: 'bg-rose-50 dark:bg-rose-950/30',
+   304→    text: 'text-rose-700 dark:text-rose-300',
+   305→    ring: 'ring-rose-200 dark:ring-rose-800',
+   306→    gradient: 'from-rose-500 to-red-500',
+   307→  },
+   308→}
+   309→
+   310→// Animated count-up hook
+   311→function useCountUp(target: number, duration = 1.8) {
+   312→  const [value, setValue] = useState(0)
+   313→  useEffect(() => {
+   314→    let raf = 0
+   315→    const start = performance.now()
+   316→    const tick = (now: number) => {
+   317→      const t = Math.min(1, (now - start) / (duration * 1000))
+   318→      const eased = 1 - Math.pow(1 - t, 3)
+   319→      setValue(Math.round(target * eased))
+   320→      if (t < 1) raf = requestAnimationFrame(tick)
+   321→    }
+   322→    raf = requestAnimationFrame(tick)
+   323→    return () => cancelAnimationFrame(raf)
+   324→  }, [target, duration])
+   325→  return value
+   326→}
+   327→
+   328→// ─── Sub-components ──────────────────────────────────────────────────────────
+   329→
+   330→function HealthScoreGauge({ score }: { score: number }) {
+   331→  const animatedScore = useCountUp(score, 2)
+   332→  const size = 240
+   333→  const stroke = 18
+   334→  const radius = (size - stroke) / 2
+   335→  const circumference = 2 * Math.PI * radius
+   336→  const offset = circumference * (1 - animatedScore / 100)
+   337→
+   338→  return (
+   339→    <div className="relative" style={{ width: size, height: size }}>
+   340→      <svg width={size} height={size} className="-rotate-90">
+   341→        <defs>
+   342→          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+   343→            <stop offset="0%" stopColor="#8b5cf6" />
+   344→            <stop offset="50%" stopColor="#a855f7" />
+   345→            <stop offset="100%" stopColor="#f59e0b" />
+   346→          </linearGradient>
+   347→          <filter id="glow">
+   348→            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+   349→            <feMerge>
+   350→              <feMergeNode in="coloredBlur" />
+   351→              <feMergeNode in="SourceGraphic" />
+   352→            </feMerge>
+   353→          </filter>
+   354→        </defs>
+   355→        {/* Background ring */}
+   356→        <circle
+   357→          cx={size / 2}
+   358→          cy={size / 2}
+   359→          r={radius}
+   360→          fill="none"
+   361→          stroke="oklch(0.91 0.02 325)"
+   362→          strokeWidth={stroke}
+   363→          className="dark:stroke-white/10"
+   364→        />
+   365→        {/* Progress arc */}
+   366→        <motion.circle
+   367→          cx={size / 2}
+   368→          cy={size / 2}
+   369→          r={radius}
+   370→          fill="none"
+   371→          stroke="url(#scoreGradient)"
+   372→          strokeWidth={stroke}
+   373→          strokeLinecap="round"
+   374→          strokeDasharray={circumference}
+   375→          initial={{ strokeDashoffset: circumference }}
+   376→          animate={{ strokeDashoffset: offset }}
+   377→          transition={{ duration: 2, ease: 'easeOut' }}
+   378→          filter="url(#glow)"
+   379→        />
+   380→      </svg>
+   381→      <div className="absolute inset-0 flex flex-col items-center justify-center">
+   382→        <motion.div
+   383→          initial={{ opacity: 0, scale: 0.8 }}
+   384→          animate={{ opacity: 1, scale: 1 }}
+   385→          transition={{ delay: 0.5, duration: 0.4 }}
+   386→          className="text-5xl font-bold bg-gradient-to-br from-violet-600 to-amber-500 bg-clip-text text-transparent"
+   387→        >
+   388→          {animatedScore}
+   389→        </motion.div>
+   390→        <div className="text-xs font-medium text-muted-foreground mt-1">out of 100</div>
+   391→        <Badge className="mt-2 bg-gradient-to-r from-violet-500 to-amber-500 text-white border-0">
+   392→          <Sparkles className="h-3 w-3 mr-1" /> Highly Predictable
+   393→        </Badge>
+   394→      </div>
+   395→    </div>
+   396→  )
+   397→}
+   398→
+   399→function MiniChart({ data, color }: { data: { label: string; value: number; baseline: number }[]; color: string }) {
+   400→  const max = Math.max(...data.map((d) => Math.max(d.value, d.baseline)))
+   401→  return (
+   402→    <div className="h-16 flex items-end gap-1">
+   403→      {data.map((d, i) => (
+   404→        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+   405→          <div className="w-full flex items-end justify-center gap-0.5 h-full">
+   406→            <div
+   407→              className={`w-1.5 rounded-t bg-gradient-to-t ${color} transition-all`}
+   408→              style={{ height: `${(d.value / max) * 100}%` }}
+   409→            />
+   410→            <div
+   411→              className="w-0.5 rounded-t bg-muted-foreground/30"
+   412→              style={{ height: `${(d.baseline / max) * 100}%` }}
+   413→            />
+   414→          </div>
+   415→          <span className="text-[8px] text-muted-foreground">{d.label}</span>
+   416→        </div>
+   417→      ))}
+   418→    </div>
+   419→  )
+   420→}
+   421→
+   422→function ForecastCard({ prediction, index }: { prediction: Prediction; index: number }) {
+   423→  const Icon = prediction.icon
+   424→  return (
+   425→    <motion.div
+   426→      initial={{ opacity: 0, y: 20 }}
+   427→      animate={{ opacity: 1, y: 0 }}
+   428→      transition={{ duration: 0.4, delay: index * 0.08 }}
+   429→      whileHover={{ y: -4 }}
+   430→      className="h-full"
+   431→    >
+   432→      <Card className="overflow-hidden h-full border-violet-200/40 dark:border-violet-800/30 bg-gradient-to-br from-white to-violet-50/30 dark:from-card dark:to-violet-950/10 backdrop-blur-sm">
+   433→        <div className={`h-1.5 bg-gradient-to-r ${prediction.gradient}`} />
+   434→        <CardHeader className="pb-3">
+   435→          <div className="flex items-start justify-between">
+   436→            <div className="flex items-center gap-3">
+   437→              <div className={`p-2 rounded-xl bg-gradient-to-br ${prediction.gradient} text-white shadow-lg`}>
+   438→                <Icon className="h-5 w-5" />
+   439→              </div>
+   440→              <div>
+   441→                <CardTitle className="text-base">{prediction.title}</CardTitle>
+   442→                <p className="text-[11px] text-muted-foreground mt-0.5">7-day forecast</p>
+   443→              </div>
+   444→            </div>
+   445→            <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
+   446→              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+   447→              {prediction.confidence}% conf.
+   448→            </Badge>
+   449→          </div>
+   450→        </CardHeader>
+   451→        <CardContent className="space-y-3">
+   452→          {/* Summary */}
+   453→          <div className="rounded-lg bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2.5">
+   454→            <p className="text-xs text-foreground/80 leading-relaxed">{prediction.summary}</p>
+   455→          </div>
+   456→
+   457→          {/* 7-day forecast visualization */}
+   458→          {prediction.chartType === 'emoji' ? (
+   459→            <div className="grid grid-cols-7 gap-1">
+   460→              {prediction.data.map((d, i) => (
+   461→                <div key={i} className="flex flex-col items-center gap-1">
+   462→                  <div
+   463→                    className={cn(
+   464→                      'text-xl transition-transform hover:scale-125 cursor-default',
+   465→                      d.value >= 75 ? 'opacity-100' : d.value >= 50 ? 'opacity-80' : 'opacity-60'
+   466→                    )}
+   467→                    title={`${d.day} ${d.date}: ${d.label} (${d.value})`}
+   468→                  >
+   469→                    {d.emoji}
+   470→                  </div>
+   471→                  <div className="w-full bg-muted/60 rounded-full h-1 overflow-hidden">
+   472→                    <div
+   473→                      className={`h-full bg-gradient-to-r ${prediction.gradient}`}
+   474→                      style={{ width: `${d.value}%` }}
+   475→                    />
+   476→                  </div>
+   477→                  <span className="text-[8px] text-muted-foreground">{d.day}</span>
+   478→                </div>
+   479→              ))}
+   480→            </div>
+   481→          ) : prediction.chartType === 'bar' ? (
+   482→            <div className="h-28">
+   483→              <ResponsiveContainer width="100%" height="100%">
+   484→                <BarChart data={prediction.data} margin={{ top: 4, right: 0, bottom: 0, left: -22 }}>
+   485→                  <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+   486→                  <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+   487→                  <Tooltip
+   488→                    cursor={{ fill: 'rgba(139,92,246,0.08)' }}
+   489→                    contentStyle={{
+   490→                      borderRadius: 8,
+   491→                      border: '1px solid rgba(139,92,246,0.2)',
+   492→                      fontSize: 11,
+   493→                      padding: '6px 10px',
+   494→                    }}
+   495→                    formatter={(v: number) => [`${v} / 100`, prediction.title]}
+   496→                  />
+   497→                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+   498→                    {prediction.data.map((_, i) => (
+   499→                      <Cell key={i}>
+   500→                        <defs>
+   501→                          <linearGradient id={`bar-${prediction.id}-${i}`} x1="0" y1="0" x2="0" y2="1">
+   502→                            <stop offset="0%" stopColor="#a855f7" />
+   503→                            <stop offset="100%" stopColor="#7c3aed" />
+   504→                          </linearGradient>
+   505→                        </defs>
+   506→                      </Cell>
+   507→                    ))}
+   508→                  </Bar>
+   509→                </BarChart>
+   510→              </ResponsiveContainer>
+   511→            </div>
+   512→          ) : (
+   513→            <div className="h-28">
+   514→              <ResponsiveContainer width="100%" height="100%">
+   515→                <AreaChart data={prediction.data} margin={{ top: 4, right: 0, bottom: 0, left: -22 }}>
+   516→                  <defs>
+   517→                    <linearGradient id={`area-${prediction.id}`} x1="0" y1="0" x2="0" y2="1">
+   518→                      <stop offset="0%" stopColor="#a855f7" stopOpacity={0.6} />
+   519→                      <stop offset="100%" stopColor="#a855f7" stopOpacity={0.05} />
+   520→                    </linearGradient>
+   521→                  </defs>
+   522→                  <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+   523→                  <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+   524→                  <Tooltip
+   525→                    contentStyle={{
+   526→                      borderRadius: 8,
+   527→                      border: '1px solid rgba(139,92,246,0.2)',
+   528→                      fontSize: 11,
+   529→                      padding: '6px 10px',
+   530→                    }}
+   531→                    formatter={(v: number) => [`${v} / 100`, prediction.title]}
+   532→                  />
+   533→                  <Area
+   534→                    type="monotone"
+   535→                    dataKey="value"
+   536→                    stroke="#a855f7"
+   537→                    strokeWidth={2}
+   538→                    fill={`url(#area-${prediction.id})`}
+   539→                  />
+   540→                </AreaChart>
+   541→              </ResponsiveContainer>
+   542→            </div>
+   543→          )}
+   544→
+   545→          {/* Highlights */}
+   546→          <div className="space-y-1.5">
+   547→            {prediction.highlights.map((h, i) => (
+   548→              <div
+   549→                key={i}
+   550→                className={cn(
+   551→                  'flex items-start gap-1.5 text-[11px] leading-snug',
+   552→                  h.type === 'positive' && 'text-emerald-700 dark:text-emerald-400',
+   553→                  h.type === 'warning' && 'text-rose-700 dark:text-rose-400',
+   554→                  h.type === 'info' && 'text-muted-foreground'
+   555→                )}
+   556→              >
+   557→                {h.type === 'positive' && <ArrowUpRight className="h-3 w-3 mt-0.5 shrink-0" />}
+   558→                {h.type === 'warning' && <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />}
+   559→                {h.type === 'info' && <Info className="h-3 w-3 mt-0.5 shrink-0" />}
+   560→                <span>{h.text}</span>
+   561→              </div>
+   562→            ))}
+   563→          </div>
+   564→
+   565→          <Separator />
+   566→
+   567→          {/* Recommendations */}
+   568→          <div>
+   569→            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+   570→              AI Recommendations
+   571→            </p>
+   572→            <ul className="space-y-1">
+   573→              {prediction.recommendations.map((r, i) => (
+   574→                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+   575→                  <CheckCircle2 className="h-3 w-3 mt-0.5 text-violet-500 shrink-0" />
+   576→                  <span>{r}</span>
+   577→                </li>
+   578→              ))}
+   579→            </ul>
+   580→          </div>
+   581→        </CardContent>
+   582→      </Card>
+   583→    </motion.div>
+   584→  )
+   585→}
+   586→
+   587→function PatternCard({ pattern, index }: { pattern: PatternInsight; index: number }) {
+   588→  const Icon = pattern.icon
+   589→  const colorMap: Record<string, string> = {
+   590→    rose: 'from-rose-500 to-pink-500',
+   591→    indigo: 'from-indigo-500 to-blue-500',
+   592→    amber: 'from-amber-500 to-orange-500',
+   593→    orange: 'from-orange-500 to-rose-500',
+   594→    cyan: 'from-cyan-500 to-blue-500',
+   595→    emerald: 'from-emerald-500 to-teal-500',
+   596→  }
+   597→  return (
+   598→    <motion.div
+   599→      initial={{ opacity: 0, y: 20 }}
+   600→      animate={{ opacity: 1, y: 0 }}
+   601→      transition={{ duration: 0.4, delay: index * 0.07 }}
+   602→      whileHover={{ y: -3 }}
+   603→    >
+   604→      <Card className="h-full glass border-violet-200/40 dark:border-violet-800/30 overflow-hidden">
+   605→        <CardHeader className="pb-2">
+   606→          <div className="flex items-start justify-between gap-2">
+   607→            <div className="flex items-center gap-2.5">
+   608→              <div className={`p-2 rounded-lg bg-gradient-to-br ${colorMap[pattern.color]} text-white shadow`}>
+   609→                <Icon className="h-4 w-4" />
+   610→              </div>
+   611→              <CardTitle className="text-sm leading-tight">{pattern.title}</CardTitle>
+   612→            </div>
+   613→            <Badge
+   614→              variant="outline"
+   615→              className={cn(
+   616→                'shrink-0 gap-1 text-[10px]',
+   617→                pattern.direction === 'up'
+   618→                  ? 'border-rose-200 text-rose-600 dark:border-rose-800 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30'
+   619→                  : 'border-emerald-200 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
+   620→              )}
+   621→            >
+   622→              {pattern.direction === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+   623→              {pattern.delta}
+   624→            </Badge>
+   625→          </div>
+   626→        </CardHeader>
+   627→        <CardContent className="space-y-3">
+   628→          <p className="text-[11px] text-muted-foreground leading-relaxed">{pattern.description}</p>
+   629→
+   630→          {/* Mini chart */}
+   631→          <div className="rounded-lg bg-muted/40 dark:bg-muted/20 p-2.5">
+   632→            <div className="flex items-center justify-between mb-1.5">
+   633→              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+   634→                Supporting data
+   635→              </span>
+   636→              <div className="flex items-center gap-2 text-[9px]">
+   637→                <span className="flex items-center gap-0.5">
+   638→                  <span className="h-1.5 w-1.5 rounded-sm bg-violet-500" /> You
+   639→                </span>
+   640→                <span className="flex items-center gap-0.5">
+   641→                  <span className="h-1.5 w-1.5 rounded-sm bg-muted-foreground/40" /> Baseline
+   642→                </span>
+   643→              </div>
+   644→            </div>
+   645→            <MiniChart data={pattern.chartData} color={colorMap[pattern.color]} />
+   646→          </div>
+   647→
+   648→          {/* Confidence bar */}
+   649→          <div className="flex items-center gap-2">
+   650→            <span className="text-[10px] text-muted-foreground shrink-0">Confidence</span>
+   651→            <div className="flex-1 h-1.5 bg-muted/60 rounded-full overflow-hidden">
+   652→              <motion.div
+   653→                initial={{ width: 0 }}
+   654→                animate={{ width: `${pattern.confidence}%` }}
+   655→                transition={{ duration: 1, delay: 0.3 + index * 0.07 }}
+   656→                className={`h-full bg-gradient-to-r ${colorMap[pattern.color]}`}
+   657→              />
+   658→            </div>
+   659→            <span className="text-[10px] font-semibold">{pattern.confidence}%</span>
+   660→          </div>
+   661→
+   662→          {/* Recommendation */}
+   663→          <div className="flex items-start gap-1.5 rounded-md bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2">
+   664→            <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+   665→            <p className="text-[11px] text-foreground/80 leading-snug">{pattern.recommendation}</p>
+   666→          </div>
+   667→        </CardContent>
+   668→      </Card>
+   669→    </motion.div>
+   670→  )
+   671→}
+   672→
+   673→function RecommendationCard({ rec, onAdd, added }: { rec: Recommendation; onAdd: (id: string) => void; added: boolean }) {
+   674→  const Icon = rec.icon
+   675→  const impact = impactColors[rec.impact]
+   676→  return (
+   677→    <motion.div
+   678→      initial={{ opacity: 0, scale: 0.97 }}
+   679→      animate={{ opacity: 1, scale: 1 }}
+   680→      transition={{ duration: 0.3 }}
+   681→      whileHover={{ y: -2 }}
+   682→      className="h-full"
+   683→    >
+   684→      <Card className="h-full glass border-violet-200/40 dark:border-violet-800/30 flex flex-col">
+   685→        <CardHeader className="pb-2">
+   686→          <div className="flex items-start justify-between gap-2">
+   687→            <div className="flex items-center gap-2.5">
+   688→              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300">
+   689→                <Icon className="h-4 w-4" />
+   690→              </div>
+   691→              <CardTitle className="text-sm leading-tight">{rec.title}</CardTitle>
+   692→            </div>
+   693→            <Badge className={cn('text-[9px] border-0', impact.bg, impact.text)}>{impact.label}</Badge>
+   694→          </div>
+   695→        </CardHeader>
+   696→        <CardContent className="flex flex-col flex-1 gap-2.5">
+   697→          <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">{rec.description}</p>
+   698→          {rec.cyclePhase && (
+   699→            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+   700→              <Calendar className="h-3 w-3" />
+   701→              <span>{rec.cyclePhase}</span>
+   702→            </div>
+   703→          )}
+   704→          <div className="flex items-start gap-1.5 rounded-md bg-amber-50/50 dark:bg-amber-950/15 p-1.5">
+   705→            <Database className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+   706→            <p className="text-[10px] text-muted-foreground leading-snug">{rec.evidence}</p>
+   707→          </div>
+   708→          <Button
+   709→            size="sm"
+   710→            variant={added ? 'secondary' : 'default'}
+   711→            className={cn(
+   712→              'w-full h-8 text-[11px] gap-1.5',
+   713→              !added && 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700',
+   714→              added && 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+   715→            )}
+   716→            onClick={() => onAdd(rec.id)}
+   717→            disabled={added}
+   718→          >
+   719→            {added ? (
+   720→              <>
+   721→                <Check className="h-3.5 w-3.5" /> Added to Plan
+   722→              </>
+   723→            ) : (
+   724→              <>
+   725→                <Plus className="h-3.5 w-3.5" /> Add to Plan
+   726→              </>
+   727→            )}
+   728→          </Button>
+   729→        </CardContent>
+   730→      </Card>
+   731→    </motion.div>
+   732→  )
+   733→}
+   734→
+   735→function RiskCard({ risk, index }: { risk: RiskAssessment; index: number }) {
+   736→  const Icon = risk.icon
+   737→  const colors = riskColors[risk.riskLevel]
+   738→  return (
+   739→    <motion.div
+   740→      initial={{ opacity: 0, y: 20 }}
+   741→      animate={{ opacity: 1, y: 0 }}
+   742→      transition={{ duration: 0.4, delay: index * 0.08 }}
+   743→      whileHover={{ y: -3 }}
+   744→    >
+   745→      <Card className={cn('h-full ring-1', colors.bg, colors.ring)}>
+   746→        <CardHeader className="pb-3">
+   747→          <div className="flex items-start justify-between gap-2">
+   748→            <div className="flex items-center gap-3">
+   749→              <div className={`p-2.5 rounded-xl bg-gradient-to-br ${colors.gradient} text-white shadow-lg`}>
+   750→                <Icon className="h-5 w-5" />
+   751→              </div>
+   752→              <div>
+   753→                <CardTitle className="text-base">{risk.condition}</CardTitle>
+   754→                <div className="flex items-center gap-1.5 mt-0.5">
+   755→                  <span className={cn('text-[10px] font-semibold uppercase tracking-wide', colors.text)}>
+   756→                    {risk.riskLevel} risk
+   757→                  </span>
+   758→                  {risk.trend === 'improving' && (
+   759→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-emerald-300 text-emerald-600">
+   760→                      <TrendingDown className="h-2.5 w-2.5" /> Improving
+   761→                    </Badge>
+   762→                  )}
+   763→                  {risk.trend === 'worsening' && (
+   764→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-rose-300 text-rose-600">
+   765→                      <TrendingUp className="h-2.5 w-2.5" /> Worsening
+   766→                    </Badge>
+   767→                  )}
+   768→                  {risk.trend === 'stable' && (
+   769→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5">
+   770→                      <Activity className="h-2.5 w-2.5" /> Stable
+   771→                    </Badge>
+   772→                  )}
+   773→                </div>
+   774→              </div>
+   775→            </div>
+   776→            <div className="relative w-14 h-14 shrink-0">
+   777→              <svg width="56" height="56" className="-rotate-90">
+   778→                <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/30" />
+   779→                <motion.circle
+   780→                  cx="28"
+   781→                  cy="28"
+   782→                  r="22"
+   783→                  fill="none"
+   784→                  stroke={risk.riskLevel === 'low' ? '#10b981' : risk.riskLevel === 'medium' ? '#f59e0b' : '#ef4444'}
+   785→                  strokeWidth="5"
+   786→                  strokeLinecap="round"
+   787→                  strokeDasharray={2 * Math.PI * 22}
+   788→                  initial={{ strokeDashoffset: 2 * Math.PI * 22 }}
+   789→                  animate={{ strokeDashoffset: 2 * Math.PI * 22 * (1 - risk.riskScore / 100) }}
+   790→                  transition={{ duration: 1.5, delay: index * 0.08, ease: 'easeOut' }}
+   791→                />
+   792→              </svg>
+   793→              <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">{risk.riskScore}</div>
+   794→            </div>
+   795→          </div>
+   796→        </CardHeader>
+   797→        <CardContent className="space-y-3">
+   798→          {/* Contributing factors */}
+   799→          <div>
+   800→            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+   801→              <AlertTriangle className="h-3 w-3" /> Contributing Factors
+   802→            </p>
+   803→            <ul className="space-y-1">
+   804→              {risk.contributingFactors.map((f, i) => (
+   805→                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+   806→                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-1.5 shrink-0" />
+   807→                  <span>{f}</span>
+   808→                </li>
+   809→              ))}
+   810→            </ul>
+   811→          </div>
+   812→
+   813→          <Separator />
+   814→
+   815→          {/* Prevention tips */}
+   816→          <div>
+   817→            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+   818→              <ShieldAlert className="h-3 w-3" /> Prevention Tips
+   819→            </p>
+   820→            <ul className="space-y-1">
+   821→              {risk.preventionTips.map((t, i) => (
+   822→                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+   823→                  <CheckCircle2 className="h-3 w-3 mt-0.5 text-emerald-500 shrink-0" />
+   824→                  <span>{t}</span>
+   825→                </li>
+   826→              ))}
+   827→            </ul>
+   828→          </div>
+   829→        </CardContent>
+   830→      </Card>
+   831→    </motion.div>
+   832→  )
+   833→}
+   834→
+   835→// Custom tooltip for recharts
+   836→function ChartTooltip({ active, payload, label }: any) {
+   837→  if (!active || !payload || payload.length === 0) return null
+   838→  return (
+   839→    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-white/95 dark:bg-card/95 backdrop-blur-sm px-3 py-2 shadow-lg text-xs">
+   840→      <p className="font-semibold mb-1">{label}</p>
+   841→      {payload.map((p: any, i: number) => (
+   842→        <p key={i} className="text-muted-foreground flex items-center gap-1.5">
+   843→          <span className="h-2 w-2 rounded-sm" style={{ background: p.color || p.stroke || p.fill }} />
+   844→          <span>{p.name}:</span>
+   845→          <span className="font-semibold text-foreground">{p.value}</span>
+   846→        </p>
+   847→      ))}
+   848→    </div>
+   849→  )
+   850→}
+   851→
+   852→// ─── Main Module ─────────────────────────────────────────────────────────────
+   853→
+   854→export default function AIInsightsModule() {
+   855→  const [activeTab, setActiveTab] = useState('overview')
+   856→  const [addedRecs, setAddedRecs] = useState<Set<string>>(new Set())
+   857→
+   858→  const handleAddRec = (id: string) => {
+   859→    setAddedRecs((prev) => new Set(prev).add(id))
+   860→    toast.success('Added to your plan', {
+   861→      description: 'You can review and customize it in your dashboard.',
+   862→    })
+   863→  }
+   864→
+   865→  const recsByCategory = useMemo(() => {
+   866→    const map: Record<string, Recommendation[]> = {}
+   867→    for (const cat of REC_CATEGORIES) {
+   868→      map[cat.id] = RECOMMENDATIONS.filter((r) => r.category === cat.id)
+   869→    }
+   870→    return map
+   871→  }, [])
+   872→
+   873→  return (
+   874→    <div className="space-y-6">
+   875→      {/* ═══ 1. HEADER ═══ */}
+   876→      <motion.div
+   877→        initial={{ opacity: 0, y: -10 }}
+   878→        animate={{ opacity: 1, y: 0 }}
+   879→        transition={{ duration: 0.5 }}
+   880→        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 p-6 md:p-8 text-white shadow-2xl"
+   881→      >
+   882→        {/* Decorative blobs */}
+   883→        <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" />
+   884→        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" />
+   885→        <div className="absolute top-1/2 right-1/3 h-32 w-32 rounded-full bg-violet-400/20 blur-2xl" />
+   886→
+   887→        {/* Grid pattern */}
+   888→        <div
+   889→          className="absolute inset-0 opacity-[0.07]"
+   890→          style={{
+   891→            backgroundImage:
+   892→              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+   893→            backgroundSize: '32px 32px',
+   894→          }}
+   895→        />
+   896→
+   897→        <div className="relative z-10">
+   898→          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+   899→            <div className="space-y-3 max-w-2xl">
+   900→              <div className="flex flex-wrap items-center gap-2">
+   901→                <Badge className="bg-white/15 text-white border-white/20 backdrop-blur-sm gap-1.5">
+   902→                  <BrainCircuit className="h-3.5 w-3.5" /> AI Engine Active
+   903→                  <span className="relative flex h-2 w-2 ml-1">
+   904→                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+   905→                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+   906→                  </span>
+   907→                </Badge>
+   908→                <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 gap-1 font-semibold">
+   909→                  <Crown className="h-3.5 w-3.5" /> PREMIUM
+   910→                </Badge>
+   911→                <Badge variant="outline" className="border-white/30 text-white gap-1">
+   912→                  <Cpu className="h-3 w-3" /> v3.2.1
+   913→                </Badge>
+   914→              </div>
+   915→              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+   916→                <span className="bg-gradient-to-r from-white via-violet-100 to-amber-200 bg-clip-text text-transparent">
+   917→                  AI Health Intelligence
+   918→                </span>
+   919→              </h1>
+   920→              <p className="text-violet-100/90 text-sm md:text-base">
+   921→                Predictive insights powered by your data — patterns, forecasts, and personalized recommendations.
+   922→              </p>
+   923→              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-violet-100/80 pt-1">
+   924→                <span className="flex items-center gap-1">
+   925→                  <Database className="h-3 w-3" /> {AI_MODEL_INFO.dataPoints.toLocaleString()} data points
+   926→                </span>
+   927→                <span className="flex items-center gap-1">
+   928→                  <CheckCircle2 className="h-3 w-3" /> {AI_MODEL_INFO.accuracy}% accuracy
+   929→                </span>
+   930→                <span className="flex items-center gap-1">
+   931→                  <Clock className="h-3 w-3" /> Updated {AI_MODEL_INFO.lastUpdated}
+   932→                </span>
+   933→              </div>
+   934→            </div>
+   935→
+   936→            {/* Right-side stat tiles */}
+   937→            <div className="grid grid-cols-2 gap-3 shrink-0">
+   938→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
+   939→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   940→                  <Sparkles className="h-3 w-3" /> Predictions
+   941→                </div>
+   942→                <div className="text-2xl font-bold mt-0.5">{PREDICTIONS.length}</div>
+   943→                <div className="text-[10px] text-violet-100/70">7-day forecasts</div>
+   944→              </div>
+   945→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
+   946→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   947→                  <Network className="h-3 w-3" /> Patterns
+   948→                </div>
+   949→                <div className="text-2xl font-bold mt-0.5">{PATTERNS.length}</div>
+   950→                <div className="text-[10px] text-violet-100/70">AI-discovered</div>
+   951→              </div>
+   952→              <div className="rounded-xl bg-gradient-to-br from-amber-400/30 to-yellow-500/30 backdrop-blur-md border border-amber-300/30 p-3">
+   953→                <div className="flex items-center gap-1.5 text-amber-100/90 text-[10px] uppercase tracking-wide">
+   954→                  <Gauge className="h-3 w-3" /> Predictability
+   955→                </div>
+   956→                <div className="text-2xl font-bold mt-0.5 text-white">{PREDICTABILITY_SCORE}%</div>
+   957→                <div className="text-[10px] text-amber-100/70">Highly predictable</div>
+   958→              </div>
+   959→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3">
+   960→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   961→                  <ShieldAlert className="h-3 w-3" /> Risk checks
+   962→                </div>
+   963→                <div className="text-2xl font-bold mt-0.5">{RISK_ASSESSMENTS.length}</div>
+   964→                <div className="text-[10px] text-violet-100/70">Conditions tracked</div>
+   965→              </div>
+   966→            </div>
+   967→          </div>
+   968→        </div>
+   969→      </motion.div>
+   970→
+   971→      {/* ═══ Tabbed Content ═══ */}
+   972→      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+   973→        <div className="sticky top-[57px] z-30 -mx-4 px-4 py-2 bg-background/80 backdrop-blur-md border-b border-border/60">
+   974→          <TabsList className="bg-muted/60 h-auto p-1 gap-0.5 flex flex-wrap">
+   975→            <TabsTrigger value="overview" className="gap-1.5 text-xs">
+   976→              <Gauge className="h-3.5 w-3.5" /> Overview
+   977→            </TabsTrigger>
+   978→            <TabsTrigger value="predictions" className="gap-1.5 text-xs">
+   979→              <Sparkles className="h-3.5 w-3.5" /> Predictions
+   980→            </TabsTrigger>
+   981→            <TabsTrigger value="patterns" className="gap-1.5 text-xs">
+   982→              <Network className="h-3.5 w-3.5" /> Patterns
+   983→            </TabsTrigger>
+   984→            <TabsTrigger value="trends" className="gap-1.5 text-xs">
+   985→              <TrendingUp className="h-3.5 w-3.5" /> Trends
+   986→            </TabsTrigger>
+   987→            <TabsTrigger value="recommendations" className="gap-1.5 text-xs">
+   988→              <Lightbulb className="h-3.5 w-3.5" /> Recommendations
+   989→            </TabsTrigger>
+   990→            <TabsTrigger value="risk" className="gap-1.5 text-xs">
+   991→              <ShieldAlert className="h-3.5 w-3.5" /> Risk
+   992→            </TabsTrigger>
+   993→          </TabsList>
+   994→        </div>
+   995→
+   996→        {/* ═══ OVERVIEW TAB: Sections 2, 9, 10 ═══ */}
+   997→        <TabsContent value="overview" className="space-y-6 mt-4">
+   998→          {/* Section 2: Health Predictability Score */}
+   999→          <motion.div
+  1000→            initial={{ opacity: 0, y: 15 }}
+  1001→            animate={{ opacity: 1, y: 0 }}
+  1002→            transition={{ duration: 0.4 }}
+  1003→          >
+  1004→            <Card className="glass border-violet-200/40 dark:border-violet-800/30 overflow-hidden">
+  1005→              <CardHeader>
+  1006→                <div className="flex items-center justify-between gap-3 flex-wrap">
+  1007→                  <div>
+  1008→                    <CardTitle className="flex items-center gap-2">
+  1009→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-amber-500 text-white">
+  1010→                        <Gauge className="h-4 w-4" />
+  1011→                      </div>
+  1012→                      Health Predictability Score
+  1013→                    </CardTitle>
+  1014→                    <CardDescription className="mt-1">
+  1015→                      How reliably your health patterns can be forecast from your data
+  1016→                    </CardDescription>
+  1017→                  </div>
+  1018→                  {PREDICTABILITY_SCORE > 0 && (
+  1019→                    <Badge className="bg-gradient-to-r from-violet-500 to-amber-500 text-white border-0 gap-1">
+  1020→                      <Star className="h-3 w-3 fill-white" /> Top 12% of users
+  1021→                    </Badge>
+  1022→                  )}
+  1023→                </div>
+  1024→              </CardHeader>
+  1025→              <CardContent>
+  1026→                {PREDICTABILITY_SCORE === 0 || SCORE_BREAKDOWN.length === 0 ? (
+  1027→                  // ── Empty state: not enough data yet to compute a score ──
+  1028→                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+  1029→                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1030→                      <Gauge className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1031→                    </div>
+  1032→                    <p className="text-sm font-medium text-foreground">No predictability score yet</p>
+  1033→                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1034→                      Insights appear after you log some data. Track your cycle, mood, sleep,
+  1035→                      and symptoms for ~30 days and Nuvia will compute your health
+  1036→                      predictability score, score breakdown, and personalized AI insights here.
+  1037→                    </p>
+  1038→                  </div>
+  1039→                ) : (
+  1040→                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+  1041→                  {/* Left: Gauge */}
+  1042→                  <div className="flex flex-col items-center">
+  1043→                    <HealthScoreGauge score={PREDICTABILITY_SCORE} />
+  1044→                    <motion.p
+  1045→                      initial={{ opacity: 0 }}
+  1046→                      animate={{ opacity: 1 }}
+  1047→                      transition={{ delay: 1.5 }}
+  1048→                      className="text-center text-sm text-muted-foreground mt-3 max-w-xs"
+  1049→                    >
+  1050→                      Your health patterns are{' '}
+  1051→                      <span className="font-semibold bg-gradient-to-r from-violet-600 to-amber-500 bg-clip-text text-transparent">
+  1052→                        {PREDICTABILITY_SCORE}% predictable
+  1053→                      </span>{' '}
+  1054→                      — AI can reliably forecast your week ahead.
+  1055→                    </motion.p>
+  1056→                  </div>
+  1057→
+  1058→                  {/* Right: Breakdown */}
+  1059→                  <div className="space-y-4">
+  1060→                    <div>
+  1061→                      <h4 className="text-sm font-semibold mb-1">Score Breakdown</h4>
+  1062→                      <p className="text-[11px] text-muted-foreground">
+  1063→                        Based on 90 days of cycle, mood, sleep, and symptom data.
+  1064→                      </p>
+  1065→                    </div>
+  1066→                    <div className="space-y-3">
+  1067→                      {SCORE_BREAKDOWN.map((item, i) => {
+  1068→                        const Icon = item.icon
+  1069→                        return (
+  1070→                          <motion.div
+  1071→                            key={item.label}
+  1072→                            initial={{ opacity: 0, x: 10 }}
+  1073→                            animate={{ opacity: 1, x: 0 }}
+  1074→                            transition={{ delay: 0.5 + i * 0.1 }}
+  1075→                            className="space-y-1.5"
+  1076→                          >
+  1077→                            <div className="flex items-center justify-between">
+  1078→                              <span className="flex items-center gap-2 text-sm">
+  1079→                                <Icon className="h-4 w-4 text-violet-500" />
+  1080→                                {item.label}
+  1081→                              </span>
+  1082→                              <span className="text-sm font-semibold">{item.value}%</span>
+  1083→                            </div>
+  1084→                            <div className="h-2 bg-muted/60 rounded-full overflow-hidden">
+  1085→                              <motion.div
+  1086→                                initial={{ width: 0 }}
+  1087→                                animate={{ width: `${item.value}%` }}
+  1088→                                transition={{ duration: 1, delay: 0.7 + i * 0.1, ease: 'easeOut' }}
+  1089→                                className={`h-full bg-gradient-to-r ${item.color} rounded-full`}
+  1090→                              />
+  1091→                            </div>
+  1092→                          </motion.div>
+  1093→                        )
+  1094→                      })}
+  1095→                    </div>
+  1096→                    <Separator />
+  1097→                    <div className="grid grid-cols-3 gap-3 text-center">
+  1098→                      <div>
+  1099→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">{AI_MODEL_INFO.dataPoints.toLocaleString()}</div>
+  1100→                        <div className="text-[10px] text-muted-foreground">Data points</div>
+  1101→                      </div>
+  1102→                      <div>
+  1103→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">28d</div>
+  1104→                        <div className="text-[10px] text-muted-foreground">Rolling window</div>
+  1105→                      </div>
+  1106→                      <div>
+  1107→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">6</div>
+  1108→                        <div className="text-[10px] text-muted-foreground">Data sources</div>
+  1109→                      </div>
+  1110→                    </div>
+  1111→                  </div>
+  1112→                </div>
+  1113→                )}
+  1114→              </CardContent>
+  1115→            </Card>
+  1116→          </motion.div>
+  1117→
+  1118→          {/* Section 9: Monthly AI Report Summary */}
+  1119→          <motion.div
+  1120→            initial={{ opacity: 0, y: 15 }}
+  1121→            animate={{ opacity: 1, y: 0 }}
+  1122→            transition={{ duration: 0.4, delay: 0.1 }}
+  1123→          >
+  1124→            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+  1125→              <CardHeader>
+  1126→                <div className="flex items-center justify-between gap-3 flex-wrap">
+  1127→                  <div>
+  1128→                    <CardTitle className="flex items-center gap-2">
+  1129→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
+  1130→                        <FileText className="h-4 w-4" />
+  1131→                      </div>
+  1132→                      Monthly AI Report Summary
+  1133→                    </CardTitle>
+  1134→                    <CardDescription className="mt-1">
+  1135→                      {MONTHLY_REPORT ? MONTHLY_REPORT.month : 'No monthly report yet'}
+  1136→                    </CardDescription>
+  1137→                  </div>
+  1138→                  {MONTHLY_REPORT && (
+  1139→                    <div className="flex gap-2">
+  1140→                      <Button
+  1141→                        size="sm"
+  1142→                        variant="outline"
+  1143→                        className="gap-1.5"
+  1144→                        onClick={() => toast.success('PDF export started', { description: 'Your report will be ready in a moment.' })}
+  1145→                      >
+  1146→                        <Download className="h-3.5 w-3.5" /> PDF
+  1147→                      </Button>
+  1148→                      <Button
+  1149→                        size="sm"
+  1150→                        variant="outline"
+  1151→                        className="gap-1.5"
+  1152→                        onClick={() => toast.success('Excel export started', { description: 'Your data will download shortly.' })}
+  1153→                      >
+  1154→                        <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+  1155→                      </Button>
+  1156→                    </div>
+  1157→                  )}
+  1158→                </div>
+  1159→              </CardHeader>
+  1160→              <CardContent className="space-y-5">
+  1161→                {MONTHLY_REPORT === null ? (
+  1162→                  // ── Empty state: not enough data for a monthly report ──
+  1163→                  <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+  1164→                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1165→                      <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1166→                    </div>
+  1167→                    <p className="text-sm font-medium text-foreground">No monthly report yet</p>
+  1168→                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1169→                      Your first monthly AI report will generate automatically once you have
+  1170→                      at least one full month of cycle, mood, sleep, and symptom logs. Start
+  1171→                      tracking across Nuvia to unlock key findings, improvements, and
+  1172→                      personalized goals here.
+  1173→                    </p>
+  1174→                  </div>
+  1175→                ) : (
+  1176→                  <>
+  1177→                {/* Key findings */}
+  1178→                <div>
+  1179→                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+  1180→                    <Sparkles className="h-4 w-4 text-violet-500" /> Key Findings This Month
+  1181→                  </h4>
+  1182→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+  1183→                    {MONTHLY_REPORT.keyFindings.map((f, i) => (
+  1184→                      <motion.div
+  1185→                        key={i}
+  1186→                        initial={{ opacity: 0, x: -10 }}
+  1187→                        animate={{ opacity: 1, x: 0 }}
+  1188→                        transition={{ delay: 0.1 + i * 0.05 }}
+  1189→                        className="flex items-start gap-2 rounded-lg bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2.5"
+  1190→                      >
+  1191→                        <div className="h-5 w-5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+  1192→                          {i + 1}
+  1193→                        </div>
+  1194→                        <p className="text-[11px] text-foreground/80 leading-snug">{f}</p>
+  1195→                      </motion.div>
+  1196→                    ))}
+  1197→                  </div>
+  1198→                </div>
+  1199→
+  1200→                {/* Improvements from last month */}
+  1201→                <div>
+  1202→                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+  1203→                    <TrendingUp className="h-4 w-4 text-emerald-500" /> Improvements from Last Month
+  1204→                  </h4>
+  1205→                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+  1206→                    {MONTHLY_REPORT.improvements.map((imp, i) => (
+  1207→                      <motion.div
+  1208→                        key={imp.metric}
+  1209→                        initial={{ opacity: 0, y: 10 }}
+  1210→                        animate={{ opacity: 1, y: 0 }}
+  1211→                        transition={{ delay: 0.1 + i * 0.05 }}
+  1212→                        className="rounded-lg border border-emerald-200/60 dark:border-emerald-800/30 bg-emerald-50/40 dark:bg-emerald-950/15 p-2.5"
+  1213→                      >
+  1214→                        <div className="flex items-center justify-between mb-1">
+  1215→                          <span className="text-[10px] text-muted-foreground truncate">{imp.metric}</span>
+  1216→                          <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">{imp.delta}</span>
+  1217→                        </div>
+  1218→                        <div className="flex items-center gap-1 text-[10px]">
+  1219→                          <span className="text-muted-foreground">{imp.from}</span>
+  1220→                          <ArrowUpRight className="h-2.5 w-2.5 text-emerald-500" />
+  1221→                          <span className="font-semibold">{imp.to}</span>
+  1222→                        </div>
+  1223→                      </motion.div>
+  1224→                    ))}
+  1225→                  </div>
+  1226→                </div>
+  1227→
+  1228→                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  1229→                  {/* Areas of concern */}
+  1230→                  <div>
+  1231→                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+  1232→                      <AlertTriangle className="h-4 w-4 text-rose-500" /> Areas of Concern
+  1233→                    </h4>
+  1234→                    <ul className="space-y-1.5">
+  1235→                      {MONTHLY_REPORT.concerns.map((c, i) => (
+  1236→                        <li key={i} className="flex items-start gap-2 text-[11px] text-foreground/80">
+  1237→                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+  1238→                          {c}
+  1239→                        </li>
+  1240→                      ))}
+  1241→                    </ul>
+  1242→                  </div>
+  1243→
+  1244→                  {/* Goals for next month */}
+  1245→                  <div>
+  1246→                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+  1247→                      <Target className="h-4 w-4 text-violet-500" /> Goals for Next Month
+  1248→                    </h4>
+  1249→                    <ul className="space-y-1.5">
+  1250→                      {MONTHLY_REPORT.goals.map((g, i) => (
+  1251→                        <li key={i} className="flex items-start gap-2 text-[11px] text-foreground/80">
+  1252→                          <CheckCircle2 className="h-3 w-3 mt-0.5 text-violet-500 shrink-0" />
+  1253→                          {g}
+  1254→                        </li>
+  1255→                      ))}
+  1256→                    </ul>
+  1257→                  </div>
+  1258→                </div>
+  1259→                  </>
+  1260→                )}
+  1261→              </CardContent>
+  1262→            </Card>
+  1263→          </motion.div>
+  1264→
+  1265→          {/* Section 10: AI Model Confidence */}
+  1266→          <motion.div
+  1267→            initial={{ opacity: 0, y: 15 }}
+  1268→            animate={{ opacity: 1, y: 0 }}
+  1269→            transition={{ duration: 0.4, delay: 0.15 }}
+  1270→          >
+  1271→            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+  1272→              <CardHeader>
+  1273→                <div className="flex items-center justify-between gap-3 flex-wrap">
+  1274→                  <div>
+  1275→                    <CardTitle className="flex items-center gap-2">
+  1276→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+  1277→                        <CircuitBoard className="h-4 w-4" />
+  1278→                      </div>
+  1279→                      AI Model Confidence & Transparency
+  1280→                    </CardTitle>
+  1281→                    <CardDescription className="mt-1">
+  1282→                      How Nuvia&apos;s AI works — and why you can trust its insights
+  1283→                    </CardDescription>
+  1284→                  </div>
+  1285→                  <Button variant="outline" size="sm" className="gap-1.5">
+  1286→                    <RefreshCw className="h-3.5 w-3.5" /> Re-train model
+  1287→                  </Button>
+  1288→                </div>
+  1289→              </CardHeader>
+  1290→              <CardContent className="space-y-5">
+  1291→                {/* Stat tiles */}
+  1292→                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+  1293→                  <div className="rounded-xl border border-violet-200/50 dark:border-violet-800/30 bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 p-3">
+  1294→                    <Database className="h-4 w-4 text-violet-500 mb-1" />
+  1295→                    <div className="text-2xl font-bold">{AI_MODEL_INFO.dataPoints.toLocaleString()}</div>
+  1296→                    <div className="text-[10px] text-muted-foreground">Data points analyzed</div>
+  1297→                  </div>
+  1298→                  <div className="rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 p-3">
+  1299→                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mb-1" />
+  1300→                    <div className="text-2xl font-bold">{AI_MODEL_INFO.accuracy}%</div>
+  1301→                    <div className="text-[10px] text-muted-foreground">Model accuracy</div>
+  1302→                  </div>
+  1303→                  <div className="rounded-xl border border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 p-3">
+  1304→                    <Clock className="h-4 w-4 text-amber-500 mb-1" />
+  1305→                    <div className="text-sm font-bold mt-1">{AI_MODEL_INFO.lastUpdated}</div>
+  1306→                    <div className="text-[10px] text-muted-foreground">Last updated</div>
+  1307→                  </div>
+  1308→                  <div className="rounded-xl border border-fuchsia-200/50 dark:border-fuchsia-800/30 bg-gradient-to-br from-fuchsia-50 to-pink-50 dark:from-fuchsia-950/20 dark:to-pink-950/20 p-3">
+  1309→                    <GitBranch className="h-4 w-4 text-fuchsia-500 mb-1" />
+  1310→                    <div className="text-sm font-bold mt-1">{AI_MODEL_INFO.nextUpdate}</div>
+  1311→                    <div className="text-[10px] text-muted-foreground">Next scheduled update</div>
+  1312→                  </div>
+  1313→                </div>
+  1314→
+  1315→                {/* Data sources */}
+  1316→                <div>
+  1317→                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+  1318→                    <Layers className="h-4 w-4 text-violet-500" /> Data Sources Used
+  1319→                  </h4>
+  1320→                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+  1321→                    {AI_MODEL_INFO.dataSources.map((src) => {
+  1322→                      const Icon = src.icon
+  1323→                      return (
+  1324→                        <div
+  1325→                          key={src.label}
+  1326→                          className="flex items-center justify-between rounded-lg border border-border bg-card/60 dark:bg-card/30 p-2.5"
+  1327→                        >
+  1328→                          <div className="flex items-center gap-2">
+  1329→                            <div className={cn('p-1.5 rounded-md', src.classes)}>
+  1330→                              <Icon className="h-3.5 w-3.5" />
+  1331→                            </div>
+  1332→                            <span className="text-[11px] font-medium">{src.label}</span>
+  1333→                          </div>
+  1334→                          <span className="text-[11px] font-semibold text-muted-foreground">{src.count}</span>
+  1335→                        </div>
+  1336→                      )
+  1337→                    })}
+  1338→                  </div>
+  1339→                </div>
+  1340→
+  1341→                <Separator />
+  1342→
+  1343→                {/* How AI works */}
+  1344→                <div>
+  1345→                  <h4 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
+  1346→                    <Info className="h-4 w-4 text-violet-500" /> How Nuvia&apos;s AI Works
+  1347→                  </h4>
+  1348→                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+  1349→                    {AI_MODEL_INFO.howItWorks.map((step, i) => (
+  1350→                      <motion.div
+  1351→                        key={step.step}
+  1352→                        initial={{ opacity: 0, y: 10 }}
+  1353→                        animate={{ opacity: 1, y: 0 }}
+  1354→                        transition={{ delay: i * 0.08 }}
+  1355→                        className="relative rounded-lg border border-violet-100 dark:border-violet-900/30 bg-gradient-to-br from-violet-50/50 to-fuchsia-50/30 dark:from-violet-950/15 dark:to-fuchsia-950/10 p-3"
+  1356→                      >
+  1357→                        <div className="absolute -top-2 -left-2 h-6 w-6 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+  1358→                          {step.step}
+  1359→                        </div>
+  1360→                        <h5 className="text-[11px] font-semibold mt-2 mb-1">{step.title}</h5>
+  1361→                        <p className="text-[10px] text-muted-foreground leading-snug">{step.description}</p>
+  1362→                      </motion.div>
+  1363→                    ))}
+  1364→                  </div>
+  1365→                </div>
+  1366→
+  1367→                <div className="flex items-start gap-2 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3">
+  1368→                  <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+  1369→                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+  1370→                    <strong className="text-foreground">Privacy first:</strong> Your data never leaves your device unencrypted.
+  1371→                    All predictions are computed locally or in an anonymized, HIPAA-compliant pipeline. You can delete your
+  1372→                    data and reset the model anytime from Settings.
+  1373→                  </p>
+  1374→                </div>
+  1375→              </CardContent>
+  1376→            </Card>
+  1377→          </motion.div>
+  1378→        </TabsContent>
+  1379→
+  1380→        {/* ═══ PREDICTIONS TAB: Section 3 ═══ */}
+  1381→        <TabsContent value="predictions" className="mt-4 space-y-4">
+  1382→          <motion.div
+  1383→            initial={{ opacity: 0, y: 10 }}
+  1384→            animate={{ opacity: 1, y: 0 }}
+  1385→            className="flex items-center justify-between gap-3 flex-wrap"
+  1386→          >
+  1387→            <div>
+  1388→              <h2 className="text-xl font-semibold flex items-center gap-2">
+  1389→                <Sparkles className="h-5 w-5 text-violet-500" /> AI Predictions Dashboard
+  1390→              </h2>
+  1391→              <p className="text-sm text-muted-foreground mt-0.5">
+  1392→                7-day forecasts for mood, energy, sleep, stress, productivity, and cravings.
+  1393→              </p>
+  1394→            </div>
+  1395→            {PREDICTIONS.length > 0 && (
+  1396→              <Badge variant="outline" className="gap-1.5">
+  1397→                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Updated 2h ago · Live model
+  1398→              </Badge>
+  1399→            )}
+  1400→          </motion.div>
+  1401→
+  1402→          {PREDICTIONS.length === 0 ? (
+  1403→            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1404→              <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
+  1405→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1406→                  <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1407→                </div>
+  1408→                <p className="text-sm font-medium text-foreground">No predictions yet</p>
+  1409→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1410→                  Insights appear after you log some data. 7-day forecasts for mood, energy,
+  1411→                  sleep, stress, productivity, and cravings will generate here once Nuvia
+  1412→                  has at least a few weeks of your cycle, mood, and symptom logs to model from.
+  1413→                </p>
+  1414→              </CardContent>
+  1415→            </Card>
+  1416→          ) : (
+  1417→            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  1418→              {PREDICTIONS.map((p, i) => (
+  1419→                <ForecastCard key={p.id} prediction={p} index={i} />
+  1420→              ))}
+  1421→            </div>
+  1422→          )}
+  1423→        </TabsContent>
+  1424→
+  1425→        {/* ═══ PATTERNS TAB: Sections 4 + 5 ═══ */}
+  1426→        <TabsContent value="patterns" className="mt-4 space-y-6">
+  1427→          {/* Section 4: Pattern Detection Engine */}
+  1428→          <div>
+  1429→            <motion.div
+  1430→              initial={{ opacity: 0, y: 10 }}
+  1431→              animate={{ opacity: 1, y: 0 }}
+  1432→              className="flex items-center justify-between gap-3 flex-wrap mb-4"
+  1433→            >
+  1434→              <div>
+  1435→                <h2 className="text-xl font-semibold flex items-center gap-2">
+  1436→                  <Network className="h-5 w-5 text-violet-500" /> Pattern Detection Engine
+  1437→                </h2>
+  1438→                <p className="text-sm text-muted-foreground mt-0.5">
+  1439→                  AI-discovered correlations from {AI_MODEL_INFO.dataPoints.toLocaleString()} of your data points.
+  1440→                </p>
+  1441→              </div>
+  1442→              <Badge className="bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white border-0 gap-1">
+  1443→                <Sparkles className="h-3 w-3" /> {PATTERNS.length} patterns found
+  1444→              </Badge>
+  1445→            </motion.div>
+  1446→
+  1447→            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  1448→              {PATTERNS.length === 0 ? (
+  1449→                <div className="col-span-full">
+  1450→                  <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1451→                    <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
+  1452→                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1453→                        <Network className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1454→                      </div>
+  1455→                      <p className="text-sm font-medium text-foreground">No patterns detected yet</p>
+  1456→                      <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1457→                        Insights appear after you log some data. Nuvia&apos;s pattern engine
+  1458→                        will surface recurring correlations — like cycle-day mood dips or hydration→cramp
+  1459→                        links — once you have a few weeks of consistent logs.
+  1460→                      </p>
+  1461→                    </CardContent>
+  1462→                  </Card>
+  1463→                </div>
+  1464→              ) : (
+  1465→                PATTERNS.map((p, i) => (
+  1466→                  <PatternCard key={p.id} pattern={p} index={i} />
+  1467→                ))
+  1468→              )}
+  1469→            </div>
+  1470→          </div>
+  1471→
+  1472→          {/* Section 5: Correlation Matrix */}
+  1473→          {CORRELATION_MATRIX.length > 0 && KEY_CORRELATIONS.length > 0 ? (
+  1474→          <motion.div
+  1475→            initial={{ opacity: 0, y: 15 }}
+  1476→            animate={{ opacity: 1, y: 0 }}
+  1477→            transition={{ duration: 0.4 }}
+  1478→          >
+  1479→            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+  1480→              <CardHeader>
+  1481→                <div className="flex items-center justify-between gap-3 flex-wrap">
+  1482→                  <div>
+  1483→                    <CardTitle className="flex items-center gap-2">
+  1484→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white">
+  1485→                        <Grid3x3 className="h-4 w-4" />
+  1486→                      </div>
+  1487→                      Correlation Matrix
+  1488→                    </CardTitle>
+  1489→                    <CardDescription className="mt-1">
+  1490→                      How your health metrics influence each other (-1.0 to +1.0)
+  1491→                    </CardDescription>
+  1492→                  </div>
+  1493→                  <div className="flex items-center gap-2 text-[10px]">
+  1494→                    <span className="flex items-center gap-1">
+  1495→                      <span className="h-3 w-3 rounded bg-rose-500" /> Strong negative
+  1496→                    </span>
+  1497→                    <span className="flex items-center gap-1">
+  1498→                      <span className="h-3 w-3 rounded bg-slate-300/50" /> Neutral
+  1499→                    </span>
+  1500→                    <span className="flex items-center gap-1">
+  1501→                      <span className="h-3 w-3 rounded bg-emerald-500" /> Strong positive
+  1502→                    </span>
+  1503→                  </div>
+  1504→                </div>
+  1505→              </CardHeader>
+  1506→              <CardContent>
+  1507→                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+  1508→                  {/* Matrix grid */}
+  1509→                  <div className="lg:col-span-3">
+  1510→                    <div className="overflow-x-auto">
+  1511→                      <div className="min-w-[400px]">
+  1512→                        {/* Column headers */}
+  1513→                        <div className="grid" style={{ gridTemplateColumns: `80px repeat(${MATRIX_VARIABLES.length}, 1fr)` }}>
+  1514→                          <div />
+  1515→                          {MATRIX_VARIABLES.map((v) => (
+  1516→                            <div key={v} className="text-center text-[10px] font-semibold text-muted-foreground pb-2">
+  1517→                              {v}
+  1518→                            </div>
+  1519→                          ))}
+  1520→                        </div>
+  1521→                        {/* Rows */}
+  1522→                        {CORRELATION_MATRIX.map((row, ri) => (
+  1523→                          <div
+  1524→                            key={ri}
+  1525→                            className="grid items-center"
+  1526→                            style={{ gridTemplateColumns: `80px repeat(${MATRIX_VARIABLES.length}, 1fr)` }}
+  1527→                          >
+  1528→                            <div className="text-[10px] font-semibold text-muted-foreground pr-2 text-right">
+  1529→                              {MATRIX_VARIABLES[ri]}
+  1530→                            </div>
+  1531→                            {row.map((val, ci) => {
+  1532→                              const isSelf = ri === ci
+  1533→                              return (
+  1534→                                <div key={ci} className="p-0.5">
+  1535→                                  <motion.div
+  1536→                                    initial={{ opacity: 0, scale: 0.8 }}
+  1537→                                    animate={{ opacity: 1, scale: 1 }}
+  1538→                                    transition={{ delay: ri * 0.05 + ci * 0.03, duration: 0.3 }}
+  1539→                                    whileHover={{ scale: 1.08 }}
+  1540→                                    className={cn(
+  1541→                                      'aspect-square rounded-md flex items-center justify-center text-[10px] font-bold cursor-default transition-shadow hover:shadow-md',
+  1542→                                      correlationColor(val),
+  1543→                                      isSelf && 'ring-2 ring-violet-400 ring-offset-1',
+  1544→                                      Math.abs(val) >= 0.6 ? 'text-white' : Math.abs(val) >= 0.3 ? 'text-foreground' : 'text-muted-foreground'
+  1545→                                    )}
+  1546→                                    title={`${MATRIX_VARIABLES[ri]} ↔ ${MATRIX_VARIABLES[ci]}: ${val.toFixed(2)} (${correlationText(val)})`}
+  1547→                                  >
+  1548→                                    {isSelf ? '1.0' : val.toFixed(2)}
+  1549→                                  </motion.div>
+  1550→                                </div>
+  1551→                              )
+  1552→                            })}
+  1553→                          </div>
+  1554→                        ))}
+  1555→                      </div>
+  1556→                    </div>
+  1557→                    <p className="text-[10px] text-muted-foreground mt-3 leading-relaxed">
+  1558→                      Hover any cell for details. Diagonal cells (self-correlation) are always 1.00. Color intensity reflects
+  1559→                      correlation strength — emerald = positive, rose = negative.
+  1560→                    </p>
+  1561→                  </div>
+  1562→
+  1563→                  {/* Key correlations */}
+  1564→                  <div className="lg:col-span-2 space-y-2">
+  1565→                    <h4 className="text-sm font-semibold flex items-center gap-1.5 mb-1">
+  1566→                      <Link2 className="h-4 w-4 text-violet-500" /> Key Correlations
+  1567→                    </h4>
+  1568→                    {KEY_CORRELATIONS.map((c, i) => (
+  1569→                      <motion.div
+  1570→                        key={c.pair}
+  1571→                        initial={{ opacity: 0, x: 10 }}
+  1572→                        animate={{ opacity: 1, x: 0 }}
+  1573→                        transition={{ delay: i * 0.08 }}
+  1574→                        className="rounded-lg border border-border bg-card/60 dark:bg-card/30 p-2.5"
+  1575→                      >
+  1576→                        <div className="flex items-center justify-between mb-1">
+  1577→                          <span className="text-[11px] font-semibold">{c.pair}</span>
+  1578→                          <Badge
+  1579→                            variant="outline"
+  1580→                            className={cn(
+  1581→                              'text-[10px] gap-0.5',
+  1582→                              c.value > 0
+  1583→                                ? 'border-emerald-300 text-emerald-600 dark:border-emerald-800 dark:text-emerald-400'
+  1584→                                : 'border-rose-300 text-rose-600 dark:border-rose-800 dark:text-rose-400'
+  1585→                            )}
+  1586→                          >
+  1587→                            {c.value > 0 ? '+' : ''}{c.value.toFixed(2)}
+  1588→                          </Badge>
+  1589→                        </div>
+  1590→                        <p className="text-[10px] text-muted-foreground leading-snug">{c.insight}</p>
+  1591→                      </motion.div>
+  1592→                    ))}
+  1593→                  </div>
+  1594→                </div>
+  1595→              </CardContent>
+  1596→            </Card>
+  1597→          </motion.div>
+  1598→          ) : (
+  1599→            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1600→              <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
+  1601→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1602→                  <Grid3x3 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1603→                </div>
+  1604→                <p className="text-sm font-medium text-foreground">No correlation matrix yet</p>
+  1605→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1606→                  Insights appear after you log some data. The correlation matrix — showing how
+  1607→                  your sleep, mood, energy, stress, water, and cramps interact — will compute
+  1608→                  automatically once Nuvia has enough paired data points.
+  1609→                </p>
+  1610→              </CardContent>
+  1611→            </Card>
+  1612→          )}
+  1613→        </TabsContent>
+  1614→
+  1615→        {/* ═══ TRENDS TAB: Section 6 ═══ */}
+  1616→        <TabsContent value="trends" className="mt-4 space-y-6">
+  1617→          <motion.div
+  1618→            initial={{ opacity: 0, y: 10 }}
+  1619→            animate={{ opacity: 1, y: 0 }}
+  1620→          >
+  1621→            <h2 className="text-xl font-semibold flex items-center gap-2">
+  1622→              <TrendingUp className="h-5 w-5 text-violet-500" /> Health Trends Analytics
+  1623→            </h2>
+  1624→            <p className="text-sm text-muted-foreground mt-0.5">
+  1625→              Long-term patterns across mood, symptoms, sleep, cycle regularity, and behavior correlations.
+  1626→            </p>
+  1627→          </motion.div>
+  1628→
+  1629→          {MOOD_TREND_90.length === 0 && SYMPTOM_TREND_90.length === 0 && SLEEP_TREND_90.length === 0 && CYCLE_REGULARITY_12.length === 0 && SLEEP_MOOD_SCATTER.length === 0 ? (
+  1630→            // ── Empty state: not enough history for trend charts ──
+  1631→            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1632→              <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
+  1633→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1634→                  <TrendingUp className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1635→                </div>
+  1636→                <p className="text-sm font-medium text-foreground">No trends yet</p>
+  1637→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1638→                  Insights appear after you log some data. Long-term trend charts — 90-day mood,
+  1639→                  symptom severity, sleep quality, 12-month cycle regularity, and sleep-vs-mood
+  1640→                  scatter — will populate here as your tracking history grows.
+  1641→                </p>
+  1642→              </CardContent>
+  1643→            </Card>
+  1644→          ) : (
+  1645→          <>
+  1646→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+  1647→            {/* 90-day mood trend — AreaChart */}
+  1648→            {MOOD_TREND_90.length > 0 && (
+  1649→            <motion.div
+  1650→              initial={{ opacity: 0, y: 15 }}
+  1651→              animate={{ opacity: 1, y: 0 }}
+  1652→              transition={{ duration: 0.4 }}
+  1653→            >
+  1654→              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+  1655→                <CardHeader className="pb-2">
+  1656→                  <div className="flex items-center justify-between">
+  1657→                    <CardTitle className="flex items-center gap-2 text-base">
+  1658→                      <Smile className="h-4 w-4 text-amber-500" /> 90-Day Mood Trend
+  1659→                    </CardTitle>
+  1660→                    <Badge variant="outline" className="text-[10px] gap-0.5 text-emerald-600 border-emerald-300">
+  1661→                      <ArrowUpRight className="h-3 w-3" /> +8% vs prior
+  1662→                    </Badge>
+  1663→                  </div>
+  1664→                  <CardDescription className="text-[11px]">Daily mood score (0–100)</CardDescription>
+  1665→                </CardHeader>
+  1666→                <CardContent>
+  1667→                  <div className="h-56">
+  1668→                    <ResponsiveContainer width="100%" height="100%">
+  1669→                      <AreaChart data={MOOD_TREND_90} margin={{ top: 5, right: 8, bottom: 0, left: -22 }}>
+  1670→                        <defs>
+  1671→                          <linearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
+  1672→                            <stop offset="0%" stopColor="#a855f7" stopOpacity={0.7} />
+  1673→                            <stop offset="100%" stopColor="#a855f7" stopOpacity={0.05} />
+  1674→                          </linearGradient>
+  1675→                        </defs>
+  1676→                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.1)" vertical={false} />
+  1677→                        <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} tickCount={6} />
+  1678→                        <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+  1679→                        <Tooltip content={<ChartTooltip />} />
+  1680→                        <ReferenceLine y={70} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1} />
+  1681→                        <Area type="monotone" dataKey="value" name="Mood" stroke="#a855f7" strokeWidth={2} fill="url(#moodGrad)" />
+  1682→                      </AreaChart>
+  1683→                    </ResponsiveContainer>
+  1684→                  </div>
+  1685→                </CardContent>
+  1686→              </Card>
+  1687→            </motion.div>
+  1688→            )}
+  1689→
+  1690→            {/* 90-day symptom severity — LineChart */}
+  1691→            {SYMPTOM_TREND_90.length > 0 && (
+  1692→            <motion.div
+  1693→              initial={{ opacity: 0, y: 15 }}
+  1694→              animate={{ opacity: 1, y: 0 }}
+  1695→              transition={{ duration: 0.4, delay: 0.05 }}
+  1696→            >
+  1697→              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+  1698→                <CardHeader className="pb-2">
+  1699→                  <div className="flex items-center justify-between">
+  1700→                    <CardTitle className="flex items-center gap-2 text-base">
+  1701→                      <Activity className="h-4 w-4 text-rose-500" /> 90-Day Symptom Severity
+  1702→                    </CardTitle>
+  1703→                    <Badge variant="outline" className="text-[10px] gap-0.5 text-emerald-600 border-emerald-300">
+  1704→                      <ArrowDownRight className="h-3 w-3" /> -12% improving
+  1705→                    </Badge>
+  1706→                  </div>
+  1707→                  <CardDescription className="text-[11px]">Daily symptom severity score (0–100)</CardDescription>
+  1708→                </CardHeader>
+  1709→                <CardContent>
+  1710→                  <div className="h-56">
+  1711→                    <ResponsiveContainer width="100%" height="100%">
+  1712→                      <LineChart data={SYMPTOM_TREND_90} margin={{ top: 5, right: 8, bottom: 0, left: -22 }}>
+  1713→                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(244,63,94,0.1)" vertical={false} />
+  1714→                        <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} tickCount={6} />
+  1715→                        <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+  1716→                        <Tooltip content={<ChartTooltip />} />
+  1717→                        <ReferenceLine y={50} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1} />
+  1718→                        <Line type="monotone" dataKey="value" name="Severity" stroke="#f43f5e" strokeWidth={2} dot={false} />
+  1719→                      </LineChart>
+  1720→                    </ResponsiveContainer>
+  1721→                  </div>
+  1722→                </CardContent>
+  1723→              </Card>
+  1724→            </motion.div>
+  1725→            )}
+  1726→
+  1727→            {/* 90-day sleep quality — LineChart */}
+  1728→            {SLEEP_TREND_90.length > 0 && (
+  1729→            <motion.div
+  1730→              initial={{ opacity: 0, y: 15 }}
+  1731→              animate={{ opacity: 1, y: 0 }}
+  1732→              transition={{ duration: 0.4, delay: 0.1 }}
+  1733→            >
+  1734→              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+  1735→                <CardHeader className="pb-2">
+  1736→                  <div className="flex items-center justify-between">
+  1737→                    <CardTitle className="flex items-center gap-2 text-base">
+  1738→                      <Moon className="h-4 w-4 text-indigo-500" /> 90-Day Sleep Quality
+  1739→                    </CardTitle>
+  1740→                    <Badge variant="outline" className="text-[10px] gap-0.5 text-emerald-600 border-emerald-300">
+  1741→                      <ArrowUpRight className="h-3 w-3" /> +5% vs prior
+  1742→                    </Badge>
+  1743→                  </div>
+  1744→                  <CardDescription className="text-[11px]">Daily sleep quality score (0–100)</CardDescription>
+  1745→                </CardHeader>
+  1746→                <CardContent>
+  1747→                  <div className="h-56">
+  1748→                    <ResponsiveContainer width="100%" height="100%">
+  1749→                      <LineChart data={SLEEP_TREND_90} margin={{ top: 5, right: 8, bottom: 0, left: -22 }}>
+  1750→                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.1)" vertical={false} />
+  1751→                        <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} tickCount={6} />
+  1752→                        <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+  1753→                        <Tooltip content={<ChartTooltip />} />
+  1754→                        <ReferenceLine y={80} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1} />
+  1755→                        <Line type="monotone" dataKey="value" name="Sleep" stroke="#6366f1" strokeWidth={2} dot={false} />
+  1756→                      </LineChart>
+  1757→                    </ResponsiveContainer>
+  1758→                  </div>
+  1759→                </CardContent>
+  1760→              </Card>
+  1761→            </motion.div>
+  1762→            )}
+  1763→
+  1764→            {/* Cycle regularity 12 months — BarChart */}
+  1765→            {CYCLE_REGULARITY_12.length > 0 && (
+  1766→            <motion.div
+  1767→              initial={{ opacity: 0, y: 15 }}
+  1768→              animate={{ opacity: 1, y: 0 }}
+  1769→              transition={{ duration: 0.4, delay: 0.15 }}
+  1770→            >
+  1771→              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+  1772→                <CardHeader className="pb-2">
+  1773→                  <div className="flex items-center justify-between">
+  1774→                    <CardTitle className="flex items-center gap-2 text-base">
+  1775→                      <Calendar className="h-4 w-4 text-violet-500" /> Cycle Regularity — 12 Months
+  1776→                    </CardTitle>
+  1777→                    <Badge variant="outline" className="text-[10px] gap-0.5 text-emerald-600 border-emerald-300">
+  1778→                      <CheckCircle2 className="h-3 w-3" /> 92% regular
+  1779→                    </Badge>
+  1780→                  </div>
+  1781→                  <CardDescription className="text-[11px]">Cycle length (days) by month — bars colored by variance</CardDescription>
+  1782→                </CardHeader>
+  1783→                <CardContent>
+  1784→                  <div className="h-56">
+  1785→                    <ResponsiveContainer width="100%" height="100%">
+  1786→                      <BarChart data={CYCLE_REGULARITY_12} margin={{ top: 5, right: 8, bottom: 0, left: -22 }}>
+  1787→                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.1)" vertical={false} />
+  1788→                        <XAxis dataKey="month" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+  1789→                        <YAxis domain={[24, 34]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+  1790→                        <Tooltip content={<ChartTooltip />} />
+  1791→                        <ReferenceLine y={28} stroke="#10b981" strokeDasharray="4 4" strokeWidth={1} />
+  1792→                        <ReferenceLine y={32} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1} />
+  1793→                        <Bar dataKey="length" name="Cycle length" radius={[4, 4, 0, 0]}>
+  1794→                          {CYCLE_REGULARITY_12.map((entry, i) => (
+  1795→                            <Cell
+  1796→                              key={i}
+  1797→                              fill={entry.variance <= 1 ? '#a855f7' : entry.variance <= 2 ? '#c084fc' : '#e9d5ff'}
+  1798→                            />
+  1799→                          ))}
+  1800→                        </Bar>
+  1801→                      </BarChart>
+  1802→                    </ResponsiveContainer>
+  1803→                  </div>
+  1804→                </CardContent>
+  1805→              </Card>
+  1806→            </motion.div>
+  1807→            )}
+  1808→          </div>
+  1809→
+  1810→          {/* Correlation scatter plot — full width */}
+  1811→          {SLEEP_MOOD_SCATTER.length > 0 && (
+  1812→          <motion.div
+  1813→            initial={{ opacity: 0, y: 15 }}
+  1814→            animate={{ opacity: 1, y: 0 }}
+  1815→            transition={{ duration: 0.4, delay: 0.2 }}
+  1816→          >
+  1817→            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+  1818→              <CardHeader className="pb-2">
+  1819→                <div className="flex items-center justify-between">
+  1820→                  <div>
+  1821→                    <CardTitle className="flex items-center gap-2 text-base">
+  1822→                      <Grid3x3 className="h-4 w-4 text-fuchsia-500" /> Sleep Hours vs Mood Score
+  1823→                    </CardTitle>
+  1824→                    <CardDescription className="text-[11px]">Each dot = one night + next-day mood (30 nights)</CardDescription>
+  1825→                  </div>
+  1826→                  <Badge variant="outline" className="text-[10px] gap-0.5 border-emerald-300 text-emerald-600">
+  1827→                    <Link2 className="h-3 w-3" /> r = +0.72
+  1828→                  </Badge>
+  1829→                </div>
+  1830→              </CardHeader>
+  1831→              <CardContent>
+  1832→                <div className="h-72">
+  1833→                  <ResponsiveContainer width="100%" height="100%">
+  1834→                    <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: -10 }}>
+  1835→                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.1)" />
+  1836→                      <XAxis
+  1837→                        type="number"
+  1838→                        dataKey="sleep"
+  1839→                        name="Sleep hours"
+  1840→                        domain={[4, 10]}
+  1841→                        tick={{ fontSize: 10 }}
+  1842→                        axisLine={false}
+  1843→                        tickLine={false}
+  1844→                        label={{ value: 'Sleep (hours)', position: 'insideBottom', offset: -5, style: { fontSize: 11, fill: 'oklch(0.5 0.03 325)' } }}
+  1845→                      />
+  1846→                      <YAxis
+  1847→                        type="number"
+  1848→                        dataKey="mood"
+  1849→                        name="Mood score"
+  1850→                        domain={[0, 100]}
+  1851→                        tick={{ fontSize: 10 }}
+  1852→                        axisLine={false}
+  1853→                        tickLine={false}
+  1854→                        label={{ value: 'Mood', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: 'oklch(0.5 0.03 325)' } }}
+  1855→                      />
+  1856→                      <Tooltip content={<ChartTooltip />} cursor={{ strokeDasharray: '3 3' }} />
+  1857→                      <Scatter name="Sleep vs Mood" data={SLEEP_MOOD_SCATTER} fill="#a855f7" fillOpacity={0.65} />
+  1858→                    </ScatterChart>
+  1859→                  </ResponsiveContainer>
+  1860→                </div>
+  1861→              </CardContent>
+  1862→            </Card>
+  1863→          </motion.div>
+  1864→          )}
+  1865→          </>
+  1866→          )}
+  1867→        </TabsContent>
+  1868→
+  1869→        {/* ═══ RECOMMENDATIONS TAB: Section 7 ═══ */}
+  1870→        <TabsContent value="recommendations" className="mt-4 space-y-6">
+  1871→          <motion.div
+  1872→            initial={{ opacity: 0, y: 10 }}
+  1873→            animate={{ opacity: 1, y: 0 }}
+  1874→            className="flex items-center justify-between gap-3 flex-wrap"
+  1875→          >
+  1876→            <div>
+  1877→              <h2 className="text-xl font-semibold flex items-center gap-2">
+  1878→                <Lightbulb className="h-5 w-5 text-violet-500" /> AI Recommendations Engine
+  1879→              </h2>
+  1880→              <p className="text-sm text-muted-foreground mt-0.5">
+  1881→                Personalized, evidence-based recommendations across 4 categories.
+  1882→              </p>
+  1883→            </div>
+  1884→            <div className="flex items-center gap-2">
+  1885→              <Badge variant="outline" className="gap-1">
+  1886→                <Check className="h-3 w-3" /> {addedRecs.size} added
+  1887→              </Badge>
+  1888→              <Badge variant="outline" className="gap-1">
+  1889→                <Sparkles className="h-3 w-3" /> {RECOMMENDATIONS.length} total
+  1890→              </Badge>
+  1891→            </div>
+  1892→          </motion.div>
+  1893→
+  1894→          {RECOMMENDATIONS.length === 0 ? (
+  1895→            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1896→              <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
+  1897→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1898→                  <Lightbulb className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1899→                </div>
+  1900→                <p className="text-sm font-medium text-foreground">No recommendations yet</p>
+  1901→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1902→                  Insights appear after you log some data. Nuvia will generate personalized,
+  1903→                  evidence-based recommendations across nutrition, exercise, lifestyle, and
+  1904→                  self-care — each tied to your actual tracked patterns — as your history grows.
+  1905→                </p>
+  1906→              </CardContent>
+  1907→            </Card>
+  1908→          ) : (
+  1909→            REC_CATEGORIES.map((cat) => {
+  1910→              const Icon = cat.icon
+  1911→              const recs = recsByCategory[cat.id]
+  1912→              return (
+  1913→                <motion.div
+  1914→                  key={cat.id}
+  1915→                  initial={{ opacity: 0, y: 15 }}
+  1916→                  animate={{ opacity: 1, y: 0 }}
+  1917→                  transition={{ duration: 0.4 }}
+  1918→                  className="space-y-3"
+  1919→                >
+  1920→                  <div className="flex items-center gap-2">
+  1921→                    <div className={`p-2 rounded-xl bg-gradient-to-br ${cat.gradient} text-white shadow-md`}>
+  1922→                      <Icon className="h-4 w-4" />
+  1923→                    </div>
+  1924→                    <div>
+  1925→                      <h3 className="text-base font-semibold">{cat.label}</h3>
+  1926→                      <p className="text-[11px] text-muted-foreground">{recs.length} recommendations · cycle-synced</p>
+  1927→                    </div>
+  1928→                  </div>
+  1929→
+  1930→                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  1931→                    {recs.map((rec) => (
+  1932→                      <RecommendationCard
+  1933→                        key={rec.id}
+  1934→                        rec={rec}
+  1935→                        onAdd={handleAddRec}
+  1936→                        added={addedRecs.has(rec.id)}
+  1937→                      />
+  1938→                    ))}
+  1939→                  </div>
+  1940→                </motion.div>
+  1941→              )
+  1942→            })
+  1943→          )}
+  1944→        </TabsContent>
+  1945→
+  1946→        {/* ═══ RISK TAB: Section 8 ═══ */}
+  1947→        <TabsContent value="risk" className="mt-4 space-y-6">
+  1948→          <motion.div
+  1949→            initial={{ opacity: 0, y: 10 }}
+  1950→            animate={{ opacity: 1, y: 0 }}
+  1951→            className="flex items-center justify-between gap-3 flex-wrap"
+  1952→          >
+  1953→            <div>
+  1954→              <h2 className="text-xl font-semibold flex items-center gap-2">
+  1955→                <ShieldAlert className="h-5 w-5 text-violet-500" /> Risk Assessment
+  1956→              </h2>
+  1957→              <p className="text-sm text-muted-foreground mt-0.5">
+  1958→                AI-calculated risk scores for common women&apos;s health conditions.
+  1959→              </p>
+  1960→            </div>
+  1961→            <Button variant="outline" size="sm" className="gap-1.5">
+  1962→              <Stethoscope className="h-3.5 w-3.5" /> Discuss with doctor
+  1963→            </Button>
+  1964→          </motion.div>
+  1965→
+  1966→          {/* Risk overview banner */}
+  1967→          <motion.div
+  1968→            initial={{ opacity: 0, y: 10 }}
+  1969→            animate={{ opacity: 1, y: 0 }}
+  1970→            transition={{ delay: 0.05 }}
+  1971→          >
+  1972→            <Card className="border-amber-200/60 dark:border-amber-800/30 bg-gradient-to-br from-amber-50/60 to-rose-50/40 dark:from-amber-950/20 dark:to-rose-950/15">
+  1973→              <CardContent className="py-4 flex items-start gap-3">
+  1974→                <Info className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+  1975→                <div className="text-[12px] text-muted-foreground leading-relaxed">
+  1976→                  <strong className="text-foreground">Important:</strong> These AI risk scores are{' '}
+  1977→                  <strong>not a medical diagnosis</strong>. They are pattern-based indicators to help you start informed
+  1978→                  conversations with your healthcare provider. Always consult a licensed physician for diagnosis and treatment.
+  1979→                </div>
+  1980→              </CardContent>
+  1981→            </Card>
+  1982→          </motion.div>
+  1983→
+  1984→          {/* Risk cards */}
+  1985→          {RISK_ASSESSMENTS.length === 0 ? (
+  1986→            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+  1987→              <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
+  1988→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+  1989→                  <ShieldAlert className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+  1990→                </div>
+  1991→                <p className="text-sm font-medium text-foreground">No risk assessments yet</p>
+  1992→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+  1993→                  Insights appear after you log some data. Nuvia will compute AI risk
+  1994→                  scores for common women&apos;s health conditions — PCOS, PMS/PMDD, iron &amp;
+  1995→                  vitamin D deficiency, thyroid — once you have enough cycle, symptom, and
+  1996→                  lifestyle logs. These scores are not a medical diagnosis; always consult a
+  1997→                  licensed physician.
+  1998→                </p>
+  1999→              </CardContent>
+  2000→            </Card>
+
+[showing lines 1-2000 of 2094; use offset=2001 with limit to continue reading]

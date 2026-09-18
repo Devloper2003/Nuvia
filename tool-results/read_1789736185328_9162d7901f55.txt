@@ -1,0 +1,702 @@
+     1→'use client'
+     2→
+     3→import { useState, useMemo, useEffect } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  LineChart,
+     7→  Line,
+     8→  BarChart,
+     9→  Bar,
+    10→  XAxis,
+    11→  YAxis,
+    12→  CartesianGrid,
+    13→  Tooltip,
+    14→  ResponsiveContainer,
+    15→  RadarChart,
+    16→  PolarGrid,
+    17→  PolarAngleAxis,
+    18→  PolarRadiusAxis,
+    19→  Radar,
+    20→} from 'recharts'
+    21→import {
+    22→  Card,
+    23→  CardContent,
+    24→  CardDescription,
+    25→  CardHeader,
+    26→  CardTitle,
+    27→} from '@/components/ui/card'
+    28→import { Button } from '@/components/ui/button'
+    29→import { Badge } from '@/components/ui/badge'
+    30→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    31→import { Progress } from '@/components/ui/progress'
+    32→import { Separator } from '@/components/ui/separator'
+    33→import { Switch } from '@/components/ui/switch'
+    34→import {
+    35→  Accordion,
+    36→  AccordionContent,
+    37→  AccordionItem,
+    38→  AccordionTrigger,
+    39→} from '@/components/ui/accordion'
+    40→import {
+    41→  Flower2,
+    42→  AlertTriangle,
+    43→  TrendingDown,
+    44→  TrendingUp,
+    45→  Dumbbell,
+    46→  Apple,
+    47→  Moon,
+    48→  BookOpen,
+    49→  ChevronRight,
+    50→  Star,
+    51→  Heart,
+    52→  Activity,
+    53→  Sparkles,
+    54→  FileBarChart,
+    55→  CheckCircle2,
+    56→  Circle,
+    57→  ShieldCheck,
+    58→  Clock,
+    59→  Stethoscope,
+    60→  ExternalLink,
+    61→  Microscope,
+    62→  Dna,
+    63→  Pill,
+    64→  Brain,
+    65→  Info,
+    66→  X,
+    67→  HelpCircle,
+    68→  Droplet,
+    69→  Layers,
+    70→  FlaskConical,
+    71→  Flame,
+    72→  Eye,
+    73→  Scissors,
+    74→  Calendar,
+    75→  Sprout,
+    76→} from 'lucide-react'
+    77→import { useAppStore } from '@/lib/store'
+    78→
+    79→// ─── Types ──────────────────────────────────────────────────────────────────
+    80→
+    81→interface PCOSSymptom {
+    82→  id: string
+    83→  label: string
+    84→  checked: boolean
+    85→  severity: 'none' | 'mild' | 'moderate' | 'severe'
+    86→}
+    87→
+    88→interface Recommendation {
+    89→  category: string
+    90→  icon: React.ReactNode
+    91→  items: string[]
+    92→  priority: 'high' | 'medium' | 'low'
+    93→}
+    94→
+    95→// ─── Symptom checklist configuration (kept — these are options, not user data) ─
+    96→
+    97→const initialSymptoms: PCOSSymptom[] = [
+    98→  { id: 'irregular-periods', label: 'Irregular periods', checked: false, severity: 'none' },
+    99→  { id: 'excess-hair', label: 'Excess hair growth', checked: false, severity: 'none' },
+   100→  { id: 'acne', label: 'Acne', checked: false, severity: 'none' },
+   101→  { id: 'weight-gain', label: 'Weight gain', checked: false, severity: 'none' },
+   102→  { id: 'hair-loss', label: 'Hair loss', checked: false, severity: 'none' },
+   103→  { id: 'skin-tags', label: 'Skin tags', checked: false, severity: 'none' },
+   104→  { id: 'fatigue', label: 'Fatigue', checked: false, severity: 'none' },
+   105→  { id: 'mood-changes', label: 'Mood changes', checked: false, severity: 'none' },
+   106→  { id: 'sleep-issues', label: 'Sleep issues', checked: false, severity: 'none' },
+   107→]
+   108→
+   109→// Weight & sleep data are now empty by default — populated from real API data once the user logs entries.
+   110→// The monthly report-card radar is also empty until the user has tracking history.
+   111→
+   112→const resourceLibrary = [
+   113→  {
+   114→    title: 'Understanding PCOS',
+   115→    description: 'A complete guide to Polycystic Ovary Syndrome, its causes, and effects on your body.',
+   116→    category: 'Basics',
+   117→    readTime: '8 min',
+   118→    color: 'from-pink-400 to-rose-400',
+   119→  },
+   120→  {
+   121→    title: 'PCOS-Friendly Diet Plan',
+   122→    description: 'Anti-inflammatory foods and meal plans designed to manage insulin resistance.',
+   123→    category: 'Diet',
+   124→    readTime: '12 min',
+   125→    color: 'from-amber-400 to-orange-400',
+   126→  },
+   127→  {
+   128→    title: 'Exercise & PCOS',
+   129→    description: 'Best workout routines for managing weight and improving insulin sensitivity.',
+   130→    category: 'Fitness',
+   131→    readTime: '6 min',
+   132→    color: 'from-emerald-400 to-teal-400',
+   133→  },
+   134→  {
+   135→    title: 'Mental Health & PCOS',
+   136→    description: 'Coping strategies for anxiety, depression, and body image concerns with PCOS.',
+   137→    category: 'Wellness',
+   138→    readTime: '10 min',
+   139→    color: 'from-purple-400 to-violet-400',
+   140→  },
+   141→  {
+   142→    title: 'Fertility & PCOS',
+   143→    description: 'Understanding ovulation, conception challenges, and treatment options.',
+   144→    category: 'Fertility',
+   145→    readTime: '15 min',
+   146→    color: 'from-sky-400 to-blue-400',
+   147→  },
+   148→  {
+   149→    title: 'When to See a Doctor',
+   150→    description: 'Red flags and signs that warrant professional medical evaluation.',
+   151→    category: 'Medical',
+   152→    readTime: '5 min',
+   153→    color: 'from-red-400 to-pink-400',
+   154→  },
+   155→]
+   156→
+   157→// ─── Research & Learn data ────────────────────────────────────────────────────
+   158→
+   159→const pcosCauses = [
+   160→  {
+   161→    title: 'Insulin Resistance',
+   162→    icon: <Droplet className="h-5 w-5 text-amber-500" />,
+   163→    bg: 'bg-amber-50 dark:bg-amber-950/20',
+   164→    border: 'border-amber-200/60 dark:border-amber-800/30',
+   165→    desc: 'Up to 70% of women with PCOS have insulin resistance. Cells respond poorly to insulin, so the pancreas produces more — which in turn stimulates the ovaries to make extra androgens.',
+   166→  },
+   167→  {
+   168→    title: 'Hormonal Imbalance (High Androgens)',
+   169→    icon: <Dna className="h-5 w-5 text-pink-500" />,
+   170→    bg: 'bg-pink-50 dark:bg-pink-950/20',
+   171→    border: 'border-pink-200/60 dark:border-pink-800/30',
+   172→    desc: 'Elevated testosterone and other male hormones disrupt ovulation and drive symptoms like acne, excess facial/body hair, and thinning scalp hair. LH-to-FSH ratio is often skewed (≥2:1).',
+   173→  },
+   174→  {
+   175→    title: 'Genetics & Family History',
+   176→    icon: <Dna className="h-5 w-5 text-rose-500" />,
+   177→    bg: 'bg-rose-50 dark:bg-rose-950/20',
+   178→    border: 'border-rose-200/60 dark:border-rose-800/30',
+   179→    desc: 'PCOS runs in families. Having a mother or sister with PCOS significantly raises your risk. Multiple genes are believed to be involved, interacting with environmental factors.',
+   180→  },
+   181→  {
+   182→    title: 'Low-Grade Inflammation',
+   183→    icon: <Flame className="h-5 w-5 text-orange-500" />,
+   184→    bg: 'bg-orange-50 dark:bg-orange-950/20',
+   185→    border: 'border-orange-200/60 dark:border-orange-800/30',
+   186→    desc: 'Women with PCOS often have chronic low-grade inflammation. This stimulates polycystic ovaries to produce androgens, fueling a self-reinforcing cycle of hormonal imbalance.',
+   187→  },
+   188→]
+   189→
+   190→const pcosSymptomsToWatch = [
+   191→  {
+   192→    title: 'Irregular Periods',
+   193→    icon: <Calendar className="h-5 w-5 text-amber-500" />,
+   194→    severity: 'Very Common',
+   195→    severityColor: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+   196→    desc: 'Cycles shorter than 21 days or longer than 35 days, skipped periods, or very heavy bleeding. Caused by lack of ovulation.',
+   197→  },
+   198→  {
+   199→    title: 'Excess Androgen (Hirsutism, Acne)',
+   200→    icon: <Sparkles className="h-5 w-5 text-pink-500" />,
+   201→    severity: 'Common',
+   202→    severityColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+   203→    desc: 'Dark facial/body hair (chin, chest, abdomen), persistent adult acne, and oily skin due to elevated testosterone levels.',
+   204→  },
+   205→  {
+   206→    title: 'Polycystic Ovaries',
+   207→    icon: <Droplet className="h-5 w-5 text-rose-500" />,
+   208→    severity: 'Common',
+   209→    severityColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+   210→    desc: 'Enlarged ovaries containing 12 or more small follicles (cysts) visible on ultrasound. Note: cysts alone do NOT confirm PCOS.',
+   211→  },
+   212→  {
+   213→    title: 'Weight Gain',
+   214→    icon: <TrendingUp className="h-5 w-5 text-orange-500" />,
+   215→    severity: 'Common',
+   216→    severityColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+   217→    desc: 'Difficulty losing weight, especially around the abdomen. Insulin resistance makes weight management more challenging.',
+   218→  },
+   219→  {
+   220→    title: 'Hair Thinning',
+   221→    icon: <Scissors className="h-5 w-5 text-amber-600" />,
+   222→    severity: 'Less Common',
+   223→    severityColor: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+   224→    desc: 'Male-pattern baldness, thinning at the crown, or widening part line. Caused by high androgens affecting hair follicles.',
+   225→  },
+   226→  {
+   227→    title: 'Skin Tags & Darkening',
+   228→    icon: <Eye className="h-5 w-5 text-rose-600" />,
+   229→    severity: 'Less Common',
+   230→    severityColor: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+   231→    desc: 'Small soft skin growths and dark, velvety patches (acanthosis nigricans) in skin folds — signs of insulin resistance.',
+   232→  },
+   233→]
+   234→
+   235→const pcosTypes = [
+   236→  {
+   237→    name: 'Insulin-Resistant PCOS',
+   238→    prevalence: '~70%',
+   239→    badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+   240→    gradient: 'from-amber-400 to-orange-400',
+   241→    markers: 'High insulin, high testosterone, weight gain',
+   242→    rootCause: 'Insulin resistance driving ovarian androgen production',
+   243→    approach: 'Low-GI diet, strength training, Metformin, Inositol',
+   244→    icon: <Droplet className="h-6 w-6 text-white" />,
+   245→  },
+   246→  {
+   247→    name: 'Adrenal PCOS',
+   248→    prevalence: '~10%',
+   249→    badgeColor: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+   250→    gradient: 'from-rose-400 to-pink-400',
+   251→    markers: 'High DHEA-S, normal insulin & testosterone',
+   252→    rootCause: 'Chronic stress driving adrenal androgen output',
+   253→    approach: 'Stress management, adaptogens, sleep, gentle exercise',
+   254→    icon: <Brain className="h-6 w-6 text-white" />,
+   255→  },
+   256→  {
+   257→    name: 'Post-Pill PCOS',
+   258→    prevalence: '~15%',
+   259→    badgeColor: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+   260→    gradient: 'from-pink-400 to-fuchsia-400',
+   261→    markers: 'Symptoms appear within months of stopping birth control',
+   262→    rootCause: 'Temporary androgen surge after contraceptive withdrawal',
+   263→    approach: 'Patience (6–12 months), liver support, blood sugar balance',
+   264→    icon: <Pill className="h-6 w-6 text-white" />,
+   265→  },
+   266→  {
+   267→    name: 'Inflammatory PCOS',
+   268→    prevalence: '~5–10%',
+   269→    badgeColor: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+   270→    gradient: 'from-orange-400 to-red-400',
+   271→    markers: 'Elevated CRP, food sensitivities, IBS, joint pain',
+   272→    rootCause: 'Chronic inflammation from diet, gut, or environment',
+   273→    approach: 'Anti-inflammatory diet, gut healing, key supplements',
+   274→    icon: <Flame className="h-6 w-6 text-white" />,
+   275→  },
+   276→]
+   277→
+   278→const pcosLongTermRisks = [
+   279→  {
+   280→    title: 'Type 2 Diabetes',
+   281→    icon: <Droplet className="h-5 w-5 text-red-500" />,
+   282→    risk: '50%',
+   283→    riskLabel: 'risk by age 40',
+   284→    desc: 'More than half of women with PCOS develop type 2 diabetes by age 40 due to insulin resistance.',
+   285→    prevention: 'Annual glucose screening, low-sugar diet, regular exercise, Metformin if prescribed.',
+   286→  },
+   287→  {
+   288→    title: 'Cardiovascular Disease',
+   289→    icon: <Heart className="h-5 w-5 text-rose-500" />,
+   290→    risk: '2×',
+   291→    riskLabel: 'higher risk',
+   292→    desc: 'PCOS raises the risk of high blood pressure, cholesterol issues, and heart disease.',
+   293→    prevention: 'Manage weight, control lipids, avoid smoking, eat heart-healthy fats & fiber.',
+   294→  },
+   295→  {
+   296→    title: 'Endometrial Cancer',
+   297→    icon: <AlertTriangle className="h-5 w-5 text-orange-500" />,
+   298→    risk: '2.7×',
+   299→    riskLabel: 'higher risk',
+   300→    desc: 'Infrequent periods cause endometrial buildup, increasing cancer risk over time.',
+   301→    prevention: 'Induce a period at least every 3 months (progestin therapy) to shed the lining.',
+   302→  },
+   303→  {
+   304→    title: 'Infertility',
+   305→    icon: <Flower2 className="h-5 w-5 text-pink-500" />,
+   306→    risk: '70–80%',
+   307→    riskLabel: 'with ovulation issues',
+   308→    desc: 'PCOS is the leading cause of anovulatory infertility, but most women can conceive with treatment.',
+   309→    prevention: 'Ovulation induction (Clomid/Letrozole), lifestyle changes, IVF if needed.',
+   310→  },
+   311→  {
+   312→    title: 'Sleep Apnea',
+   313→    icon: <Moon className="h-5 w-5 text-amber-500" />,
+   314→    risk: '5×',
+   315→    riskLabel: 'higher risk',
+   316→    desc: 'Sleep apnea is significantly more common in women with PCOS — independent of body weight.',
+   317→    prevention: 'Sleep study if snoring or fatigue, weight management, side-sleeping, avoid alcohol.',
+   318→  },
+   319→  {
+   320→    title: 'Depression & Anxiety',
+   321→    icon: <Brain className="h-5 w-5 text-rose-600" />,
+   322→    risk: '3×',
+   323→    riskLabel: 'higher risk',
+   324→    desc: 'Hormonal shifts, inflammation, and the emotional toll of chronic symptoms take a real toll.',
+   325→    prevention: 'Therapy, social support, regular movement, mindfulness, treat underlying hormones.',
+   326→  },
+   327→]
+   328→
+   329→const pcosBloodTests = [
+   330→  'Total & free testosterone',
+   331→  'LH / FSH ratio (often ≥ 2:1 in PCOS)',
+   332→  'Fasting glucose & insulin (HOMA-IR)',
+   333→  'DHEA-S (adrenal androgen)',
+   334→  'Lipid panel (cholesterol, triglycerides)',
+   335→  'Thyroid panel (to rule out thyroid causes)',
+   336→  'Prolactin (to exclude other conditions)',
+   337→  'Sex hormone binding globulin (SHBG)',
+   338→  'Hemoglobin A1C (3-month blood sugar)',
+   339→  'Anti-Müllerian Hormone (AMH)',
+   340→]
+   341→
+   342→const pcosTreatmentApproaches = [
+   343→  {
+   344→    title: 'Lifestyle Modifications',
+   345→    icon: <Sprout className="h-5 w-5 text-emerald-500" />,
+   346→    desc: 'The first-line treatment for all PCOS types — and the foundation every other approach builds upon.',
+   347→    items: [
+   348→      { label: 'Diet', detail: 'Low-glycemic, anti-inflammatory foods. Prioritize protein, fiber, healthy fats. Limit added sugars and refined carbs.' },
+   349→      { label: 'Exercise', detail: '150+ minutes/week of mixed cardio and strength training. Even small consistent movement improves insulin sensitivity.' },
+   350→      { label: 'Sleep', detail: '7–9 hours nightly. Poor sleep raises cortisol and insulin — both worsen PCOS symptoms.' },
+   351→      { label: 'Stress Management', detail: 'Daily mindfulness, yoga, breathwork, or journaling. Chronic stress drives adrenal androgens.' },
+   352→    ],
+   353→  },
+   354→  {
+   355→    title: 'Medications',
+   356→    icon: <Pill className="h-5 w-5 text-pink-500" />,
+   357→    desc: 'Prescribed by your doctor based on your specific symptoms, labs, and goals (fertility vs. symptom control).',
+   358→    items: [
+   359→      { label: 'Metformin', detail: 'Improves insulin sensitivity, lowers androgens, helps with weight and ovulation. Common first prescription.' },
+   360→      { label: 'Birth Control Pills', detail: 'Regulate cycles, reduce acne and excess hair. Manages symptoms but does not treat the root cause.' },
+   361→      { label: 'Spironolactone', detail: 'Anti-androgen that reduces hirsutism, acne, and hair loss. Often paired with contraception.' },
+   362→      { label: 'Clomid / Letrozole', detail: 'Ovulation induction for women trying to conceive. Letrozole is now preferred over Clomid for PCOS.' },
+   363→    ],
+   364→  },
+   365→  {
+   366→    title: 'Natural Supplements',
+   367→    icon: <FlaskConical className="h-5 w-5 text-amber-500" />,
+   368→    desc: 'May complement lifestyle and medication. Always consult your provider before starting — doses matter.',
+   369→    items: [
+   370→      { label: 'Myo-Inositol & D-Chiro-Inositol', detail: '40:1 ratio is most studied. Improves insulin sensitivity and ovulation in ~70% of women.' },
+   371→      { label: 'Vitamin D', detail: 'Up to 85% of women with PCOS are deficient. Repletion improves insulin resistance and fertility.' },
+   372→      { label: 'Omega-3 (EPA/DHA)', detail: 'Reduces inflammation, lowers testosterone, improves lipid profile. 1–2g daily.' },
+   373→      { label: 'Zinc', detail: 'Supports hormone balance, reduces hirsutism and acne. 15–30mg daily with food.' },
+   374→    ],
+   375→  },
+   376→]
+   377→
+   378→const pcosStatistics = [
+   379→  {
+   380→    label: 'Global Prevalence',
+   381→    value: '8–13%',
+   382→    sub: 'of reproductive-age women',
+   383→    icon: <Activity className="h-5 w-5 text-rose-500" />,
+   384→    color: 'rose',
+   385→  },
+   386→  {
+   387→    label: 'Time to Diagnosis',
+   388→    value: '2–3 yrs',
+   389→    sub: 'average delay worldwide',
+   390→    icon: <Clock className="h-5 w-5 text-amber-500" />,
+   391→    color: 'amber',
+   392→  },
+   393→  {
+   394→    label: 'Lifestyle Success',
+   395→    value: '60–80%',
+   396→    sub: 'symptom improvement with changes',
+   397→    icon: <TrendingUp className="h-5 w-5 text-emerald-500" />,
+   398→    color: 'emerald',
+   399→  },
+   400→  {
+   401→    label: 'Pregnancy Success',
+   402→    value: '70–80%',
+   403→    sub: 'with ovulation induction',
+   404→    icon: <Flower2 className="h-5 w-5 text-pink-500" />,
+   405→    color: 'pink',
+   406→  },
+   407→]
+   408→
+   409→const pcosMythsFacts = [
+   410→  {
+   411→    myth: 'PCOS means you have cysts on your ovaries.',
+   412→    fact: 'Not always — many women with PCOS do not have cysts, and many women with cysts do not have PCOS. Diagnosis requires 2 of 3 Rotterdam criteria.',
+   413→  },
+   414→  {
+   415→    myth: 'You can\'t get pregnant with PCOS.',
+   416→    fact: 'Many women with PCOS conceive naturally or with treatment. Up to 80% success rate with ovulation induction (Clomid/Letrozole).',
+   417→  },
+   418→  {
+   419→    myth: 'PCOS only affects overweight women.',
+   420→    fact: 'PCOS affects women of all sizes. Lean PCOS is real and often under-diagnosed because weight is mistakenly used as a gatekeeper symptom.',
+   421→  },
+   422→  {
+   423→    myth: 'PCOS goes away after menopause.',
+   424→    fact: 'Symptoms may change, but the underlying metabolic issues (insulin resistance, diabetes risk) persist and require lifelong management.',
+   425→  },
+   426→  {
+   427→    myth: 'Birth control cures PCOS.',
+   428→    fact: 'Birth control manages symptoms (cycles, acne, hair) but does not treat the root cause. Symptoms often return when stopped.',
+   429→  },
+   430→]
+   431→
+   432→const pcosFaqs = [
+   433→  {
+   434→    q: 'Is PCOS curable?',
+   435→    a: 'PCOS is not curable, but it is highly manageable. With the right combination of lifestyle changes, supplements, and (when needed) medication, most women see significant improvement in symptoms and long-term health outcomes. PCOS is a lifelong condition, but it does not have to define your life.',
+   436→  },
+   437→  {
+   438→    q: 'Can I get pregnant with PCOS?',
+   439→    a: 'Yes — absolutely. PCOS is one of the most treatable causes of infertility. Many women conceive naturally once cycles regulate. For those who need help, ovulation induction with Letrozole or Clomid has a 70–80% success rate, and IVF is an option if needed. Working with a fertility specialist early can speed up the journey.',
+   440→  },
+   441→  {
+   442→    q: 'Does PCOS cause weight gain?',
+   443→    a: 'PCOS makes weight gain easier and weight loss harder — but it does not cause weight gain directly. Insulin resistance promotes fat storage (especially around the abdomen), and hormonal imbalances affect appetite and metabolism. Targeted diet, strength training, and insulin-sensitizing strategies can break the cycle.',
+   444→  },
+   445→  {
+   446→    q: 'Is PCOS genetic?',
+   447→    a: 'There is a strong genetic component. If your mother, sister, or aunt has PCOS, your risk is significantly higher. However, genes are not destiny — environment, diet, stress, and lifestyle play a major role in whether those genes are "expressed." This is why lifestyle changes are so effective.',
+   448→  },
+   449→  {
+   450→    q: 'Can diet really help PCOS?',
+   451→    a: 'Yes — diet is one of the most powerful tools for managing PCOS. A low-glycemic, anti-inflammatory diet improves insulin sensitivity in 60–80% of women. Even a 5–10% reduction in body weight can restore ovulation. Focus on whole foods, protein, fiber, healthy fats, and minimal added sugars.',
+   452→  },
+   453→  {
+   454→    q: 'What foods should I avoid with PCOS?',
+   455→    a: 'Limit refined carbohydrates (white bread, pastries), sugary drinks, processed snacks, fried foods, and excess dairy. These spike blood sugar, worsen insulin resistance, and promote inflammation. That said, no food is strictly "off-limits" forever — focus on a sustainable, balanced approach rather than rigid restriction.',
+   456→  },
+   457→  {
+   458→    q: 'How long does it take to see results from lifestyle changes?',
+   459→    a: 'Most women notice energy and mood improvements within 2–4 weeks. Cycle changes typically take 3–6 months of consistent effort. Skin and hair changes (acne reduction, less hair growth) may take 6–12 months. Sustainable habits compound over time — patience and consistency matter more than perfection.',
+   460→  },
+   461→  {
+   462→    q: 'When should I see a specialist?',
+   463→    a: 'See a healthcare provider if you have irregular periods, excess hair growth, persistent acne, or difficulty conceiving. Ask for a referral to an endocrinologist (for hormonal/metabolic care) or a reproductive endocrinologist (for fertility). A registered dietitian specializing in PCOS can also be invaluable.',
+   464→  },
+   465→]
+   466→
+   467→const pcosRecommendedReading = [
+   468→  {
+   469→    name: 'PCOS Awareness Association',
+   470→    url: 'https://pcosawarenessassociation.org',
+   471→    desc: 'Education, advocacy, and community support for women with PCOS.',
+   472→  },
+   473→  {
+   474→    name: 'CDC — PCOS Information',
+   475→    url: 'https://www.cdc.gov/diabetes/about/pcos.html',
+   476→    desc: 'U.S. government resource on PCOS and its link to diabetes.',
+   477→  },
+   478→  {
+   479→    name: 'Mayo Clinic — PCOS',
+   480→    url: 'https://www.mayoclinic.org/diseases-conditions/pcos',
+   481→    desc: 'Comprehensive medical overview of causes, symptoms, and treatment.',
+   482→  },
+   483→  {
+   484→    name: 'NIH — PCOS Research',
+   485→    url: 'https://www.nichd.nih.gov/health/topics/pcos',
+   486→    desc: 'Latest research, clinical trials, and evidence-based information.',
+   487→  },
+   488→  {
+   489→    name: 'Office on Women\'s Health',
+   490→    url: 'https://www.womenshealth.gov/pcos',
+   491→    desc: 'Trusted government resource covering all aspects of PCOS care.',
+   492→  },
+   493→]
+   494→
+   495→// ─── Motion variants for stagger animations ──────────────────────────────────
+   496→
+   497→const staggerContainer = {
+   498→  hidden: { opacity: 0 },
+   499→  show: {
+   500→    opacity: 1,
+   501→    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+   502→  },
+   503→}
+   504→
+   505→const staggerItem = {
+   506→  hidden: { opacity: 0, y: 20 },
+   507→  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+   508→}
+   509→
+   510→// ─── Circular Gauge Component ───────────────────────────────────────────────
+   511→
+   512→function CircularGauge({ value, size = 180 }: { value: number; size?: number }) {
+   513→  const strokeWidth = 14
+   514→  const radius = (size - strokeWidth) / 2
+   515→  const circumference = 2 * Math.PI * radius
+   516→  const progress = (value / 100) * circumference
+   517→  const center = size / 2
+   518→
+   519→  const getColorZone = (val: number) => {
+   520→    if (val <= 30) return { color: '#22c55e', label: 'Low Risk', bg: 'bg-green-50 dark:bg-green-950/20' }
+   521→    if (val <= 55) return { color: '#eab308', label: 'Moderate Risk', bg: 'bg-yellow-50 dark:bg-yellow-950/20' }
+   522→    if (val <= 75) return { color: '#f97316', label: 'High Risk', bg: 'bg-orange-50 dark:bg-orange-950/20' }
+   523→    return { color: '#ef4444', label: 'Very High Risk', bg: 'bg-red-50 dark:bg-red-950/20' }
+   524→  }
+   525→
+   526→  const zone = getColorZone(value)
+   527→
+   528→  return (
+   529→    <div className="flex flex-col items-center gap-3">
+   530→      <div className={`relative rounded-2xl p-6 ${zone.bg}`}>
+   531→        <svg width={size} height={size} className="transform -rotate-90">
+   532→          {/* Background circle */}
+   533→          <circle
+   534→            cx={center}
+   535→            cy={center}
+   536→            r={radius}
+   537→            fill="none"
+   538→            stroke="currentColor"
+   539→            strokeWidth={strokeWidth}
+   540→            className="text-muted/30"
+   541→          />
+   542→          {/* Progress arc */}
+   543→          <motion.circle
+   544→            cx={center}
+   545→            cy={center}
+   546→            r={radius}
+   547→            fill="none"
+   548→            stroke={zone.color}
+   549→            strokeWidth={strokeWidth}
+   550→            strokeLinecap="round"
+   551→            strokeDasharray={circumference}
+   552→            initial={{ strokeDashoffset: circumference }}
+   553→            animate={{ strokeDashoffset: circumference - progress }}
+   554→            transition={{ duration: 1.5, ease: 'easeOut' }}
+   555→          />
+   556→        </svg>
+   557→        <div className="absolute inset-0 flex flex-col items-center justify-center">
+   558→          <motion.span
+   559→            initial={{ opacity: 0, scale: 0.5 }}
+   560→            animate={{ opacity: 1, scale: 1 }}
+   561→            transition={{ delay: 0.5 }}
+   562→            className="text-4xl font-bold"
+   563→            style={{ color: zone.color }}
+   564→          >
+   565→            {value}
+   566→          </motion.span>
+   567→          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">
+   568→            / 100
+   569→          </span>
+   570→        </div>
+   571→      </div>
+   572→      <Badge
+   573→        className="text-xs font-semibold px-3 py-1"
+   574→        style={{ backgroundColor: zone.color + '20', color: zone.color, borderColor: zone.color + '40' }}
+   575→        variant="outline"
+   576→      >
+   577→        {zone.label}
+   578→      </Badge>
+   579→    </div>
+   580→  )
+   581→}
+   582→
+   583→// ─── Progress Ring Component ────────────────────────────────────────────────
+   584→
+   585→function ProgressRing({ value, max, size = 80, color = '#ec4899' }: { value: number; max: number; size?: number; color?: string }) {
+   586→  const strokeWidth = 6
+   587→  const radius = (size - strokeWidth) / 2
+   588→  const circumference = 2 * Math.PI * radius
+   589→  const progress = (value / max) * circumference
+   590→  const center = size / 2
+   591→
+   592→  return (
+   593→    <div className="relative inline-flex items-center justify-center">
+   594→      <svg width={size} height={size} className="transform -rotate-90">
+   595→        <circle cx={center} cy={center} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} className="text-muted/30" />
+   596→        <motion.circle
+   597→          cx={center}
+   598→          cy={center}
+   599→          r={radius}
+   600→          fill="none"
+   601→          stroke={color}
+   602→          strokeWidth={strokeWidth}
+   603→          strokeLinecap="round"
+   604→          strokeDasharray={circumference}
+   605→          initial={{ strokeDashoffset: circumference }}
+   606→          animate={{ strokeDashoffset: circumference - progress }}
+   607→          transition={{ duration: 1, ease: 'easeOut' }}
+   608→        />
+   609→      </svg>
+   610→      <div className="absolute inset-0 flex items-center justify-center">
+   611→        <span className="text-sm font-bold" style={{ color }}>{value}</span>
+   612→      </div>
+   613→    </div>
+   614→  )
+   615→}
+   616→
+   617→// ─── Main Component ─────────────────────────────────────────────────────────
+   618→
+   619→export default function PCOSModule() {
+   620→  const [symptoms, setSymptoms] = useState<PCOSSymptom[]>(initialSymptoms)
+   621→  const [exerciseMinutes, setExerciseMinutes] = useState(0)
+   622→  const [dietScore, setDietScore] = useState(0)
+   623→  const [weightData, setWeightData] = useState<Array<{ month: string; weight: number }>>([])
+   624→  const [sleepQualityData, setSleepQualityData] = useState<Array<{ month: string; quality: number }>>([])
+   625→  const [reportCardData, setReportCardData] = useState<
+   626→    Array<{ category: string; score: number; fullMark: number }>
+   627→  >([])
+   628→
+   629→  // Fetch real PCOS history (and derive weight/sleep/report data from it) once logged in.
+   630→  // The schema doesn't have a separate weight table — the PCOS record carries exerciseMinutes & dietQuality,
+   631→  // and the report-card scores are derived from those plus symptom counts.
+   632→  const userProfile = useAppStore((s) => s.userProfile)
+   633→  useEffect(() => {
+   634→    if (!userProfile?.id) return
+   635→    let cancelled = false
+   636→    fetch(`/api/pcos?userId=${encodeURIComponent(userProfile.id)}`)
+   637→      .then((r) => (r.ok ? r.json() : []))
+   638→      .then((records: Array<{ date: string; exerciseMinutes: number; dietQuality: number; riskScore: number }> = []) => {
+   639→        if (cancelled || !Array.isArray(records)) return
+   640→        // Build weight trend from exercise/diet history (note: no actual weight field in schema; show entries count by month as a placeholder)
+   641→        // Build sleep trend: we don't have sleep data here; skip until a real sleep API connection is wired.
+   642→        // Build report card from latest 30 days
+   643→        if (records.length > 0) {
+   644→          const last30 = records.slice(0, 30)
+   645→          const avgExercise = Math.round(
+   646→            last30.reduce((a, b) => a + (b.exerciseMinutes ?? 0), 0) / last30.length
+   647→          )
+   648→          const avgDiet = Math.round(
+   649→            (last30.reduce((a, b) => a + (b.dietQuality ?? 0), 0) / last30.length) * 20
+   650→          )
+   651→          const avgSymptom = Math.round(100 - (last30[0]?.riskScore ?? 0))
+   652→          setExerciseMinutes(avgExercise)
+   653→          setReportCardData([
+   654→            { category: 'Diet', score: avgDiet, fullMark: 100 },
+   655→            { category: 'Exercise', score: Math.min(100, Math.round((avgExercise / 150) * 100)), fullMark: 100 },
+   656→            { category: 'Symptoms', score: avgSymptom, fullMark: 100 },
+   657→          ])
+   658→        }
+   659→      })
+   660→      .catch(() => {})
+   661→    return () => {
+   662→      cancelled = true
+   663→    }
+   664→  }, [userProfile?.id])
+   665→
+   666→  // Calculate PCOS risk score based on checked symptoms
+   667→  const riskScore = useMemo(() => {
+   668→    const checked = symptoms.filter((s) => s.checked)
+   669→    const baseScore = checked.length * 11
+   670→    const severityBonus = checked.reduce((acc, s) => {
+   671→      if (!s.checked) return acc
+   672→      switch (s.severity) {
+   673→        case 'mild': return acc + 2
+   674→        case 'moderate': return acc + 5
+   675→        case 'severe': return acc + 8
+   676→        default: return acc
+   677→      }
+   678→    }, 0)
+   679→    return Math.min(Math.round(baseScore + severityBonus), 100)
+   680→  }, [symptoms])
+   681→
+   682→  const toggleSymptom = (id: string) => {
+   683→    setSymptoms((prev) =>
+   684→      prev.map((s) =>
+   685→        s.id === id
+   686→          ? { ...s, checked: !s.checked, severity: !s.checked ? 'mild' : 'none' }
+   687→          : s
+   688→      )
+   689→    )
+   690→  }
+   691→
+   692→  const setSeverity = (id: string, severity: 'none' | 'mild' | 'moderate' | 'severe') => {
+   693→    setSymptoms((prev) =>
+   694→      prev.map((s) => (s.id === id ? { ...s, severity } : s))
+   695→    )
+   696→  }
+   697→
+   698→  // Generate recommendations based on checked symptoms
+   699→  const recommendations: Recommendation[] = useMemo(() => {
+   700→    const recs: Recommendation[] = []
+
+[showing lines 1-700 of 2110; use offset=701 with limit to continue reading]

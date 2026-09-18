@@ -45,10 +45,8 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'annual'
@@ -122,11 +120,11 @@ function ScoreCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
     >
-      <Card className="relative overflow-hidden border-teal-100 dark:border-teal-900/50 hover:shadow-md transition-shadow">
+      <Card className="relative overflow-hidden border-border hover:shadow-md transition-shadow">
         <CardContent className="p-4">
           <div className="flex items-start justify-between mb-3">
-            <div className={`p-2 rounded-lg ${color}`}>
-              <Icon className="size-4 text-white" />
+            <div className={`flex h-11 w-11 items-center justify-center rounded-full ${color}`}>
+              <Icon className="size-4 text-primary" />
             </div>
             <div className="flex items-center gap-1">
               <TrendIcon current={score} previous={prevScore} />
@@ -135,7 +133,7 @@ function ScoreCard({
           </div>
           <p className="text-2xl font-bold text-foreground">{score}</p>
           <p className="text-xs text-muted-foreground mt-0.5">{title}</p>
-          <Progress value={score} className="mt-3 h-1.5 bg-teal-100 dark:bg-teal-900/50 [&>div]:bg-teal-500" />
+          <Progress value={score} className="mt-3 h-1.5 bg-muted [&>div]:bg-primary" />
         </CardContent>
       </Card>
     </motion.div>
@@ -429,36 +427,40 @@ export default function ReportsModule() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background rounded-xl border border-teal-100 dark:border-teal-900/50">
+    <div className="flex flex-col h-full bg-gradient-to-b from-blush/50 to-background rounded-xl border border-border">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-teal-100 dark:border-teal-900/50 bg-white/80 dark:bg-background/80 backdrop-blur-sm rounded-t-xl">
-        <div className="flex items-center gap-2.5">
-          <div className="p-2 rounded-lg bg-teal-500 text-white">
+      <div className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-border bg-card/80 backdrop-blur-sm rounded-t-xl">
+        <div aria-hidden className="lotus-watermark absolute inset-0" />
+        <div className="relative flex items-center gap-2.5 min-w-0">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-plum-soft text-primary">
             <BarChart3 className="size-5" />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-foreground">Report Center</h2>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Report Center</h2>
+            <p className="text-xs text-muted-foreground truncate">
               {data?.period?.label
                 ? `${data.period.label} · ${data.period.startDate} → ${data.period.endDate}`
                 : 'AI-powered health insights'}
             </p>
+            <span className="gold-divider text-[10px] mt-1" aria-hidden>
+              <span>✦</span>
+            </span>
           </div>
         </div>
 
         {/* Period Selector */}
-        <Tabs value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
-          <TabsList className="bg-teal-50 dark:bg-teal-950/50">
-            <TabsTrigger value="daily" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+        <Tabs value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)} className="relative">
+          <TabsList className="h-auto bg-muted/60 border border-border flex-wrap py-1">
+            <TabsTrigger value="daily" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground min-h-11 text-xs px-3">
               Daily
             </TabsTrigger>
-            <TabsTrigger value="weekly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+            <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground min-h-11 text-xs px-3">
               Weekly
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+            <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground min-h-11 text-xs px-3">
               Monthly
             </TabsTrigger>
-            <TabsTrigger value="annual" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+            <TabsTrigger value="annual" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground min-h-11 text-xs px-3">
               Annual
             </TabsTrigger>
           </TabsList>
@@ -470,22 +472,22 @@ export default function ReportsModule() {
         {loading ? (
           // ── Loading skeletons while the report is being computed ──
           <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+                <Card key={i} className="border-border">
                   <CardContent className="p-4 space-y-3">
-                    <div className="h-8 w-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+                    <div className="h-8 w-8 rounded-full bg-blush animate-pulse" />
                     <div className="h-6 w-16 rounded bg-muted animate-pulse" />
-                    <div className="h-1.5 w-full rounded-full bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+                    <div className="h-1.5 w-full rounded-full bg-blush animate-pulse" />
                   </CardContent>
                 </Card>
               ))}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {Array.from({ length: 2 }).map((_, i) => (
-                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+                <Card key={i} className="border-border">
                   <CardContent className="p-4">
-                    <div className="h-[220px] rounded-lg bg-teal-50 dark:bg-teal-950/20 animate-pulse" />
+                    <div className="h-[220px] rounded-lg bg-blush/60 animate-pulse" />
                   </CardContent>
                 </Card>
               ))}
@@ -498,10 +500,10 @@ export default function ReportsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
           >
-            <Card className="border-dashed border-teal-200 dark:border-teal-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
-                  <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                  <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No data for this period yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -510,13 +512,13 @@ export default function ReportsModule() {
                   generated here automatically.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-                  <Badge variant="secondary" className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-[10px] gap-1">
+                  <Badge variant="secondary" className="chip-soft text-primary text-[10px] gap-1">
                     <Activity className="h-3 w-3" /> Log cycle
                   </Badge>
-                  <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] gap-1">
+                  <Badge variant="secondary" className="chip-soft text-gold text-[10px] gap-1">
                     <Brain className="h-3 w-3" /> Log mood
                   </Badge>
-                  <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] gap-1">
+                  <Badge variant="secondary" className="chip-soft text-plum text-[10px] gap-1">
                     <Moon className="h-3 w-3" /> Log sleep
                   </Badge>
                 </div>
@@ -526,13 +528,13 @@ export default function ReportsModule() {
         ) : (
           <>
         {/* Score Cards Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <ScoreCard
             title="Cycle Regularity"
             score={data.cycleRegularity}
             prevScore={data.prevCycleRegularity}
             icon={Activity}
-            color="bg-teal-500"
+            color="bg-medical-soft"
             delay={0}
           />
           <ScoreCard
@@ -540,7 +542,7 @@ export default function ReportsModule() {
             score={100 - data.symptomSeverity}
             prevScore={100 - data.prevSymptomSeverity}
             icon={Heart}
-            color="bg-rose-400"
+            color="bg-blush"
             delay={0.05}
           />
           <ScoreCard
@@ -548,7 +550,7 @@ export default function ReportsModule() {
             score={data.moodStability}
             prevScore={data.prevMoodStability}
             icon={Brain}
-            color="bg-amber-400"
+            color="bg-gold-soft"
             delay={0.1}
           />
           <ScoreCard
@@ -556,20 +558,20 @@ export default function ReportsModule() {
             score={data.wellnessScore}
             prevScore={data.prevWellnessScore}
             icon={Sparkles}
-            color="bg-emerald-500"
+            color="bg-lilac"
             delay={0.15}
           />
         </div>
 
         {/* Charts Row 1: Symptom Frequency + Mood Distribution */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Symptom Frequency Bar Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+            <Card className="border-border h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Symptom Frequency</CardTitle>
                 <CardDescription className="text-xs">Most reported symptoms this period</CardDescription>
@@ -600,7 +602,7 @@ export default function ReportsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.25 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+            <Card className="border-border h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Mood Distribution</CardTitle>
                 <CardDescription className="text-xs">How your moods were distributed</CardDescription>
@@ -636,14 +638,14 @@ export default function ReportsModule() {
         </div>
 
         {/* Charts Row 2: Wellness Trend Line + Radar */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Wellness & Symptom Trend */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+            <Card className="border-border h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Wellness & Symptom Trends</CardTitle>
                 <CardDescription className="text-xs">Tracking over time</CardDescription>
@@ -686,7 +688,7 @@ export default function ReportsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.35 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+            <Card className="border-border h-full">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-semibold">Period Comparison</CardTitle>
                 <CardDescription className="text-xs">Current vs previous period</CardDescription>
@@ -695,9 +697,9 @@ export default function ReportsModule() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.radarData}>
-                      <PolarGrid stroke="#e5e7eb" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
-                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
+                      <PolarGrid stroke="var(--border)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }} />
                       <Radar
                         name="Current"
                         dataKey="current"
@@ -725,16 +727,16 @@ export default function ReportsModule() {
         </div>
 
         {/* Key Metrics Row: Sleep + Water Averages */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50">
+            <Card className="border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50">
-                  <Moon className="size-5 text-indigo-500" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-lilac">
+                  <Moon className="size-5 text-plum" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Sleep Average</p>
@@ -752,10 +754,10 @@ export default function ReportsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.45 }}
           >
-            <Card className="border-teal-100 dark:border-teal-900/50">
+            <Card className="border-border">
               <CardContent className="p-4 flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/50">
-                  <Droplets className="size-5 text-sky-500" />
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-medical-soft">
+                  <Droplets className="size-5 text-medical" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">Water Average</p>
@@ -775,7 +777,7 @@ export default function ReportsModule() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.5 }}
         >
-          <Card className="border-teal-100 dark:border-teal-900/50">
+          <Card className="border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Trend Comparison</CardTitle>
               <CardDescription className="text-xs">Current vs previous period metrics</CardDescription>
@@ -790,12 +792,12 @@ export default function ReportsModule() {
                   { label: 'Sleep Quality', current: Math.round(data.sleepAvg * 10), previous: Math.round((data.sleepAvg - 0.3) * 10), higher: true },
                   { label: 'Hydration', current: Math.round(data.waterAvg * 10), previous: Math.round((data.waterAvg - 0.5) * 10), higher: true },
                 ].map((item, i) => (
-                  <div key={item.label} className="flex items-center gap-3">
-                    <p className="text-xs text-muted-foreground w-36 shrink-0 truncate">{item.label}</p>
+                  <div key={item.label} className="flex items-center gap-2 sm:gap-3">
+                    <p className="text-xs text-muted-foreground w-24 sm:w-36 shrink-0 truncate">{item.label}</p>
                     <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                         <motion.div
-                          className="h-full rounded-full bg-teal-400"
+                          className="h-full rounded-full bg-primary/35"
                           initial={{ width: 0 }}
                           animate={{ width: `${item.previous}%` }}
                           transition={{ duration: 0.8, delay: 0.1 * i }}
@@ -805,9 +807,9 @@ export default function ReportsModule() {
                     </div>
                     <ChevronRight className="size-3 text-muted-foreground shrink-0" />
                     <div className="flex-1 flex items-center gap-2">
-                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+                      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                         <motion.div
-                          className="h-full rounded-full bg-teal-600"
+                          className="h-full rounded-full bg-primary"
                           initial={{ width: 0 }}
                           animate={{ width: `${item.current}%` }}
                           transition={{ duration: 0.8, delay: 0.1 * i + 0.3 }}
@@ -817,15 +819,15 @@ export default function ReportsModule() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center gap-4 pt-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-2.5 rounded-full bg-teal-400" />
-                    <span className="text-[10px] text-muted-foreground">Previous</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="size-2.5 rounded-full bg-teal-600" />
-                    <span className="text-[10px] text-muted-foreground">Current</span>
-                  </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-foreground">
+                    <span className="size-2.5 rounded-full bg-primary/40" />
+                    Previous
+                  </span>
+                  <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] text-foreground">
+                    <span className="size-2.5 rounded-full bg-primary" />
+                    Current
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -838,10 +840,10 @@ export default function ReportsModule() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.55 }}
         >
-          <Card className="border-teal-100 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background">
+          <Card className="card-blush">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-teal-500" />
+                <Sparkles className="size-4 text-gold" />
                 <CardTitle className="text-sm font-semibold">AI Health Insights</CardTitle>
               </div>
               <CardDescription className="text-xs flex items-center gap-1.5">
@@ -857,9 +859,9 @@ export default function ReportsModule() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: 0.6 + i * 0.08 }}
-                    className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/80 dark:bg-background/80 border border-teal-100 dark:border-teal-900/30"
+                    className="flex items-start gap-2.5 p-2.5 rounded-lg bg-card/80 border border-border"
                   >
-                    <div className="mt-0.5 size-1.5 rounded-full bg-teal-500 shrink-0" />
+                    <div className="mt-0.5 size-1.5 rounded-full bg-primary shrink-0" />
                     <p className="text-xs text-foreground leading-relaxed">{insight}</p>
                   </motion.div>
                 ))}
@@ -874,7 +876,7 @@ export default function ReportsModule() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.6 }}
         >
-          <Card className="border-teal-100 dark:border-teal-900/50">
+          <Card className="border-border">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold">Cycle Summary</CardTitle>
               <CardDescription className="text-xs">Key phase milestones this period</CardDescription>
@@ -883,10 +885,10 @@ export default function ReportsModule() {
               <div className="space-y-2">
                 {data.cycleSummary.map((item, i) => (
                   <div key={i} className="flex items-center gap-3 text-xs">
-                    <div className="flex items-center justify-center size-7 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-medium shrink-0">
+                    <div className="flex items-center justify-center size-7 rounded-full bg-blush text-primary font-medium shrink-0">
                       {item.day}
                     </div>
-                    <Badge variant="outline" className="text-[10px] border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 shrink-0">
+                    <Badge variant="outline" className="chip-soft text-primary text-[10px] shrink-0">
                       {item.phase}
                     </Badge>
                     <span className="text-muted-foreground truncate">{item.note}</span>
@@ -903,44 +905,41 @@ export default function ReportsModule() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.65 }}
         >
-          <Card className="border-teal-100 dark:border-teal-900/50">
-            <CardContent className="p-4">
+          <Card className="card-peach">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">Export Report</p>
                   <p className="text-xs text-muted-foreground">Download your health data for sharing</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
+                    type="button"
                     disabled={!data}
                     onClick={handleExportCsv}
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                    className="btn-plum inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold disabled:opacity-50"
                   >
-                    <Download className="size-3.5 mr-1.5" />
+                    <Download className="size-3.5" />
                     CSV
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  </button>
+                  <button
+                    type="button"
                     disabled={!data}
                     onClick={handleExportPdf}
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                    className="btn-plum inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold disabled:opacity-50"
                   >
-                    <FileText className="size-3.5 mr-1.5" />
+                    <FileText className="size-3.5" />
                     PDF
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  </button>
+                  <button
+                    type="button"
                     disabled={!data}
                     onClick={handleExportExcel}
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                    className="btn-plum inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold disabled:opacity-50"
                   >
-                    <FileSpreadsheet className="size-3.5 mr-1.5" />
+                    <FileSpreadsheet className="size-3.5" />
                     Excel
-                  </Button>
+                  </button>
                 </div>
               </div>
             </CardContent>

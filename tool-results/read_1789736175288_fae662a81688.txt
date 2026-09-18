@@ -1,0 +1,562 @@
+   782→      {
+   783→        meal: 'Breakfast',
+   784→        time: '8:00 AM',
+   785→        foods: ['Greek yogurt', 'Berries', 'Chia seeds'],
+   786→        calories: 320,
+   787→        emoji: '🥛',
+   788→      },
+   789→      {
+   790→        meal: 'Lunch',
+   791→        time: '1:00 PM',
+   792→        foods: ['Grilled chicken salad', 'Quinoa', 'Olive oil dressing'],
+   793→        calories: 450,
+   794→        emoji: '🥗',
+   795→      },
+   796→      {
+   797→        meal: 'Snack',
+   798→        time: '4:00 PM',
+   799→        foods: ['Apple', 'Small handful of almonds'],
+   800→        calories: 180,
+   801→        emoji: '🍎',
+   802→      },
+   803→      {
+   804→        meal: 'Dinner',
+   805→        time: '7:00 PM',
+   806→        foods: ['Baked cod', 'Steamed broccoli', 'Sweet potato'],
+   807→        calories: 460,
+   808→        emoji: '🐟',
+   809→      },
+   810→    ],
+   811→    tips: [
+   812→      {
+   813→        title: 'Prioritize Protein',
+   814→        description: 'Aim for 25–35% of calories from protein. It\'s the most satiating macronutrient and helps preserve muscle during weight loss.',
+   815→        icon: 'apple',
+   816→      },
+   817→      {
+   818→        title: 'Eat High-Volume, Low-Calorie',
+   819→        description: 'Fill half your plate with non-starchy vegetables. They add bulk, fiber, and nutrients for very few calories.',
+   820→        icon: 'leaf',
+   821→      },
+   822→      {
+   823→        title: 'Hydrate Before You Eat',
+   824→        description: 'Drink a glass of water 20 minutes before meals. Thirst is often mistaken for hunger, and water adds zero calories.',
+   825→        icon: 'droplet',
+   826→      },
+   827→      {
+   828→        title: 'Mind Your Beverages',
+   829→        description: 'Liquid calories (soda, juice, sweetened coffee, alcohol) add up fast. Switch to water, sparkling water, or unsweetened tea.',
+   830→        icon: 'zap',
+   831→      },
+   832→    ],
+   833→  },
+   834→
+   835→  wellness: {
+   836→    condition: 'wellness',
+   837→    title: 'General Wellness Plan',
+   838→    description:
+   839→      'A balanced, whole-food foundation built on colorful vegetables, lean proteins, healthy fats, and complex carbs for everyday vitality.',
+   840→    dailyCalories: 2000,
+   841→    macros: {
+   842→      carbs: { pct: 45, grams: 225 },
+   843→      protein: { pct: 25, grams: 125 },
+   844→      fat: { pct: 30, grams: 67 },
+   845→    },
+   846→    foodsToEat: [
+   847→      { name: 'Leafy Greens', benefit: 'Vitamins, minerals, fiber', emoji: '🥬' },
+   848→      { name: 'Berries', benefit: 'Antioxidants & fiber', emoji: '🍓' },
+   849→      { name: 'Salmon', benefit: 'Omega-3 & protein', emoji: '🐟' },
+   850→      { name: 'Quinoa', benefit: 'Complete plant protein', emoji: '🌾' },
+   851→      { name: 'Olive Oil', benefit: 'Heart-healthy fats', emoji: '🫒' },
+   852→      { name: 'Eggs', benefit: 'Protein & choline', emoji: '🥚' },
+   853→      { name: 'Avocado', benefit: 'Healthy fats & potassium', emoji: '🥑' },
+   854→      { name: 'Almonds', benefit: 'Vitamin E & healthy fats', emoji: '🌰' },
+   855→      { name: 'Sweet Potatoes', benefit: 'Vitamin A & fiber', emoji: '🍠' },
+   856→      { name: 'Greek Yogurt', benefit: 'Probiotics & protein', emoji: '🥛' },
+   857→      { name: 'Broccoli', benefit: 'Vitamin C & fiber', emoji: '🥦' },
+   858→      { name: 'Lentils', benefit: 'Plant protein & fiber', emoji: '🫘' },
+   859→    ],
+   860→    foodsToAvoid: [
+   861→      'Highly processed packaged foods',
+   862→      'Sugary drinks & sodas',
+   863→      'Refined grains (in excess)',
+   864→      'Trans fats & hydrogenated oils',
+   865→      'Excess added sugars',
+   866→      'Excess sodium',
+   867→    ],
+   868→    mealPlan: [
+   869→      {
+   870→        meal: 'Breakfast',
+   871→        time: '8:00 AM',
+   872→        foods: ['Oatmeal with berries', 'Walnuts', 'Drizzle of honey'],
+   873→        calories: 420,
+   874→        emoji: '🥣',
+   875→      },
+   876→      {
+   877→        meal: 'Lunch',
+   878→        time: '1:00 PM',
+   879→        foods: ['Quinoa bowl', 'Roasted vegetables', 'Grilled chicken'],
+   880→        calories: 540,
+   881→        emoji: '🥗',
+   882→      },
+   883→      {
+   884→        meal: 'Snack',
+   885→        time: '4:00 PM',
+   886→        foods: ['Apple', 'Almond butter'],
+   887→        calories: 220,
+   888→        emoji: '🍎',
+   889→      },
+   890→      {
+   891→        meal: 'Dinner',
+   892→        time: '7:00 PM',
+   893→        foods: ['Baked salmon', 'Brown rice', 'Steamed greens'],
+   894→        calories: 580,
+   895→        emoji: '🐟',
+   896→      },
+   897→    ],
+   898→    tips: [
+   899→      {
+   900→        title: 'Eat the Rainbow',
+   901→        description: 'Aim for 5+ servings of colorful fruits and vegetables daily. Different colors provide different phytonutrients and antioxidants.',
+   902→        icon: 'leaf',
+   903→      },
+   904→      {
+   905→        title: 'Balance Your Plate',
+   906→        description: 'Build meals with ½ vegetables, ¼ lean protein, ¼ complex carbs, plus a thumb of healthy fat for sustained energy.',
+   907→        icon: 'apple',
+   908→      },
+   909→      {
+   910→        title: 'Stay Hydrated',
+   911→        description: 'Aim for 8 glasses of water a day. Mild dehydration shows up as fatigue, headaches, and cravings before thirst kicks in.',
+   912→        icon: 'droplet',
+   913→      },
+   914→      {
+   915→        title: 'Limit Ultra-Processed Foods',
+   916→        description: 'Choose whole foods in their natural state as often as possible. The fewer ingredients on a label, the better.',
+   917→        icon: 'zap',
+   918→      },
+   919→    ],
+   920→  },
+   921→}
+   922→
+   923→// ─── Quick Prompts ──────────────────────────────────────────────────────────
+   924→
+   925→const quickPrompts = [
+   926→  { icon: Droplets, label: 'Period foods', prompt: 'What should I eat during my period?' },
+   927→  { icon: Flower2, label: 'PCOS weight loss', prompt: 'Best foods for PCOS weight loss' },
+   928→  { icon: Baby, label: 'Fertility foods', prompt: 'Fertility-boosting foods' },
+   929→  { icon: Apple, label: 'PCOS avoid', prompt: 'Foods to avoid with PCOS' },
+   930→  { icon: Cookie, label: 'Snack ideas', prompt: 'Healthy snack ideas' },
+   931→  { icon: GlassWater, label: 'Water intake', prompt: 'How much water should I drink?' },
+   932→]
+   933→
+   934→// ─── Initial Chat Messages ──────────────────────────────────────────────────
+   935→
+   936→// Chat starts empty — a friendly greeting + suggested prompts are shown in the
+   937→// empty-state UI. No fake previous messages from "user" or "assistant".
+   938→const initialMessages: ChatMessage[] = []
+   939→
+   940→// ─── Fallback Chat Engine ───────────────────────────────────────────────────
+   941→
+   942→const SAFETY_NOTE =
+   943→  '\n\n⚕️ For personalized medical nutrition advice, consult a registered dietitian.'
+   944→
+   945→function buildFallbackResponse(message: string, condition: ConditionId): string {
+   946→  const msg = message.toLowerCase()
+   947→  const plan = dietPlans[condition]
+   948→  const conditionLabel =
+   949→    conditions.find((c) => c.id === condition)?.label ?? 'General Wellness'
+   950→
+   951→  // Order matters — most specific first.
+   952→  const matchers: { keys: string[]; reply: string }[] = [
+   953→    {
+   954→      keys: ['period', 'menstrual', 'cramp', 'menstruation'],
+   955→      reply:
+   956→        'For your period, focus on foods that fight inflammation and replenish iron 🩸:\n\n• Iron-rich foods: lentils, spinach, lean beef, pumpkin seeds — to replace menstrual losses\n• Magnesium foods: dark chocolate (70%+), bananas, leafy greens — to ease cramps\n• Omega-3s: salmon, walnuts, chia seeds — reduce inflammation and cramp-causing prostaglandins\n• Ginger & turmeric tea — natural anti-inflammatories that soothe cramps and nausea\n\nLimit salt (bloating), caffeine (worsens anxiety & breast tenderness), and refined sugar (mood swings). Sip chamomile or ginger tea and stay well-hydrated.',
+   957→    },
+   958→    {
+   959→      keys: ['pcos'],
+   960→      reply:
+   961→        'For PCOS, the goal is improving insulin sensitivity and reducing inflammation 🌼:\n\n• Eat low-glycemic carbs: quinoa, lentils, sweet potatoes, beans — instead of white rice or bread\n• Pair every carb with protein (eggs, fish, Greek yogurt, tofu) to blunt blood sugar spikes\n• Add omega-3 fats: salmon, chia seeds, walnuts, flaxseeds — to fight inflammation\n• Include cinnamon — studies suggest it improves insulin sensitivity\n• Load up on cruciferous vegetables (broccoli, cauliflower) for hormone balance\n\nAvoid: sugary drinks, refined carbs, fried foods, and excess processed snacks. Even a 5–10% weight loss can significantly improve PCOS symptoms.',
+   962→    },
+   963→    {
+   964→      keys: ['fertility', 'conceiv', 'ovulat', 'trying to get pregnant', 'egg quality'],
+   965→      reply:
+   966→        'Fertility-boosting foods focus on folate, omega-3, and antioxidants 🌸:\n\n• Folate-rich foods: leafy greens, lentils, beans, fortified grains, citrus — essential for early pregnancy\n• Omega-3s: salmon (low-mercury), sardines, walnuts, chia & flax seeds — support egg quality\n• Antioxidant foods: berries, colorful vegetables, dark leafy greens, green tea\n• Zinc: pumpkin seeds, oysters, lean beef — supports ovulation\n• Full-fat dairy (in moderation) has been linked to healthier ovulation in some studies\n\nLimit caffeine to <200mg/day (about 1 coffee), avoid alcohol, skip high-mercury fish (swordfish, shark), and start a prenatal vitamin with folate if you\'re trying to conceive.',
+   967→    },
+   968→    {
+   969→      keys: ['pregnan', 'expecting', 'baby', 'trimester', 'nausea', 'morning sickness'],
+   970→      reply:
+   971→        'Pregnancy nutrition is about supporting baby\'s growth and your health 🤰:\n\n• Folate: spinach, lentils, fortified cereals, citrus — prevents neural tube defects\n• Iron: lean beef, lentils, spinach, fortified grains — supports increased blood volume (pair with vitamin C for absorption)\n• DHA: salmon (low-mercury, 2x/week), walnuts, chia — for baby\'s brain development\n• Calcium: Greek yogurt, milk, fortified plant milks, broccoli, leafy greens\n• Protein: eggs, chicken, fish, beans, Greek yogurt\n\nFood safety: avoid raw/undercooked meat & fish, high-mercury fish, unpasteurized dairy, soft cheeses, raw eggs, and deli meats (unless reheated to steaming). No alcohol. For nausea, try small frequent meals, ginger, and bland carbs like crackers.',
+   972→    },
+   973→    {
+   974→      keys: ['menopause', 'hot flash', 'night sweat', 'perimenopause'],
+   975→      reply:
+   976→        'Menopause nutrition focuses on phytoestrogens, bone health, and heart health 🌅:\n\n• Phytoestrogens: soy foods (tofu, tempeh, edamame), flaxseeds — may ease hot flashes\n• Calcium & vitamin D: Greek yogurt, fortified milks, leafy greens, salmon — protect bones (aim for 1200mg calcium/day)\n• Omega-3s: salmon, walnuts, chia — support heart health as estrogen drops\n• Fiber: whole grains, legumes, vegetables — supports heart and digestion\n\nLimit triggers: caffeine, alcohol, spicy foods, and excess sugar can worsen hot flashes. Eat smaller, more frequent meals if digestion slows.',
+   977→    },
+   978→    {
+   979→      keys: ['hormone', 'hormonal', 'balance hormone', 'estrogen'],
+   980→      reply:
+   981→        'To balance hormones naturally, focus on the building blocks and clearance pathways ⚖️:\n\n• Healthy fats: avocado, olive oil, nuts, salmon — cholesterol is the precursor to estrogen, progesterone, and testosterone\n• Cruciferous vegetables: broccoli, Brussels sprouts, cabbage — support healthy estrogen metabolism\n• Fiber: 25–30g/day from legumes, whole grains, vegetables — helps the body clear excess estrogen\n• Omega-3s: reduce inflammation that disrupts hormone signaling\n• Magnesium & zinc: leafy greens, pumpkin seeds, almonds — cofactors for hormone production\n\nAvoid: trans fats, excess sugar, ultra-processed foods, and excess caffeine — these can disrupt endocrine function.',
+   982→    },
+   983→    {
+   984→      keys: ['weight loss', 'lose weight', 'weight management', 'fat loss', 'losing weight'],
+   985→      reply:
+   986→        'For sustainable weight loss, prioritize protein, fiber, and whole foods ⚖️:\n\n• Protein at every meal: eggs, chicken, fish, Greek yogurt, lentils — most satiating macro, preserves muscle\n• High-volume, low-calorie foods: leafy greens, broccoli, cucumbers, berries — fill up for fewer calories\n• Complex carbs: quinoa, oats, sweet potatoes — keep energy stable\n• Healthy fats in moderation: avocado, olive oil, nuts — portion-controlled (fats are calorie-dense)\n\nAvoid: sugary drinks, fast food, refined carbs, alcohol. Try eating slowly, drinking water before meals, and filling half your plate with vegetables. Aim for a modest 300–500 calorie deficit for sustainable loss of ½–1 lb/week.',
+   987→    },
+   988→    {
+   989→      keys: ['water', 'hydrat', 'drink', 'how much water'],
+   990→      reply:
+   991→        'Hydration is essential for digestion, energy, skin, and hormone balance 💧:\n\n• General guideline: about 8 glasses (2 liters) of water per day for most women\n• If pregnant or breastfeeding: aim for 10–12 glasses daily\n• During your period: extra water helps reduce bloating and replaces fluids lost\n• In hot weather or when exercising: drink more to replace sweat losses\n\nTips:\n• Carry a reusable bottle\n• Drink a glass of water 20 minutes before meals (helps with portion control)\n• Flavor with lemon, cucumber, or mint if plain water is boring\n• Herbal teas (chamomile, ginger, peppermint) count toward hydration\n\nSkip sugary drinks and limit caffeine — both can dehydrate you.',
+   992→    },
+   993→    {
+   994→      keys: ['snack', 'snacks'],
+   995→      reply:
+   996→        'Healthy snack ideas that balance blood sugar and satisfy cravings 🍪:\n\n• Apple slices + almond butter (fiber + healthy fat)\n• Greek yogurt + berries + chia seeds (protein + antioxidants)\n• Handful of almonds + a piece of dark chocolate (magnesium + antioxidants)\n• Carrot & cucumber sticks + hummus (fiber + protein)\n• Hard-boiled egg + cherry tomatoes (protein + vitamins)\n• Edamame (plant protein + fiber)\n• Cottage cheese + pineapple (slow-digesting protein)\n• Trail mix with nuts & seeds (healthy fats + minerals)\n\nAim for snacks that combine protein + fiber or protein + healthy fat — these keep you full longer than carb-only snacks.',
+   997→    },
+   998→    {
+   999→      keys: ['protein', 'high protein'],
+  1000→      reply:
+  1001→        'Protein is essential for hormones, muscle, skin, and satiety 💪:\n\n• Animal sources: eggs, chicken, turkey, salmon, Greek yogurt, cottage cheese, lean beef\n• Plant sources: lentils, chickpeas, tofu, tempeh, edamame, quinoa, chia seeds, hemp seeds\n\nAim for 20–30g protein per meal (about a palm-sized portion). Most women need 0.8–1.2g of protein per kg of body weight daily — more if you\'re active, pregnant, or trying to lose weight. Spreading protein across the day (rather than one big dinner) supports muscle protein synthesis and stable energy.',
+  1002→    },
+  1003→    {
+  1004→      keys: ['iron', 'anemia', 'low iron'],
+  1005→      reply:
+  1006→        'Iron is crucial for women — especially during periods and pregnancy 🩸:\n\n• Heme iron (most absorbable): lean beef, chicken, fish, eggs\n• Non-heme iron: lentils, spinach, tofu, pumpkin seeds, fortified cereals, quinoa\n\nBoost absorption: pair iron-rich foods with vitamin C (citrus, bell peppers, strawberries, tomatoes). For example, squeeze lemon on spinach or pair lentils with tomatoes.\n\nAvoid: drinking tea or coffee with iron-rich meals — tannins block absorption. Wait 1 hour before/after meals for caffeine. If you suspect anemia (fatigue, pale skin, dizziness), ask your doctor for a ferritin test.',
+  1007→    },
+  1008→    {
+  1009→      keys: ['calcium', 'bone'],
+  1010→      reply:
+  1011→        'Calcium supports bones, teeth, muscle function, and even PMS reduction 🦴:\n\n• Dairy: Greek yogurt, milk, cheese, cottage cheese\n• Plant sources: fortified plant milks, tofu (calcium-set), leafy greens (collards, kale), broccoli, almonds, sesame seeds\n\nWomen need 1000mg/day (1200mg after menopause). Vitamin D is essential for calcium absorption — get it from salmon, fortified milks, egg yolks, or 10–15 minutes of sunlight. Weight-bearing exercise (walking, strength training) also strengthens bones.',
+  1012→    },
+  1013→    {
+  1014→      keys: ['magnesium'],
+  1015→      reply:
+  1016→        'Magnesium eases cramps, supports sleep, and helps with mood 🟤:\n\n• Best food sources: pumpkin seeds, almonds, dark chocolate (70%+), spinach, black beans, avocado, cashews, quinoa\n\nWomen need 310–320mg/day. Magnesium is depleted by stress, caffeine, and alcohol — so many women run low.Boosting magnesium-rich foods (or considering a supplement after talking to your doctor) can help with PMS cramps, sleep quality, and anxiety.',
+  1017→    },
+  1018→    {
+  1019→      keys: ['fiber'],
+  1020→      reply:
+  1021→        'Fiber supports digestion, blood sugar control, and hormone clearance 🌾:\n\n• Soluble fiber: oats, beans, lentils, apples, chia seeds, flaxseeds\n• Insoluble fiber: whole grains, wheat bran, vegetables, leafy greens\n\nWomen need 25g/day, but most get only 12–15g. Build up slowly and drink plenty of water to avoid bloating. Fiber binds to excess estrogen and helps the body clear it — important for PCOS, PMS, and hormone balance.',
+  1022→    },
+  1023→    {
+  1024→      keys: ['sugar', 'sweet', 'dessert', 'craving'],
+  1025→      reply:
+  1026→        'Managing sugar cravings starts with stable blood sugar 🍭:\n\n• Swap refined sweets for whole fruit (berries, apples, pears) — fiber slows the sugar hit\n• Pair a sweet with protein or fat (apple + almond butter, dark chocolate + nuts)\n• Choose 70%+ dark chocolate — lower sugar, rich in magnesium\n• Stay hydrated — thirst often masquerades as cravings\n• Get enough sleep — sleep deprivation spikes sugar cravings\n\nIf cravings are intense before your period, that\'s normal — hormones drive it. Satisfy with small portions of quality treats rather than fighting them entirely.',
+  1027→    },
+  1028→    {
+  1029→      keys: ['breakfast'],
+  1030→      reply:
+  1031→        'Great breakfast options that balance blood sugar and energy 🌅:\n\n• Oatmeal with walnuts, berries & flaxseeds\n• Veggie omelet with spinach and avocado\n• Greek yogurt with chia seeds and berries\n• Sprouted toast with mashed avocado and a poached egg\n• Smoothie with spinach, berries, Greek yogurt, and a tablespoon of nut butter\n\nAim for protein + fiber + healthy fat — this trio keeps you full and prevents the mid-morning crash that comes from cereal or pastries alone.',
+  1032→    },
+  1033→    {
+  1034→      keys: ['lunch', 'dinner', 'meal'],
+  1035→      reply:
+  1036→        'Build a balanced plate for any meal 🍽️:\n\n• ½ plate vegetables: leafy greens, roasted veggies, colorful salads\n• ¼ plate lean protein: salmon, chicken, tofu, lentils, eggs\n• ¼ plate complex carbs: quinoa, sweet potato, brown rice, beans\n• + a thumb of healthy fat: olive oil, avocado, nuts, seeds\n\nThis formula works for PCOS, fertility, pregnancy, weight management, and general wellness. Add herbs and spices (turmeric, ginger, cinnamon, garlic) for flavor and anti-inflammatory benefits.',
+  1037→    },
+  1038→    {
+  1039→      keys: ['caffeine', 'coffee'],
+  1040→      reply:
+  1041→        'Caffeine affects women differently across life stages ☕:\n\n• Fertility: limit to <200mg/day (about 1 coffee) — high caffeine may reduce fertility\n• Pregnancy: keep under 200mg/day — excess linked to miscarriage risk\n• PMS & periods: caffeine can worsen anxiety, breast tenderness, and cramps\n• Menopause: caffeine can trigger hot flashes in some women\n\nIf you\'re sensitive, swap coffee for green tea (lower caffeine, high antioxidants), herbal teas (chamomile, ginger, peppermint), or warm lemon water. Avoid caffeine after 2pm to protect sleep.',
+  1042→    },
+  1043→    {
+  1044→      keys: ['supplement', 'vitamin', 'prenatal', 'omega-3', 'fish oil'],
+  1045→      reply:
+  1046→        'Key supplements many women benefit from (always check with a doctor first) 💊:\n\n• Prenatal vitamin with folate — if trying to conceive or pregnant (400–800mcg folate)\n• Vitamin D — most women are low; aim for 600–1000 IU/day (or more if deficient)\n• Omega-3 (DHA/EPA) — if you don\'t eat fish 2x/week; especially important in pregnancy for baby\'s brain\n• Iron — only if bloodwork shows deficiency; supplement with vitamin C\n• Magnesium — for PMS, sleep, and stress (200–400mg glycinate)\n• B12 — if you\'re vegetarian or vegan\n\nFood first, supplements second. Always confirm dosages with a healthcare provider based on your bloodwork.',
+  1047→    },
+  1048→    {
+  1049→      keys: ['omega', 'fish oil', 'dha', 'epa'],
+  1050→      reply:
+  1051→        'Omega-3 fatty acids are powerful for women\'s health 🐟:\n\n• Best food sources: salmon, sardines, mackerel (low-mercury), walnuts, chia seeds, flaxseeds, hemp seeds\n• Benefits: reduce inflammation, support brain & heart health, balance hormones, ease period cramps, and support baby\'s brain development in pregnancy\n\nAim for 2 servings of low-mercury fish per week. If you don\'t eat fish, consider an algae-based DHA/EPA supplement (especially in pregnancy).',
+  1052→    },
+  1053→  ]
+  1054→
+  1055→  // Find first matching topic
+  1056→  for (const m of matchers) {
+  1057→    if (m.keys.some((k) => msg.includes(k))) {
+  1058→      return m.reply + SAFETY_NOTE
+  1059→    }
+  1060→  }
+  1061→
+  1062→  // Default — use the selected condition's plan as context
+  1063→  return (
+  1064→    `Great question! Based on the "${conditionLabel}" plan you're viewing, here are some key takeaways:\n\n` +
+  1065→    `• Daily target: ~${plan.dailyCalories} calories with ${plan.macros.carbs.pct}% carbs, ${plan.macros.protein.pct}% protein, ${plan.macros.fat.pct}% fat\n` +
+  1066→    `• Focus foods: ${plan.foodsToEat
+  1067→      .slice(0, 5)
+  1068→      .map((f) => f.name)
+  1069→      .join(', ')}\n` +
+  1070→    `• Avoid: ${plan.foodsToAvoid.slice(0, 3).join(', ')}\n\n` +
+  1071→    `Top tip for this plan: ${plan.tips[0].description}\n\n` +
+  1072→    `Try asking about specific topics like "period foods", "PCOS weight loss", "fertility foods", "water intake", "snack ideas", "iron-rich foods", or "protein" for more targeted guidance. 🌱`
+  1073→  ) + SAFETY_NOTE
+  1074→}
+  1075→
+  1076→// ─── Tip Icon Map ───────────────────────────────────────────────────────────
+  1077→
+  1078→const tipIconMap: Record<NutritionTip['icon'], React.ElementType> = {
+  1079→  leaf: Leaf,
+  1080→  flame: Flame,
+  1081→  droplet: Droplets,
+  1082→  apple: Apple,
+  1083→  heart: Heart,
+  1084→  brain: Brain,
+  1085→  zap: Zap,
+  1086→}
+  1087→
+  1088→// ─── Main Component ─────────────────────────────────────────────────────────
+  1089→
+  1090→export default function DietAdvisorModule() {
+  1091→  const [selectedCondition, setSelectedCondition] = useState<ConditionId>('pcos')
+  1092→  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
+  1093→  const [input, setInput] = useState('')
+  1094→  const [isLoading, setIsLoading] = useState(false)
+  1095→
+  1096→  // Daily tracker state (starts empty — user logs their own meals & water)
+  1097→  const [waterGlasses, setWaterGlasses] = useState(0)
+  1098→  const [loggedMeals, setLoggedMeals] = useState<
+  1099→    { id: string; name: string; calories: number; type: string }[]
+  1100→  >([])
+  1101→  const [newMeal, setNewMeal] = useState('')
+  1102→  const [newMealCalories, setNewMealCalories] = useState('')
+  1103→  const [newMealType, setNewMealType] = useState('Snack')
+  1104→
+  1105→  const scrollRef = useRef<HTMLDivElement>(null)
+  1106→  const inputRef = useRef<HTMLInputElement>(null)
+  1107→
+  1108→  const plan = dietPlans[selectedCondition]
+  1109→  const conditionMeta = useMemo(
+  1110→    () => conditions.find((c) => c.id === selectedCondition)!,
+  1111→    [selectedCondition]
+  1112→  )
+  1113→
+  1114→  const loggedCalories = loggedMeals.reduce((s, m) => s + m.calories, 0)
+  1115→  const calorieProgress = Math.min(
+  1116→    100,
+  1117→    Math.round((loggedCalories / plan.dailyCalories) * 100)
+  1118→  )
+  1119→
+  1120→  useEffect(() => {
+  1121→    if (scrollRef.current) {
+  1122→      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  1123→    }
+  1124→  }, [messages, isLoading])
+  1125→
+  1126→  const handleSelectCondition = (id: ConditionId) => {
+  1127→    setSelectedCondition(id)
+  1128→  }
+  1129→
+  1130→  const sendMessage = async (text: string) => {
+  1131→    if (!text.trim() || isLoading) return
+  1132→
+  1133→    const userMessage: ChatMessage = {
+  1134→      id: Date.now().toString(),
+  1135→      role: 'user',
+  1136→      content: text.trim(),
+  1137→      timestamp: new Date(),
+  1138→    }
+  1139→
+  1140→    setMessages((prev) => [...prev, userMessage])
+  1141→    setInput('')
+  1142→    setIsLoading(true)
+  1143→
+  1144→    try {
+  1145→      const history = messages.slice(-10).map((m) => ({
+  1146→        role: m.role,
+  1147→        content: m.content,
+  1148→      }))
+  1149→
+  1150→      const response = await fetch('/api/diet-chat', {
+  1151→        method: 'POST',
+  1152→        headers: { 'Content-Type': 'application/json' },
+  1153→        body: JSON.stringify({
+  1154→          message: text.trim(),
+  1155→          condition: selectedCondition,
+  1156→          history,
+  1157→        }),
+  1158→      })
+  1159→
+  1160→      const data = await response.json()
+  1161→
+  1162→      if (response.ok && data.success && data.response) {
+  1163→        // Ensure safety note is included
+  1164→        const content = data.response.includes(
+  1165→          'consult a registered dietitian'
+  1166→        )
+  1167→          ? data.response
+  1168→          : data.response + SAFETY_NOTE
+  1169→        setMessages((prev) => [
+  1170→          ...prev,
+  1171→          {
+  1172→            id: (Date.now() + 1).toString(),
+  1173→            role: 'assistant',
+  1174→            content,
+  1175→            timestamp: new Date(),
+  1176→          },
+  1177→        ])
+  1178→      } else {
+  1179→        // Smart local fallback
+  1180→        const fallback = buildFallbackResponse(text.trim(), selectedCondition)
+  1181→        setMessages((prev) => [
+  1182→          ...prev,
+  1183→          {
+  1184→            id: (Date.now() + 1).toString(),
+  1185→            role: 'assistant',
+  1186→            content: fallback,
+  1187→            timestamp: new Date(),
+  1188→          },
+  1189→        ])
+  1190→      }
+  1191→    } catch {
+  1192→      // Network or other error — use smart local fallback
+  1193→      const fallback = buildFallbackResponse(text.trim(), selectedCondition)
+  1194→      setMessages((prev) => [
+  1195→        ...prev,
+  1196→        {
+  1197→          id: (Date.now() + 1).toString(),
+  1198→          role: 'assistant',
+  1199→          content: fallback,
+  1200→          timestamp: new Date(),
+  1201→        },
+  1202→      ])
+  1203→    } finally {
+  1204→      setIsLoading(false)
+  1205→    }
+  1206→  }
+  1207→
+  1208→  const handleSubmit = (e: React.FormEvent) => {
+  1209→    e.preventDefault()
+  1210→    sendMessage(input)
+  1211→  }
+  1212→
+  1213→  const resetConversation = () => {
+  1214→    setMessages(initialMessages)
+  1215→  }
+  1216→
+  1217→  const formatTime = (date: Date) =>
+  1218→    date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  1219→
+  1220→  const addMeal = () => {
+  1221→    if (!newMeal.trim() || !newMealCalories) return
+  1222→    setLoggedMeals((prev) => [
+  1223→      ...prev,
+  1224→      {
+  1225→        id: Date.now().toString(),
+  1226→        name: newMeal.trim(),
+  1227→        calories: parseInt(newMealCalories) || 0,
+  1228→        type: newMealType,
+  1229→      },
+  1230→    ])
+  1231→    setNewMeal('')
+  1232→    setNewMealCalories('')
+  1233→  }
+  1234→
+  1235→  const removeMeal = (id: string) => {
+  1236→    setLoggedMeals((prev) => prev.filter((m) => m.id !== id))
+  1237→  }
+  1238→
+  1239→  return (
+  1240→    <div className="space-y-6 pb-6">
+  1241→      {/* ─── 1. Header ─────────────────────────────────────────────── */}
+  1242→      <motion.div
+  1243→        initial={{ opacity: 0, y: -10 }}
+  1244→        animate={{ opacity: 1, y: 0 }}
+  1245→        transition={{ duration: 0.4 }}
+  1246→        className="space-y-3"
+  1247→      >
+  1248→        <div className="flex flex-wrap items-start justify-between gap-3">
+  1249→          <div className="space-y-1.5">
+  1250→            <div className="flex items-center gap-2 flex-wrap">
+  1251→              <h2 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
+  1252→                AI Diet Advisor
+  1253→              </h2>
+  1254→              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 hover:bg-emerald-100">
+  1255→                <Sparkles className="h-3 w-3 mr-1" /> AI-Powered
+  1256→              </Badge>
+  1257→            </div>
+  1258→            <p className="text-sm md:text-base text-muted-foreground">
+  1259→              Expert nutrition guidance for every phase of your health journey
+  1260→            </p>
+  1261→          </div>
+  1262→        </div>
+  1263→      </motion.div>
+  1264→
+  1265→      {/* ─── 2. Health Condition Selector ─────────────────────────── */}
+  1266→      <div className="space-y-3">
+  1267→        <div className="flex items-center gap-2">
+  1268→          <Salad className="h-4 w-4 text-emerald-500" />
+  1269→          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+  1270→            Choose Your Health Goal
+  1271→          </h3>
+  1272→        </div>
+  1273→        <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 snap-x">
+  1274→          {conditions.map((c) => {
+  1275→            const isSelected = selectedCondition === c.id
+  1276→            const Icon = c.icon
+  1277→            return (
+  1278→              <motion.button
+  1279→                key={c.id}
+  1280→                onClick={() => handleSelectCondition(c.id)}
+  1281→                whileHover={{ y: -2 }}
+  1282→                whileTap={{ scale: 0.97 }}
+  1283→                className={cn(
+  1284→                  'shrink-0 snap-start w-36 md:w-40 text-left rounded-2xl p-4 border-2 transition-all duration-200',
+  1285→                  isSelected
+  1286→                    ? cn(c.bg, c.border, 'shadow-md ring-2', c.ring)
+  1287→                    : 'glass border-transparent hover:border-border'
+  1288→                )}
+  1289→              >
+  1290→                <div className="flex items-center justify-between mb-2">
+  1291→                  <div
+  1292→                    className={cn(
+  1293→                      'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm',
+  1294→                      c.gradient
+  1295→                    )}
+  1296→                  >
+  1297→                    <Icon className="h-5 w-5" />
+  1298→                  </div>
+  1299→                  <span className="text-lg">{c.emoji}</span>
+  1300→                </div>
+  1301→                <p
+  1302→                  className={cn(
+  1303→                    'text-sm font-semibold leading-tight',
+  1304→                    isSelected ? c.text : 'text-foreground'
+  1305→                  )}
+  1306→                >
+  1307→                  {c.label}
+  1308→                </p>
+  1309→              </motion.button>
+  1310→            )
+  1311→          })}
+  1312→        </div>
+  1313→      </div>
+  1314→
+  1315→      {/* ─── 3. Diet Plan Display ─────────────────────────────────── */}
+  1316→      <AnimatePresence mode="wait">
+  1317→        <motion.div
+  1318→          key={selectedCondition}
+  1319→          initial={{ opacity: 0, y: 12 }}
+  1320→          animate={{ opacity: 1, y: 0 }}
+  1321→          exit={{ opacity: 0, y: -8 }}
+  1322→          transition={{ duration: 0.3 }}
+  1323→          className="space-y-4"
+  1324→        >
+  1325→          {/* Plan header card */}
+  1326→          <Card
+  1327→            className={cn(
+  1328→              'border-0 shadow-lg overflow-hidden',
+  1329→              conditionMeta.bg
+  1330→            )}
+  1331→          >
+  1332→            <CardContent className="p-5 md:p-6">
+  1333→              <div className="flex items-start gap-3 mb-2">
+  1334→                <div
+  1335→                  className={cn(
+  1336→                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow',
+  1337→                    conditionMeta.gradient
+  1338→                  )}
+  1339→                >
+  1340→                  <conditionMeta.icon className="h-5 w-5" />
+  1341→                </div>
+
+[showing lines 782-1341 of 2041; use offset=1342 with limit to continue reading]

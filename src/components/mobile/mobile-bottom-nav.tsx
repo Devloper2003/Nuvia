@@ -222,7 +222,7 @@ export default function MobileBottomNav() {
             <div className="px-5 py-4 space-y-6">
               {ALL_MODULES.map((group) => (
                 <motion.section
-                  key={group.title}
+                  key={group.titleKey}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25 }}
@@ -410,10 +410,10 @@ function CenterFab({
           repeat: Infinity,
           ease: 'easeInOut',
         }}
-        className="absolute -top-5 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 text-white shadow-lg shadow-rose-500/40 ring-4 ring-card"
+        className="absolute -top-5 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-[#6E366F] via-[#8E4463] to-[#C2497E] text-white shadow-lg shadow-[#8E4463]/40 ring-4 ring-card"
       >
         {/* Glow */}
-        <span className="absolute inset-0 rounded-full bg-rose-400/30 blur-md -z-10" />
+        <span className="absolute inset-0 rounded-full bg-[#8E4463]/30 blur-md -z-10" />
 
         <MessageCircle className="h-6 w-6" />
 
@@ -426,7 +426,7 @@ function CenterFab({
 
         {/* Pulse ring */}
         <motion.span
-          className="absolute inset-0 rounded-full border-2 border-rose-400"
+          className="absolute inset-0 rounded-full border-2 border-[#C2497E]"
           animate={{ scale: [1, 1.35], opacity: [0.6, 0] }}
           transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
         />

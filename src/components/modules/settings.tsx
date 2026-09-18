@@ -160,11 +160,11 @@ function SettingsSection({
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-3">
-            <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg shrink-0', iconColor)}>
+            <div className={cn('flex h-10 w-10 items-center justify-center rounded-full shrink-0', iconColor)}>
               <Icon className="h-4 w-4" />
             </div>
-            <div>
-              <CardTitle className="text-base">{title}</CardTitle>
+            <div className="min-w-0">
+              <CardTitle className="font-serif text-base">{title}</CardTitle>
               {description && <CardDescription className="text-xs">{description}</CardDescription>}
             </div>
           </div>
@@ -184,7 +184,7 @@ function LanguageSection({ delay = 0 }: { delay?: number }) {
       title={t('language.title')}
       description={t('language.description')}
       icon={Languages}
-      iconColor="bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400"
+      iconColor="bg-lilac text-plum"
       delay={delay}
     >
       <LanguageSegmented />
@@ -229,15 +229,15 @@ export default function SettingsModule() {
 
   // Notification preferences
   const [notifications, setNotifications] = useState<NotificationPref[]>([
-    { id: 'period', label: 'Period Reminders', description: 'Alerts before your period starts', enabled: true, icon: Calendar, color: 'bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400' },
-    { id: 'ovulation', label: 'Ovulation Alerts', description: 'Notifications for fertile window', enabled: true, icon: HeartPulse, color: 'bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-600 dark:text-fuchsia-400' },
-    { id: 'pill', label: 'Medication Reminders', description: 'Birth control & supplement alerts', enabled: false, icon: Zap, color: 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400' },
-    { id: 'mood', label: 'Mood Check-ins', description: 'Daily mood logging prompts', enabled: true, icon: Activity, color: 'bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400' },
-    { id: 'water', label: 'Hydration Reminders', description: 'Periodic water intake alerts', enabled: false, icon: Activity, color: 'bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400' },
-    { id: 'sleep', label: 'Sleep Wind-down', description: 'Bedtime reminder alerts', enabled: true, icon: Moon, color: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400' },
-    { id: 'community', label: 'Community Updates', description: 'Replies, likes, and mentions', enabled: true, icon: User, color: 'bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400' },
-    { id: 'weekly', label: 'Weekly Health Report', description: 'Summary of your week every Sunday', enabled: true, icon: FileText, color: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' },
-    { id: 'tips', label: 'AI Tips & Insights', description: 'Personalized health tips', enabled: false, icon: Sparkles, color: 'bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400' },
+    { id: 'period', label: 'Period Reminders', description: 'Alerts before your period starts', enabled: true, icon: Calendar, color: 'bg-blush text-primary' },
+    { id: 'ovulation', label: 'Ovulation Alerts', description: 'Notifications for fertile window', enabled: true, icon: HeartPulse, color: 'bg-lilac text-plum' },
+    { id: 'pill', label: 'Medication Reminders', description: 'Birth control & supplement alerts', enabled: false, icon: Zap, color: 'bg-gold-soft text-amber-600 dark:text-amber-400' },
+    { id: 'mood', label: 'Mood Check-ins', description: 'Daily mood logging prompts', enabled: true, icon: Activity, color: 'bg-plum-soft text-gold' },
+    { id: 'water', label: 'Hydration Reminders', description: 'Periodic water intake alerts', enabled: false, icon: Activity, color: 'bg-medical-soft text-medical' },
+    { id: 'sleep', label: 'Sleep Wind-down', description: 'Bedtime reminder alerts', enabled: true, icon: Moon, color: 'bg-lilac text-plum' },
+    { id: 'community', label: 'Community Updates', description: 'Replies, likes, and mentions', enabled: true, icon: User, color: 'bg-blush text-primary' },
+    { id: 'weekly', label: 'Weekly Health Report', description: 'Summary of your week every Sunday', enabled: true, icon: FileText, color: 'bg-peach-soft text-amber-600 dark:text-amber-400' },
+    { id: 'tips', label: 'AI Tips & Insights', description: 'Personalized health tips', enabled: false, icon: Sparkles, color: 'bg-gold-soft text-amber-600 dark:text-amber-400' },
   ])
 
   // Wearable devices
@@ -269,8 +269,8 @@ export default function SettingsModule() {
       name: 'Garmin Connect',
       description: 'Sync Garmin watch data for advanced health metrics',
       icon: Watch,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-950/40',
+      color: 'text-plum',
+      bgColor: 'bg-lilac',
       connected: false,
       features: ['Stress Score', 'Sleep', 'SpO2', 'Body Battery'],
     },
@@ -736,12 +736,15 @@ export default function SettingsModule() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-slate-500 to-slate-700 text-white shadow-md">
-          <SettingsIcon className="h-6 w-6" />
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-plum-soft text-gold shadow-md">
+          <SettingsIcon className="h-5 w-5" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-sm text-muted-foreground">Manage your account, preferences, and privacy</p>
+          <span className="gold-divider text-[10px] mt-1" aria-hidden>
+            <span>✦</span>
+          </span>
         </div>
       </motion.div>
 
@@ -753,24 +756,24 @@ export default function SettingsModule() {
       >
         <Card className="overflow-hidden border-primary/20 group/banner">
           {/* Branded banner — crescent moon + dotted texture + shimmer */}
-          <div className="relative bg-gradient-to-r from-rose-500 via-fuchsia-500 to-purple-500 h-24 sm:h-28 overflow-hidden">
+          <div className="relative bg-gradient-to-r from-plum via-plum-soft to-plum h-24 sm:h-28 overflow-hidden">
             <div className="absolute inset-0 opacity-[0.14] [background-image:radial-gradient(circle_at_center,white_1.2px,transparent_1.2px)] [background-size:16px_16px]" />
-            <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-white/15 blur-2xl transition-transform duration-700 group-hover/banner:scale-125" />
-            <div className="absolute top-4 right-24 h-10 w-10 rounded-full bg-white/10" />
+            <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-gold/25 blur-2xl transition-transform duration-700 group-hover/banner:scale-125" />
+            <div className="absolute top-4 right-24 h-10 w-10 rounded-full bg-gold/15" />
             {/* Crescent: two overlapping circles */}
             <div className="absolute right-8 top-1/2 -translate-y-1/2 h-9 w-9">
-              <div className="absolute inset-0 rounded-full bg-white/25" />
-              <div className="absolute inset-0 rounded-full bg-fuchsia-500/90 translate-x-2.5 -translate-y-1.5" />
+              <div className="absolute inset-0 rounded-full bg-gold/40" />
+              <div className="absolute inset-0 rounded-full bg-plum translate-x-2.5 -translate-y-1.5" />
             </div>
-            <div className="absolute left-1/4 -bottom-6 h-16 w-16 rounded-full bg-white/10 blur-lg" />
+            <div className="absolute left-1/4 -bottom-6 h-16 w-16 rounded-full bg-gold/10 blur-lg" />
             {/* Shimmer sweep */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/15 to-white/0 -translate-x-full group-hover/banner:translate-x-full transition-transform duration-1000" />
+            <div className="absolute inset-0 bg-gradient-to-r from-gold/0 via-gold/20 to-gold/0 -translate-x-full group-hover/banner:translate-x-full transition-transform duration-1000" />
           </div>
           <CardContent className="p-5 -mt-10">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
               <div className="relative">
-                <Avatar className="h-20 w-20 border-4 border-card shadow-lg ring-2 ring-fuchsia-300/60 ring-offset-0">
-                  <AvatarFallback className="bg-gradient-to-br from-rose-400 to-fuchsia-500 text-white text-xl font-bold">
+                <Avatar className="h-20 w-20 border-4 border-card shadow-lg ring-2 ring-gold/60 ring-offset-0">
+                  <AvatarFallback className="bg-gradient-to-br from-plum-soft to-plum text-gold text-xl font-bold">
                     {formData.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -780,7 +783,7 @@ export default function SettingsModule() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg font-bold">{formData.name}</h2>
                   {isPremium ? (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 gap-1">
+                    <Badge variant="secondary" className="bg-gold-soft text-plum gap-1">
                       <Crown className="h-3 w-3" /> Premium
                     </Badge>
                   ) : (
@@ -794,6 +797,7 @@ export default function SettingsModule() {
               <Button
                 variant={isEditing ? 'default' : 'outline'}
                 size="sm"
+                className={cn('min-h-11 rounded-full px-5', isEditing && 'btn-plum font-semibold')}
                 onClick={() => isEditing ? handleSave() : setIsEditing(true)}
               >
                 {isEditing ? (
@@ -814,10 +818,10 @@ export default function SettingsModule() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <Card className="border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/10">
+            <Card className="border-gold/40 bg-gold-soft/40">
               <CardContent className="p-4 flex items-center gap-2 text-sm">
                 <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span className="text-amber-700 dark:text-amber-300">
+                <span className="text-plum">
                   You're now editing your profile. Click "Save Changes" at the top to apply.
                 </span>
                 <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setIsEditing(false)}>
@@ -834,7 +838,7 @@ export default function SettingsModule() {
         title="Personal Information"
         description="Your basic profile details"
         icon={User}
-        iconColor="bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400"
+        iconColor="bg-blush text-primary"
         delay={0.1}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -910,7 +914,7 @@ export default function SettingsModule() {
         title="Cycle Settings"
         description="Personalize your cycle tracking parameters"
         icon={Calendar}
-        iconColor="bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-600 dark:text-fuchsia-400"
+        iconColor="bg-peach-soft text-amber-600 dark:text-amber-400"
         delay={0.15}
       >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -960,8 +964,8 @@ export default function SettingsModule() {
             />
           </div>
         </div>
-        <div className="mt-4 p-3 rounded-lg bg-fuchsia-50 dark:bg-fuchsia-950/20 border border-fuchsia-200 dark:border-fuchsia-900">
-          <p className="text-xs text-fuchsia-700 dark:text-fuchsia-300 flex items-start gap-2">
+        <div className="mt-4 p-3 rounded-lg bg-blush/60 border border-primary/20">
+          <p className="text-xs text-plum flex items-start gap-2">
             <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
               <strong>Tip:</strong> The more accurate your cycle settings, the better Nuvia's predictions.
@@ -976,7 +980,7 @@ export default function SettingsModule() {
         title="Notification Preferences"
         description="Choose what you want to be notified about"
         icon={Bell}
-        iconColor="bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        iconColor="bg-gold-soft text-plum"
         delay={0.2}
       >
         <div className="space-y-1">
@@ -985,7 +989,7 @@ export default function SettingsModule() {
               key={n.id}
               className="flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-muted/40 transition-colors"
             >
-              <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg shrink-0', n.color)}>
+              <div className={cn('flex h-10 w-10 items-center justify-center rounded-full shrink-0', n.color)}>
                 <n.icon className="h-4 w-4" />
               </div>
               <div className="flex-1 min-w-0">
@@ -1013,7 +1017,7 @@ export default function SettingsModule() {
         title="Privacy & Security"
         description="Manage your data and account security"
         icon={Shield}
-        iconColor="bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400"
+        iconColor="bg-plum-soft text-gold"
         delay={0.25}
       >
         <div className="space-y-2">
@@ -1022,7 +1026,7 @@ export default function SettingsModule() {
             disabled={seedingDemo}
             className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left disabled:opacity-60"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blush text-primary shrink-0">
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1035,9 +1039,9 @@ export default function SettingsModule() {
           <button
             onClick={handleExportData}
             disabled={exporting}
-            className="group w-full flex items-center gap-3 p-3 rounded-lg border border-emerald-200/70 dark:border-emerald-900/60 bg-gradient-to-r from-emerald-50/60 to-transparent dark:from-emerald-950/20 hover:border-emerald-300 dark:hover:border-emerald-800 hover:shadow-sm transition-all text-left disabled:opacity-60"
+            className="group w-full flex items-center gap-3 p-3 rounded-lg border border-primary/30 bg-blush/40 hover:border-primary/50 hover:shadow-sm transition-all text-left disabled:opacity-60"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0 transition-transform group-hover:scale-110 group-active:scale-95">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-plum-soft text-gold shrink-0 transition-transform group-hover:scale-110 group-active:scale-95">
               {exporting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
@@ -1047,7 +1051,7 @@ export default function SettingsModule() {
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium flex items-center gap-1.5">
                 {exporting ? 'Preparing your export…' : 'Export My Data'}
-                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-gold-soft text-plum">
                   JSON
                 </Badge>
               </div>
@@ -1062,7 +1066,7 @@ export default function SettingsModule() {
             onClick={() => toast.info('Privacy Policy', { description: 'Opening privacy policy in a new tab...' })}
             className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-lilac text-plum shrink-0">
               <FileText className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1073,7 +1077,7 @@ export default function SettingsModule() {
           </button>
 
           <div className="flex items-center gap-3 p-3 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/10">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
               <Lock className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1094,7 +1098,7 @@ export default function SettingsModule() {
           <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
             <AlertDialogTrigger asChild>
               <button className="w-full flex items-center gap-3 p-3 rounded-lg border border-rose-200 dark:border-rose-900 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors text-left">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 shrink-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 shrink-0">
                   <Trash2 className="h-4 w-4" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1134,13 +1138,13 @@ export default function SettingsModule() {
         title="Content Moderation"
         description="Operator console for reported community posts"
         icon={ShieldAlert}
-        iconColor="bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400"
+        iconColor="bg-lilac text-plum"
         delay={0.32}
       >
         {!adminToken ? (
           <div className="space-y-3">
-            <div className="flex items-start gap-2.5 p-3 rounded-lg border border-violet-200 dark:border-violet-900 bg-violet-50/50 dark:bg-violet-950/10 text-xs text-muted-foreground">
-              <ShieldAlert className="h-4 w-4 text-violet-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-3 rounded-lg border border-primary/20 bg-blush/40 text-xs text-muted-foreground">
+              <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
               <span>
                 Reports from the community feed (3+ reports auto-hide a post) land here for review.
                 Every action is written to an audit trail. Operator sessions last 24 hours.
@@ -1185,7 +1189,7 @@ export default function SettingsModule() {
           <div className="space-y-4">
             {/* Header row */}
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border-0 gap-1">
+              <Badge className="bg-blush text-primary border-0 gap-1">
                 <ShieldCheck className="h-3 w-3" /> {adminName ?? 'Moderator'} signed in
               </Badge>
               {modStats && (
@@ -1205,10 +1209,10 @@ export default function SettingsModule() {
 
             {/* Moderation pulse — 7-day activity from the audit trail */}
             {modActivity && modActivity.total > 0 && (
-              <div className="rounded-xl border bg-muted/20 px-3.5 py-3 transition-colors hover:border-violet-300 dark:hover:border-violet-800">
+              <div className="rounded-xl border bg-muted/20 px-3.5 py-3 transition-colors hover:border-primary/40">
                 <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                   <div className="flex items-center gap-1.5">
-                    <TrendingUp className="h-3.5 w-3.5 text-violet-500" />
+                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
                     <span className="text-xs font-semibold">Moderation pulse — last 7 days</span>
                   </div>
                   <span className="text-[10px] text-muted-foreground">
@@ -1227,7 +1231,7 @@ export default function SettingsModule() {
                         <div
                           className={cn(
                             'w-full rounded-t-sm transition-all group-hover/day:brightness-110',
-                            d.count > 0 ? 'bg-violet-500/80' : 'bg-muted-foreground/15'
+                            d.count > 0 ? 'bg-primary/70' : 'bg-muted-foreground/15'
                           )}
                           style={{ height: `${Math.max((d.count / max) * 28, 3)}px` }}
                         />
@@ -1241,33 +1245,33 @@ export default function SettingsModule() {
 
             {/* Bulk action bar */}
             {selectedPostIds.size > 0 && (
-              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-50/60 dark:bg-violet-950/20 px-3 py-2">
-                <Badge className="bg-violet-600 text-white border-0 text-[10px] h-5">
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-blush/50 px-3 py-2">
+                <Badge className="bg-primary text-primary-foreground border-0 text-[10px] h-5">
                   {selectedPostIds.size} selected
                 </Badge>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                  className="h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                   disabled={bulkBusy}
                   onClick={() => handleBulkAction('restore')}
                 >
                   {bulkBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
                   Restore selected
                 </Button>
-                <Button size="sm" variant="outline" className="h-7 text-xs" disabled={bulkBusy} onClick={() => handleBulkAction('dismiss')}>
+                <Button size="sm" variant="outline" className="h-9 text-xs" disabled={bulkBusy} onClick={() => handleBulkAction('dismiss')}>
                   Dismiss selected
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                  className="h-9 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                   disabled={bulkBusy}
                   onClick={() => handleBulkAction('delete')}
                 >
                   <Trash2 className="h-3 w-3 mr-1" /> Delete selected
                 </Button>
-                <Button size="sm" variant="ghost" className="h-7 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedPostIds(new Set())}>
+                <Button size="sm" variant="ghost" className="h-9 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedPostIds(new Set())}>
                   Clear selection
                 </Button>
               </div>
@@ -1306,8 +1310,8 @@ export default function SettingsModule() {
                         className={cn(
                           'mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors',
                           selectedPostIds.has(post.id)
-                            ? 'bg-violet-600 border-violet-600 text-white'
-                            : 'border-muted-foreground/40 hover:border-violet-500'
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : 'border-muted-foreground/40 hover:border-primary/60'
                         )}
                       >
                         {selectedPostIds.has(post.id) && <Check className="h-3 w-3" />}
@@ -1360,7 +1364,7 @@ export default function SettingsModule() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                        className="h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                         disabled={modBusyId === post.id}
                         onClick={() => handleModAction('post', post.id, 'restore')}
                       >
@@ -1374,7 +1378,7 @@ export default function SettingsModule() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 text-xs"
+                        className="h-9 text-xs"
                         disabled={modBusyId === post.id}
                         onClick={() => handleModAction('post', post.id, 'dismiss')}
                       >
@@ -1385,7 +1389,7 @@ export default function SettingsModule() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                            className="h-9 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                             disabled={modBusyId === post.id}
                           >
                             <Trash2 className="h-3 w-3 mr-1" /> Delete
@@ -1416,33 +1420,33 @@ export default function SettingsModule() {
 
                 {/* Bulk action bar — comments */}
                 {selectedCommentIds.size > 0 && (
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 dark:border-sky-900 bg-sky-50/60 dark:bg-sky-950/20 px-3 py-2">
-                    <Badge className="bg-sky-600 text-white border-0 text-[10px] h-5">
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-primary/25 bg-blush/50 px-3 py-2">
+                    <Badge className="bg-primary text-primary-foreground border-0 text-[10px] h-5">
                       {selectedCommentIds.size} comment{selectedCommentIds.size === 1 ? '' : 's'} selected
                     </Badge>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                      className="h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                       disabled={bulkBusy}
                       onClick={() => handleBulkCommentAction('restore')}
                     >
                       {bulkBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
                       Restore selected
                     </Button>
-                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={bulkBusy} onClick={() => handleBulkCommentAction('dismiss')}>
+                    <Button size="sm" variant="outline" className="h-9 text-xs" disabled={bulkBusy} onClick={() => handleBulkCommentAction('dismiss')}>
                       Dismiss reports
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                      className="h-9 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                       disabled={bulkBusy}
                       onClick={() => handleBulkCommentAction('delete')}
                     >
                       <Trash2 className="h-3 w-3 mr-1" /> Delete selected
                     </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedCommentIds(new Set())}>
+                    <Button size="sm" variant="ghost" className="h-9 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedCommentIds(new Set())}>
                       Clear selection
                     </Button>
                   </div>
@@ -1466,8 +1470,8 @@ export default function SettingsModule() {
                         className={cn(
                           'mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors',
                           selectedCommentIds.has(comment.id)
-                            ? 'bg-sky-600 border-sky-600 text-white'
-                            : 'border-muted-foreground/40 hover:border-sky-500'
+                            ? 'bg-primary border-primary text-primary-foreground'
+                            : 'border-muted-foreground/40 hover:border-primary/60'
                         )}
                       >
                         {selectedCommentIds.has(comment.id) && <Check className="h-3 w-3" />}
@@ -1521,7 +1525,7 @@ export default function SettingsModule() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                          className="h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                           disabled={modBusyId === comment.id}
                           onClick={() => handleModAction('comment', comment.id, 'restore')}
                         >
@@ -1536,7 +1540,7 @@ export default function SettingsModule() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                          className="h-9 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                           disabled={modBusyId === comment.id}
                           onClick={() => handleModAction('comment', comment.id, 'dismiss')}
                         >
@@ -1553,7 +1557,7 @@ export default function SettingsModule() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                            className="h-9 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
                             disabled={modBusyId === comment.id}
                           >
                             <Trash2 className="h-3 w-3 mr-1" /> Delete
@@ -1621,7 +1625,7 @@ export default function SettingsModule() {
         title="Appearance"
         description="Customize how Nuvia looks for you"
         icon={Palette}
-        iconColor="bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400"
+        iconColor="bg-lilac text-plum"
         delay={0.3}
       >
         <div className="grid grid-cols-3 gap-3">
@@ -1634,19 +1638,19 @@ export default function SettingsModule() {
                 className={cn(
                   'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all',
                   isActive
-                    ? 'border-purple-400 bg-purple-50 dark:bg-purple-950/20 shadow-md'
-                    : 'border-border hover:border-purple-300 dark:hover:border-purple-700'
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/40'
                 )}
               >
                 <div className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-lg',
-                  isActive ? 'bg-purple-500 text-white' : 'bg-muted text-muted-foreground'
+                  'flex h-10 w-10 items-center justify-center rounded-full',
+                  isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                 )}>
                   <opt.icon className="h-5 w-5" />
                 </div>
-                <span className={cn('text-sm font-medium', isActive && 'text-purple-600 dark:text-purple-400')}>{opt.label}</span>
+                <span className={cn('text-sm font-medium', isActive && 'text-primary')}>{opt.label}</span>
                 {isActive && (
-                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 gap-0.5">
+                  <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-blush text-primary gap-0.5">
                     <Check className="h-2.5 w-2.5" /> Active
                   </Badge>
                 )}
@@ -1664,7 +1668,7 @@ export default function SettingsModule() {
         title="Health Connections"
         description="Sync data from your wearable devices"
         icon={Watch}
-        iconColor="bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400"
+        iconColor="bg-medical-soft text-medical"
         delay={0.35}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1679,7 +1683,7 @@ export default function SettingsModule() {
               )}
             >
               <div className="flex items-start gap-3">
-                <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg shrink-0', device.bgColor, device.color)}>
+                <div className={cn('flex h-10 w-10 items-center justify-center rounded-full shrink-0', device.bgColor, device.color)}>
                   <device.icon className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1723,7 +1727,7 @@ export default function SettingsModule() {
         title="Subscription"
         description="Manage your Nuvia plan"
         icon={Crown}
-        iconColor="bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        iconColor="bg-gold-soft text-amber-600 dark:text-amber-400"
         delay={0.4}
       >
         {subLoading ? (
@@ -1732,9 +1736,9 @@ export default function SettingsModule() {
           </div>
         ) : subDetails ? (
           <div className="rounded-xl border overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20">
+            <div className="p-4 bg-gold-soft/40">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white shadow-md">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full shrink-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-plum shadow-md">
                   <Crown className="h-6 w-6" />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -1742,7 +1746,7 @@ export default function SettingsModule() {
                     <span className="font-semibold capitalize">
                       {subDetails.tier} · {subDetails.plan}
                     </span>
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                    <Badge variant="secondary" className="bg-gold-soft text-plum">
                       <CheckCircle2 className="h-3 w-3 mr-1" /> Active
                     </Badge>
                     <Badge variant="outline" className="text-[10px] capitalize">
@@ -1817,7 +1821,7 @@ export default function SettingsModule() {
         ) : (
           <div className="rounded-xl border overflow-hidden">
             <div className="p-4 flex items-center gap-4 bg-muted/40">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-muted text-muted-foreground">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full shrink-0 bg-muted text-muted-foreground">
                 <Crown className="h-6 w-6" />
               </div>
               <div className="flex-1 min-w-0">
@@ -1828,7 +1832,7 @@ export default function SettingsModule() {
               </div>
             </div>
             <div className="p-3 bg-card">
-              <Button className="w-full" onClick={() => setActiveModule('premium')}>
+              <Button className="btn-plum w-full rounded-full min-h-11 font-semibold" onClick={() => setActiveModule('premium')}>
                 <Crown className="h-4 w-4 mr-1.5" /> Upgrade to Premium
                 <ChevronRight className="h-4 w-4 ml-auto" />
               </Button>
@@ -1842,7 +1846,7 @@ export default function SettingsModule() {
         title="About Nuvia"
         description="App information and resources"
         icon={Info}
-        iconColor="bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400"
+        iconColor="bg-medical-soft text-medical"
         delay={0.45}
       >
         <div className="space-y-2">
@@ -1897,8 +1901,8 @@ export default function SettingsModule() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
             {[
               { label: 'HIPAA', icon: ShieldCheck, color: 'text-emerald-600' },
-              { label: 'GDPR', icon: KeyRound, color: 'text-sky-600' },
-              { label: 'E2E Encrypted', icon: Lock, color: 'text-purple-600' },
+              { label: 'GDPR', icon: KeyRound, color: 'text-medical' },
+              { label: 'E2E Encrypted', icon: Lock, color: 'text-plum' },
               { label: 'ISO 27001', icon: Shield, color: 'text-amber-600' },
             ].map(b => (
               <div key={b.label} className="flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs">
@@ -1915,7 +1919,7 @@ export default function SettingsModule() {
         title="Help & Guidance"
         description="Tour the app and find help"
         icon={Compass}
-        iconColor="bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
+        iconColor="bg-peach-soft text-amber-600 dark:text-amber-400"
         delay={0.48}
       >
         <div className="space-y-3">
@@ -1923,8 +1927,8 @@ export default function SettingsModule() {
             New to Nuvia? Replay the interactive tour to learn where everything is —
             the sidebar, Period Tracker, AI Coach, your profile, and Premium.
           </p>
-          <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/10 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-white">
+          <div className="rounded-xl border border-gold/40 bg-gold-soft/40 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-plum-soft text-gold">
               <Compass className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -1936,7 +1940,7 @@ export default function SettingsModule() {
             <Button
               variant="outline"
               size="sm"
-              className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+              className="shrink-0 border-gold/50 text-plum hover:bg-gold-soft/60"
               onClick={() => {
                 try {
                   // Remove the per-user tour-seen flag so the tour auto-starts

@@ -1,0 +1,1438 @@
+     1→'use client'
+     2→
+     3→import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import { toast } from 'sonner'
+     6→import {
+     7→  Users,
+     8→  Heart,
+     9→  MessageCircle,
+    10→  Plus,
+    11→  TrendingUp,
+    12→  Trophy,
+    13→  Award,
+    14→  Star,
+    15→  Shield,
+    16→  Eye,
+    17→  EyeOff,
+    18→  Filter,
+    19→  Flame,
+    20→  Target,
+    21→  CheckCircle2,
+    22→  ArrowRight,
+    23→  Crown,
+    24→  Zap,
+    25→  BookOpen,
+    26→  HandHeart,
+    27→  Sparkles,
+    28→  Send,
+    29→  X,
+    30→  ChevronRight,
+    31→  UserCircle,
+    32→  Hash,
+    33→  Loader2,
+    34→  Trash2,
+    35→  Flag,
+    36→} from 'lucide-react'
+    37→import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+    38→import { Badge } from '@/components/ui/badge'
+    39→import { Button } from '@/components/ui/button'
+    40→import { Input } from '@/components/ui/input'
+    41→import { Label } from '@/components/ui/label'
+    42→import { Switch } from '@/components/ui/switch'
+    43→import { Textarea } from '@/components/ui/textarea'
+    44→import { Separator } from '@/components/ui/separator'
+    45→import { ScrollArea } from '@/components/ui/scroll-area'
+    46→import { Progress } from '@/components/ui/progress'
+    47→import {
+    48→  Dialog,
+    49→  DialogContent,
+    50→  DialogDescription,
+    51→  DialogHeader,
+    52→  DialogTitle,
+    53→  DialogTrigger,
+    54→} from '@/components/ui/dialog'
+    55→import {
+    56→  AlertDialog,
+    57→  AlertDialogAction,
+    58→  AlertDialogCancel,
+    59→  AlertDialogContent,
+    60→  AlertDialogDescription,
+    61→  AlertDialogFooter,
+    62→  AlertDialogHeader,
+    63→  AlertDialogTitle,
+    64→  AlertDialogTrigger,
+    65→} from '@/components/ui/alert-dialog'
+    66→import {
+    67→  Select,
+    68→  SelectContent,
+    69→  SelectItem,
+    70→  SelectTrigger,
+    71→  SelectValue,
+    72→} from '@/components/ui/select'
+    73→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    74→import { useAppStore } from '@/lib/store'
+    75→
+    76→// ─── Types ────────────────────────────────────────────────────────
+    77→
+    78→type Category = 'General' | 'PCOS' | 'Fertility' | 'Pregnancy' | 'Menopause' | 'Mental Health'
+    79→
+    80→interface CommentItem {
+    81→  id: string
+    82→  content: string
+    83→  author: string
+    84→  timeAgo: string
+    85→  isAnonymous: boolean
+    86→  isOwn: boolean
+    87→}
+    88→
+    89→interface Post {
+    90→  id: string
+    91→  username: string
+    92→  title: string
+    93→  content: string
+    94→  category: Category
+    95→  likes: number
+    96→  comments: number
+    97→  timeAgo: string
+    98→  liked: boolean
+    99→  isAnonymous: boolean
+   100→  isOwn: boolean
+   101→  reportedCount: number
+   102→  createdAt: string
+   103→}
+   104→
+   105→interface TrendingTopic {
+   106→  id: string
+   107→  topic: string
+   108→  posts: number
+   109→  trending: boolean
+   110→}
+   111→
+   112→interface SupportGroup {
+   113→  id: string
+   114→  name: string
+   115→  description: string
+   116→  members: number
+   117→  icon: React.ElementType
+   118→  color: string
+   119→  joined: boolean
+   120→}
+   121→
+   122→interface Challenge {
+   123→  id: string
+   124→  name: string
+   125→  description: string
+   126→  participants: number
+   127→  progress: number
+   128→  daysLeft: number
+   129→  joined: boolean
+   130→}
+   131→
+   132→interface Badge_ {
+   133→  id: string
+   134→  name: string
+   135→  description: string
+   136→  icon: React.ElementType
+   137→  earned: boolean
+   138→  color: string
+   139→}
+   140→
+   141→// ─── Category mapping (UI ↔ API) ─────────────────────────────────
+   142→
+   143→const categories: Category[] = ['General', 'PCOS', 'Fertility', 'Pregnancy', 'Menopause', 'Mental Health']
+   144→
+   145→const categoryColors: Record<Category, string> = {
+   146→  General: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+   147→  PCOS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+   148→  Fertility: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+   149→  Pregnancy: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+   150→  Menopause: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+   151→  'Mental Health': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+   152→}
+   153→
+   154→const toApiCategory: Record<Category, string> = {
+   155→  General: 'general',
+   156→  PCOS: 'pcos',
+   157→  Fertility: 'fertility',
+   158→  Pregnancy: 'pregnancy',
+   159→  Menopause: 'menopause',
+   160→  'Mental Health': 'mental_health',
+   161→}
+   162→
+   163→const fromApiCategory: Record<string, Category> = {
+   164→  general: 'General',
+   165→  pcos: 'PCOS',
+   166→  fertility: 'Fertility',
+   167→  pregnancy: 'Pregnancy',
+   168→  menopause: 'Menopause',
+   169→  mental_health: 'Mental Health',
+   170→}
+   171→
+   172→const REPORT_REASONS = [
+   173→  'Spam or scam',
+   174→  'Harassment or bullying',
+   175→  'Inappropriate content',
+   176→  'Misleading health information',
+   177→  'Other',
+   178→] as const
+   179→
+   180→// ─── Helpers ──────────────────────────────────────────────────────
+   181→
+   182→const FLOWERS = ['Lotus', 'Sakhi', 'Amber', 'River', 'Jasmine', 'Peony', 'Rose', 'Lily', 'Daisy', 'Iris']
+   183→
+   184→// Deterministic anonymous display name derived from an id — stable across
+   185→// reloads so anonymous users keep the same alias for a given post/comment.
+   186→function anonName(id: string): string {
+   187→  let hash = 0
+   188→  for (let i = 0; i < id.length; i++) {
+   189→    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+   190→  }
+   191→  const flower = FLOWERS[hash % FLOWERS.length]
+   192→  const num = hash % 100
+   193→  return `${flower}_${num}`
+   194→}
+   195→
+   196→function timeAgo(iso: string): string {
+   197→  const diff = Date.now() - new Date(iso).getTime()
+   198→  const mins = Math.floor(diff / 60_000)
+   199→  if (mins < 1) return 'Just now'
+   200→  if (mins < 60) return `${mins}m ago`
+   201→  const hours = Math.floor(mins / 60)
+   202→  if (hours < 24) return `${hours}h ago`
+   203→  const days = Math.floor(hours / 24)
+   204→  if (days < 7) return `${days}d ago`
+   205→  const weeks = Math.floor(days / 7)
+   206→  if (weeks < 5) return `${weeks}w ago`
+   207→  const months = Math.floor(days / 30)
+   208→  return `${months}mo ago`
+   209→}
+   210→
+   211→// Raw API post → UI Post
+   212→interface ApiPost {
+   213→  id: string
+   214→  title: string
+   215→  content: string
+   216→  category: string
+   217→  isAnonymous: boolean
+   218→  likes: number
+   219→  reportedCount: number
+   220→  createdAt: string
+   221→  comments?: Array<{ id: string }>
+   222→  user?: { id: string; name: string | null; avatar: string | null }
+   223→}
+   224→
+   225→function mapApiPost(p: ApiPost, currentUserId: string | undefined, likedIds: Set<string>): Post {
+   226→  const category = fromApiCategory[p.category] ?? 'General'
+   227→  const isOwn = currentUserId && p.user?.id === currentUserId
+   228→  const username = p.isAnonymous
+   229→    ? anonName(p.id)
+   230→    : isOwn
+   231→      ? 'You'
+   232→      : (p.user?.name || 'Community member')
+   233→  return {
+   234→    id: p.id,
+   235→    username,
+   236→    title: p.title,
+   237→    content: p.content,
+   238→    category,
+   239→    likes: p.likes,
+   240→    comments: p.comments?.length ?? 0,
+   241→    timeAgo: timeAgo(p.createdAt),
+   242→    liked: likedIds.has(p.id),
+   243→    isAnonymous: p.isAnonymous,
+   244→    isOwn: !!isOwn,
+   245→    reportedCount: p.reportedCount ?? 0,
+   246→    createdAt: p.createdAt,
+   247→  }
+   248→}
+   249→
+   250→// Empty arrays — groups & challenges launch later; badges are progress-driven.
+   251→const initialSupportGroups: SupportGroup[] = []
+   252→const initialChallenges: Challenge[] = []
+   253→
+   254→const userBadges: Badge_[] = [
+   255→  { id: '1', name: 'First Post', description: 'Created your first post', icon: Send, earned: false, color: 'text-sky-500' },
+   256→  { id: '2', name: 'Helpful', description: 'Received 10+ likes on a comment', icon: HandHeart, earned: false, color: 'text-emerald-500' },
+   257→  { id: '3', name: 'Supportive', description: 'Commented on 25+ posts', icon: Heart, earned: false, color: 'text-pink-500' },
+   258→  { id: '4', name: 'Challenger', description: 'Completed a community challenge', icon: Trophy, earned: false, color: 'text-amber-500' },
+   259→  { id: '5', name: 'Rising Star', description: 'Get 50+ likes on a post', icon: Star, earned: false, color: 'text-purple-500' },
+   260→  { id: '6', name: 'Mentor', description: 'Help 100 community members', icon: Crown, earned: false, color: 'text-orange-500' },
+   261→]
+   262→
+   263→// ─── Component ────────────────────────────────────────────────────
+   264→
+   265→export default function CommunityModule() {
+   266→  const userProfile = useAppStore((s) => s.userProfile)
+   267→  const [posts, setPosts] = useState<Post[]>([])
+   268→  const [loading, setLoading] = useState(true)
+   269→  const [loadingMore, setLoadingMore] = useState(false)
+   270→  const [hasMore, setHasMore] = useState(false)
+   271→  const [totalPosts, setTotalPosts] = useState(0)
+   272→  const nextOffsetRef = useRef(0)
+   273→  const [posting, setPosting] = useState(false)
+   274→  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+   275→  // Ref mirror of likedIds so mapping/loading doesn't need it in deps
+   276→  // (otherwise every like would re-trigger a full feed reload).
+   277→  const likedIdsRef = useRef<Set<string>>(new Set())
+   278→  useEffect(() => {
+   279→    likedIdsRef.current = likedIds
+   280→  }, [likedIds])
+   281→  const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All')
+   282→  const [supportGroups] = useState<SupportGroup[]>(initialSupportGroups)
+   283→  const [challenges] = useState<Challenge[]>(initialChallenges)
+   284→  const [dialogOpen, setDialogOpen] = useState(false)
+   285→  const [newPost, setNewPost] = useState({
+   286→    title: '',
+   287→    content: '',
+   288→    category: 'General' as Category,
+   289→    anonymous: true,
+   290→  })
+   291→  const [activeTab, setActiveTab] = useState<'feed' | 'groups' | 'challenges'>('feed')
+   292→
+   293→  // Comments dialog state
+   294→  const [commentsPostId, setCommentsPostId] = useState<string | null>(null)
+   295→  const [commentsList, setCommentsList] = useState<CommentItem[]>([])
+   296→  const [commentsLoading, setCommentsLoading] = useState(false)
+   297→  const [newComment, setNewComment] = useState('')
+   298→  const [commentPosting, setCommentPosting] = useState(false)
+   299→  const [reportPost, setReportPost] = useState<Post | null>(null)
+   300→  const [reportComment, setReportComment] = useState<CommentItem | null>(null)
+   301→  const [reportReason, setReportReason] = useState<string>(REPORT_REASONS[0])
+   302→
+   303→  // ─── Server-side paginated + category-filtered loading ────────────────────
+   304→  const PAGE_SIZE = 4
+   305→  const categoryQuery = (cat: Category | 'All') =>
+   306→    cat === 'All' ? '' : `&category=${encodeURIComponent(toApiCategory[cat])}`
+   307→
+   308→  const mapPage = (data: ApiPost[]) =>
+   309→    data.map((p) => mapApiPost(p, userProfile?.id, likedIdsRef.current))
+   310→
+   311→  const loadPosts = useCallback(async (cat: Category | 'All' = 'All') => {
+   312→    try {
+   313→      nextOffsetRef.current = 0
+   314→      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=0${categoryQuery(cat)}`)
+   315→      if (!res.ok) throw new Error('Failed to load posts')
+   316→      const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
+   317→      setPosts(mapPage(data.posts))
+   318→      setTotalPosts(data.total)
+   319→      setHasMore(data.hasMore)
+   320→      nextOffsetRef.current = data.nextOffset
+   321→    } catch {
+   322→      toast.error('Could not load community posts')
+   323→    } finally {
+   324→      setLoading(false)
+   325→    }
+   326→  }, [userProfile?.id])
+   327→
+   328→  const loadMorePosts = async () => {
+   329→    if (loadingMore) return
+   330→    setLoadingMore(true)
+   331→    try {
+   332→      const res = await fetch(
+   333→        `/api/community?limit=${PAGE_SIZE}&offset=${nextOffsetRef.current}${categoryQuery(activeCategory)}`
+   334→      )
+   335→      if (!res.ok) throw new Error('Failed to load more posts')
+   336→      const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
+   337→      setPosts((prev) => [...prev, ...mapPage(data.posts)])
+   338→      setHasMore(data.hasMore)
+   339→      nextOffsetRef.current = data.nextOffset
+   340→    } catch {
+   341→      toast.error('Could not load more posts')
+   342→    } finally {
+   343→      setLoadingMore(false)
+   344→    }
+   345→  }
+   346→
+   347→  // Initial load (All)
+   348→  useEffect(() => {
+   349→    loadPosts('All')
+   350→  }, [loadPosts])
+   351→
+   352→  // Server-side category filter: reload page 1 whenever the filter changes.
+   353→  const firstCategoryRender = useRef(true)
+   354→  useEffect(() => {
+   355→    if (firstCategoryRender.current) {
+   356→      firstCategoryRender.current = false
+   357→      return
+   358→    }
+   359→    setLoading(true)
+   360→    loadPosts(activeCategory)
+   361→  }, [activeCategory, loadPosts])
+   362→
+   363→  // ─── Derived ────────────────────────────────────────────────────
+   364→  const filteredPosts = activeCategory === 'All'
+   365→    ? posts
+   366→    : posts.filter(p => p.category === activeCategory)
+   367→
+   368→  // Full-stats snapshot (legacy endpoint returns the entire feed) — keeps
+   369→  // trending topics, category chip counts and gamification accurate even
+   370→  // though the visible feed is paginated/filtered.
+   371→  const [statsPosts, setStatsPosts] = useState<ApiPost[]>([])
+   372→  useEffect(() => {
+   373→    let cancelled = false
+   374→    fetch('/api/community')
+   375→      .then((r) => (r.ok ? r.json() : Promise.resolve([])))
+   376→      .then((data: ApiPost[]) => {
+   377→        if (!cancelled && Array.isArray(data)) setStatsPosts(data)
+   378→      })
+   379→      .catch(() => {})
+   380→    return () => { cancelled = true }
+   381→  }, [totalPosts])
+   382→
+   383→  const mappedStats = useMemo(
+   384→    () => statsPosts.map((p) => mapApiPost(p, userProfile?.id, likedIdsRef.current)),
+   385→    [statsPosts, userProfile?.id]
+   386→  )
+   387→
+   388→  // Per-category totals for the filter chips
+   389→  const categoryCounts = useMemo(() => {
+   390→    const counts = {} as Record<Category, number>
+   391→    for (const cat of categories) counts[cat] = 0
+   392→    for (const p of mappedStats) counts[p.category] = (counts[p.category] ?? 0) + 1
+   393→    return counts
+   394→  }, [mappedStats])
+   395→
+   396→  // Live trending topics — top categories by post count
+   397→  const trendingTopics: TrendingTopic[] = categories
+   398→    .map((cat, i) => ({
+   399→      id: String(i + 1),
+   400→      topic: `#${cat.replace(' ', '')}`,
+   401→      posts: categoryCounts[cat] ?? 0,
+   402→      trending: (categoryCounts[cat] ?? 0) >= 2,
+   403→    }))
+   404→    .filter(t => t.posts > 0)
+   405→    .sort((a, b) => b.posts - a.posts)
+   406→    .slice(0, 5)
+   407→
+   408→  // Gamification — derived from REAL community activity
+   409→  const myPosts = mappedStats.filter(p => userProfile && p.isOwn).length
+   410→  const supportScore = myPosts * 20 + mappedStats.reduce((acc, p) => acc + p.likes, 0) * 5
+   411→  const nextLevel = 100
+   412→  const level = Math.floor(supportScore / nextLevel) + 1
+   413→  const levelNames = ['Newcomer', 'Friend', 'Supporter', 'Advocate', 'Champion', 'Guardian']
+   414→  const levelName = levelNames[Math.min(level - 1, levelNames.length - 1)]
+   415→  const earnedBadges = userBadges.map(b => ({
+   416→    ...b,
+   417→    earned:
+   418→      (b.id === '1' && myPosts >= 1) ||
+   419→      (b.id === '5' && mappedStats.some(p => p.likes >= 5)) ||
+   420→      (b.id === '3' && mappedStats.reduce((acc, p) => acc + p.comments, 0) >= 3),
+   421→  }))
+   422→
+   423→  const generateAnonName = () => {
+   424→    const flower = FLOWERS[Math.floor(Math.random() * FLOWERS.length)]
+   425→    const num = Math.floor(Math.random() * 100)
+   426→    return `${flower}_${num}`
+   427→  }
+   428→
+   429→  // ─── Actions ────────────────────────────────────────────────────
+   430→  const handleCreatePost = async () => {
+   431→    if (!newPost.title.trim() || !newPost.content.trim()) return
+   432→    if (!userProfile) {
+   433→      toast.error('Please sign in to post')
+   434→      return
+   435→    }
+   436→    setPosting(true)
+   437→    try {
+   438→      const res = await fetch('/api/community', {
+   439→        method: 'POST',
+   440→        headers: { 'Content-Type': 'application/json' },
+   441→        body: JSON.stringify({
+   442→          userId: userProfile.id,
+   443→          title: newPost.title.trim(),
+   444→          content: newPost.content.trim(),
+   445→          category: toApiCategory[newPost.category],
+   446→          isAnonymous: newPost.anonymous,
+   447→        }),
+   448→      })
+   449→      if (!res.ok) {
+   450→        const err = await res.json().catch(() => ({}))
+   451→        throw new Error(err.error || 'Failed to create post')
+   452→      }
+   453→      const created: ApiPost = await res.json()
+   454→      const createdUi = mapApiPost(created, userProfile.id, likedIdsRef.current)
+   455→      // Only prepend when it matches the active server-side filter.
+   456→      if (activeCategory === 'All' || createdUi.category === activeCategory) {
+   457→        setPosts(prev => [createdUi, ...prev])
+   458→        setTotalPosts(t => t + 1)
+   459→      } else {
+   460→        toast.success(`Posted! Switch to #${createdUi.category} to see it in the feed.`)
+   461→      }
+   462→      setNewPost({ title: '', content: '', category: 'General', anonymous: true })
+   463→      setDialogOpen(false)
+   464→      toast.success('Post shared with the community 💙')
+   465→    } catch (e) {
+   466→      toast.error(e instanceof Error ? e.message : 'Failed to create post')
+   467→    } finally {
+   468→      setPosting(false)
+   469→    }
+   470→  }
+   471→
+   472→  const toggleLike = async (postId: string) => {
+   473→    const post = posts.find(p => p.id === postId)
+   474→    if (!post || !userProfile) return
+   475→    const willLike = !post.liked
+   476→
+   477→    // Optimistic update
+   478→    setPosts(prev =>
+   479→      prev.map(p =>
+   480→        p.id === postId
+   481→          ? { ...p, liked: willLike, likes: Math.max(0, willLike ? p.likes + 1 : p.likes - 1) }
+   482→          : p
+   483→      )
+   484→    )
+   485→    setLikedIds(prev => {
+   486→      const next = new Set(prev)
+   487→      if (willLike) next.add(postId)
+   488→      else next.delete(postId)
+   489→      return next
+   490→    })
+   491→
+   492→    try {
+   493→      const res = await fetch('/api/community', {
+   494→        method: 'PATCH',
+   495→        headers: { 'Content-Type': 'application/json' },
+   496→        body: JSON.stringify({ postId, action: willLike ? 'like' : 'unlike' }),
+   497→      })
+   498→      if (!res.ok) throw new Error()
+   499→      const updated: ApiPost = await res.json()
+   500→      setPosts(prev =>
+   501→        prev.map(p => (p.id === postId ? { ...p, likes: updated.likes } : p))
+   502→      )
+   503→    } catch {
+   504→      // Revert on failure
+   505→      setPosts(prev =>
+   506→        prev.map(p =>
+   507→          p.id === postId
+   508→            ? { ...p, liked: !willLike, likes: Math.max(0, !willLike ? p.likes + 1 : p.likes - 1) }
+   509→            : p
+   510→        )
+   511→      )
+   512→      toast.error('Could not update like')
+   513→    }
+   514→  }
+   515→
+   516→  const handleDeletePost = async (postId: string) => {
+   517→    if (!userProfile) return
+   518→    const prevPosts = posts
+   519→    // Optimistic removal
+   520→    setPosts(prev => prev.filter(p => p.id !== postId))
+   521→    try {
+   522→      const res = await fetch(
+   523→        `/api/community?postId=${encodeURIComponent(postId)}&userId=${encodeURIComponent(userProfile.id)}`,
+   524→        { method: 'DELETE' }
+   525→      )
+   526→      if (!res.ok) {
+   527→        const err = await res.json().catch(() => ({}))
+   528→        throw new Error(err.error || 'Failed to delete post')
+   529→      }
+   530→      toast.success('Post deleted')
+   531→    } catch (e) {
+   532→      setPosts(prevPosts)
+   533→      toast.error(e instanceof Error ? e.message : 'Could not delete post')
+   534→    }
+   535→  }
+   536→
+   537→  // ─── Report a post (moderation flow) ────────────────────────────────────
+   538→  const handleReportPost = async (postId: string, reason: string) => {
+   539→    const prevPosts = posts
+   540→    // The reporter should not keep seeing the flagged post
+   541→    setPosts(prev => prev.filter(p => p.id !== postId))
+   542→    try {
+   543→      const res = await fetch('/api/community', {
+   544→        method: 'PATCH',
+   545→        headers: { 'Content-Type': 'application/json' },
+   546→        body: JSON.stringify({ postId, action: 'report', reason, userId: userProfile?.id }),
+   547→      })
+   548→      if (!res.ok) {
+   549→        const err = await res.json().catch(() => ({}))
+   550→        throw new Error(err.error || 'Failed to report post')
+   551→      }
+   552→      const data = await res.json()
+   553→      toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
+   554→    } catch (e) {
+   555→      const msg = e instanceof Error ? e.message : 'Could not report post'
+   556→      if (msg.toLowerCase().includes('already reported')) {
+   557→        // De-duplicated server-side: keep it hidden for the reporter, no error.
+   558→        toast.info(msg)
+   559→      } else {
+   560→        setPosts(prevPosts)
+   561→        toast.error(msg)
+   562→      }
+   563→    }
+   564→  }
+   565→
+   566→  // ─── Report a comment (moderation flow, mirrors post reporting) ─────────
+   567→  const handleReportComment = async (commentId: string, reason: string) => {
+   568→    const prevList = commentsList
+   569→    // The reporter should not keep seeing the flagged comment
+   570→    setCommentsList(prev => prev.filter(c => c.id !== commentId))
+   571→    try {
+   572→      const res = await fetch('/api/community/comments', {
+   573→        method: 'PATCH',
+   574→        headers: { 'Content-Type': 'application/json' },
+   575→        body: JSON.stringify({ commentId, action: 'report', reason, userId: userProfile?.id }),
+   576→      })
+   577→      if (!res.ok) {
+   578→        const err = await res.json().catch(() => ({}))
+   579→        throw new Error(err.error || 'Failed to report comment')
+   580→      }
+   581→      const data = await res.json()
+   582→      toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
+   583→    } catch (e) {
+   584→      const msg = e instanceof Error ? e.message : 'Could not report comment'
+   585→      if (msg.toLowerCase().includes('already reported')) {
+   586→        toast.info(msg)
+   587→      } else {
+   588→        setCommentsList(prevList)
+   589→        toast.error(msg)
+   590→      }
+   591→    }
+   592→  }
+   593→
+   594→  // ─── Comments ───────────────────────────────────────────────────
+   595→  const openComments = async (postId: string) => {
+   596→    setCommentsPostId(postId)
+   597→    setCommentsLoading(true)
+   598→    setCommentsList([])
+   599→    setNewComment('')
+   600→    try {
+   601→      const res = await fetch(`/api/community/comments?postId=${postId}`)
+   602→      if (!res.ok) throw new Error()
+   603→      const data = await res.json()
+   604→      setCommentsList(
+   605→        data.map((c: { id: string; content: string; isAnonymous: boolean; createdAt: string; user?: { id: string; name: string | null } }) => ({
+   606→          id: c.id,
+   607→          content: c.content,
+   608→          author: c.isAnonymous ? anonName(c.id) : (c.user?.name || 'Member'),
+   609→          timeAgo: timeAgo(c.createdAt),
+   610→          isAnonymous: c.isAnonymous,
+   611→          isOwn: c.user?.id === userProfile?.id,
+   612→        }))
+   613→      )
+   614→    } catch {
+   615→      toast.error('Could not load comments')
+   616→    } finally {
+   617→      setCommentsLoading(false)
+   618→    }
+   619→  }
+   620→
+   621→  const handleAddComment = async () => {
+   622→    if (!newComment.trim() || !commentsPostId || !userProfile) return
+   623→    setCommentPosting(true)
+   624→    try {
+   625→      const res = await fetch('/api/community/comments', {
+   626→        method: 'POST',
+   627→        headers: { 'Content-Type': 'application/json' },
+   628→        body: JSON.stringify({
+   629→          postId: commentsPostId,
+   630→          userId: userProfile.id,
+   631→          content: newComment.trim(),
+   632→          isAnonymous: true,
+   633→        }),
+   634→      })
+   635→      if (!res.ok) throw new Error()
+   636→      const created = await res.json()
+   637→      const c = created as { id: string; content: string; isAnonymous: boolean; createdAt: string }
+   638→      setCommentsList(prev => [
+   639→        ...prev,
+   640→        {
+   641→          id: c.id,
+   642→          content: c.content,
+   643→          author: anonName(c.id),
+   644→          timeAgo: 'Just now',
+   645→          isAnonymous: true,
+   646→        },
+   647→      ])
+   648→      setPosts(prev =>
+   649→        prev.map(p => (p.id === commentsPostId ? { ...p, comments: p.comments + 1 } : p))
+   650→      )
+   651→      setNewComment('')
+   652→      toast.success('Comment added 💬')
+   653→    } catch {
+   654→      toast.error('Could not add comment')
+   655→    } finally {
+   656→      setCommentPosting(false)
+   657→    }
+   658→  }
+   659→
+   660→  const toggleGroup = (groupId: string) => {
+   661→    setSupportGroups(prev =>
+   662→      prev.map(g =>
+   663→        g.id === groupId
+   664→          ? {
+   665→              ...g,
+   666→              joined: !g.joined,
+   667→              members: g.joined ? g.members - 1 : g.members + 1,
+   668→            }
+   669→          : g
+   670→      )
+   671→    )
+   672→  }
+   673→
+   674→  const toggleChallenge = (challengeId: string) => {
+   675→    setChallenges(prev =>
+   676→      prev.map(c =>
+   677→        c.id === challengeId
+   678→          ? {
+   679→              ...c,
+   680→              joined: !c.joined,
+   681→              participants: c.joined ? c.participants - 1 : c.participants + 1,
+   682→            }
+   683→          : c
+   684→      )
+   685→    )
+   686→  }
+   687→
+   688→  return (
+   689→    <div className="space-y-6 max-w-6xl mx-auto">
+   690→      {/* Header */}
+   691→      <motion.div
+   692→        initial={{ opacity: 0, y: -10 }}
+   693→        animate={{ opacity: 1, y: 0 }}
+   694→        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+   695→      >
+   696→        <div>
+   697→          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+   698→            <Users className="h-7 w-7 text-sky-500" />
+   699→            Community
+   700→          </h1>
+   701→          <p className="text-muted-foreground mt-1">Connect, share, and support each other</p>
+   702→        </div>
+   703→        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+   704→          <DialogTrigger asChild>
+   705→            <Button className="bg-sky-500 hover:bg-sky-600 text-white">
+   706→              <Plus className="h-4 w-4 mr-1.5" /> Create Post
+   707→            </Button>
+   708→          </DialogTrigger>
+   709→          <DialogContent className="sm:max-w-lg">
+   710→            <DialogHeader>
+   711→              <DialogTitle>Create a Post</DialogTitle>
+   712→              <DialogDescription>Share your thoughts with the community</DialogDescription>
+   713→            </DialogHeader>
+   714→            <div className="space-y-4 pt-2">
+   715→              <div className="space-y-1.5">
+   716→                <Label className="text-sm">Title</Label>
+   717→                <Input
+   718→                  placeholder="What's on your mind?"
+   719→                  value={newPost.title}
+   720→                  onChange={(e) => setNewPost(prev => ({ ...prev, title: e.target.value }))}
+   721→                />
+   722→              </div>
+   723→              <div className="space-y-1.5">
+   724→                <Label className="text-sm">Content</Label>
+   725→                <Textarea
+   726→                  placeholder="Share your experience, ask a question, or offer support..."
+   727→                  rows={4}
+   728→                  value={newPost.content}
+   729→                  onChange={(e) => setNewPost(prev => ({ ...prev, content: e.target.value }))}
+   730→                />
+   731→              </div>
+   732→              <div className="space-y-1.5">
+   733→                <Label className="text-sm">Category</Label>
+   734→                <Select
+   735→                  value={newPost.category}
+   736→                  onValueChange={(v) => setNewPost(prev => ({ ...prev, category: v as Category }))}
+   737→                >
+   738→                  <SelectTrigger>
+   739→                    <SelectValue />
+   740→                  </SelectTrigger>
+   741→                  <SelectContent>
+   742→                    {categories.map(c => (
+   743→                      <SelectItem key={c} value={c}>{c}</SelectItem>
+   744→                    ))}
+   745→                  </SelectContent>
+   746→                </Select>
+   747→              </div>
+   748→              <div className="flex items-center justify-between">
+   749→                <div className="flex items-center gap-2">
+   750→                  {newPost.anonymous ? <EyeOff className="h-4 w-4 text-sky-500" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+   751→                  <Label className="text-sm">Post anonymously</Label>
+   752→                </div>
+   753→                <Switch
+   754→                  checked={newPost.anonymous}
+   755→                  onCheckedChange={(v) => setNewPost(prev => ({ ...prev, anonymous: v }))}
+   756→                />
+   757→              </div>
+   758→              {newPost.anonymous && (
+   759→                <p className="text-xs text-muted-foreground flex items-center gap-1">
+   760→                  <Shield className="h-3 w-3" />
+   761→                  Your username will appear as a random flower name like &quot;Lotus_42&quot;
+   762→                </p>
+   763→              )}
+   764→              <div className="flex justify-end gap-2 pt-2">
+   765→                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+   766→                <Button
+   767→                  onClick={handleCreatePost}
+   768→                  className="bg-sky-500 hover:bg-sky-600 text-white"
+   769→                  disabled={!newPost.title.trim() || !newPost.content.trim() || posting}
+   770→                >
+   771→                  {posting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
+   772→                  {posting ? 'Posting…' : 'Post'}
+   773→                </Button>
+   774→              </div>
+   775→            </div>
+   776→          </DialogContent>
+   777→        </Dialog>
+   778→      </motion.div>
+   779→
+   780→      {/* Gamification Bar */}
+   781→      <motion.div
+   782→        initial={{ opacity: 0, y: 5 }}
+   783→        animate={{ opacity: 1, y: 0 }}
+   784→        transition={{ delay: 0.05 }}
+   785→      >
+   786→        <Card className="border-sky-200 dark:border-sky-900/50 bg-gradient-to-r from-sky-50/80 to-blue-50/80 dark:from-sky-950/20 dark:to-blue-950/20">
+   787→          <CardContent className="py-4">
+   788→            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+   789→              <div className="flex items-center gap-3">
+   790→                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+   791→                  {level}
+   792→                </div>
+   793→                <div>
+   794→                  <p className="font-semibold text-sm">Level {level} — {levelName}</p>
+   795→                  <p className="text-xs text-muted-foreground">{supportScore} / {level * nextLevel} points to Level {level + 1}</p>
+   796→                </div>
+   797→              </div>
+   798→              <div className="flex-1 w-full sm:w-auto">
+   799→                <Progress value={((supportScore % nextLevel) / nextLevel) * 100} className="h-2.5" />
+   800→              </div>
+   801→              <div className="flex items-center gap-1.5">
+   802→                {earnedBadges.filter(b => b.earned).map(badge => {
+   803→                  const Icon = badge.icon
+   804→                  return (
+   805→                    <div
+   806→                      key={badge.id}
+   807→                      className="h-8 w-8 rounded-full bg-white dark:bg-card border border-sky-200 dark:border-sky-800 flex items-center justify-center shadow-sm"
+   808→                      title={`${badge.name}: ${badge.description}`}
+   809→                    >
+   810→                      <Icon className={`h-4 w-4 ${badge.color}`} />
+   811→                    </div>
+   812→                  )
+   813→                })}
+   814→                <div className="h-8 w-8 rounded-full bg-muted border border-dashed border-muted-foreground/30 flex items-center justify-center">
+   815→                  <span className="text-[10px] text-muted-foreground font-medium">+{earnedBadges.filter(b => !b.earned).length}</span>
+   816→                </div>
+   817→              </div>
+   818→            </div>
+   819→          </CardContent>
+   820→        </Card>
+   821→      </motion.div>
+   822→
+   823→      {/* Tab Navigation */}
+   824→      <div className="flex gap-1 bg-muted rounded-lg p-1 w-fit">
+   825→        {[
+   826→          { key: 'feed' as const, label: 'Feed', icon: MessageCircle },
+   827→          { key: 'groups' as const, label: 'Groups', icon: Users },
+   828→          { key: 'challenges' as const, label: 'Challenges', icon: Trophy },
+   829→        ].map(tab => (
+   830→          <Button
+   831→            key={tab.key}
+   832→            size="sm"
+   833→            variant={activeTab === tab.key ? 'default' : 'ghost'}
+   834→            className={`text-xs px-4 ${activeTab === tab.key ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+   835→            onClick={() => setActiveTab(tab.key)}
+   836→          >
+   837→            <tab.icon className="h-3.5 w-3.5 mr-1.5" />
+   838→            {tab.label}
+   839→          </Button>
+   840→        ))}
+   841→      </div>
+   842→
+   843→      <AnimatePresence mode="wait">
+   844→        {activeTab === 'feed' && (
+   845→          <motion.div
+   846→            key="feed"
+   847→            initial={{ opacity: 0, y: 10 }}
+   848→            animate={{ opacity: 1, y: 0 }}
+   849→            exit={{ opacity: 0, y: -10 }}
+   850→            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+   851→          >
+   852→            {/* Feed Column */}
+   853→            <div className="lg:col-span-2 space-y-4">
+   854→              {/* Category Filters */}
+   855→              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+   856→                <Button
+   857→                  size="sm"
+   858→                  variant={activeCategory === 'All' ? 'default' : 'outline'}
+   859→                  className={`text-xs shrink-0 rounded-full ${activeCategory === 'All' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+   860→                  onClick={() => setActiveCategory('All')}
+   861→                >
+   862→                  <Filter className="h-3 w-3 mr-1" /> All
+   863→                  <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === 'All' ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+   864→                    {totalPosts}
+   865→                  </span>
+   866→                </Button>
+   867→                {categories.map(cat => (
+   868→                  <Button
+   869→                    key={cat}
+   870→                    size="sm"
+   871→                    variant={activeCategory === cat ? 'default' : 'outline'}
+   872→                    className={`text-xs shrink-0 rounded-full ${activeCategory === cat ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+   873→                    onClick={() => setActiveCategory(cat)}
+   874→                  >
+   875→                    <Hash className="h-3 w-3 mr-1" />
+   876→                    {cat}
+   877→                    <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === cat ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+   878→                      {categoryCounts[cat] ?? 0}
+   879→                    </span>
+   880→                  </Button>
+   881→                ))}
+   882→              </div>
+   883→
+   884→              {/* Posts */}
+   885→              {loading ? (
+   886→                <Card>
+   887→                  <CardContent className="flex flex-col items-center justify-center py-12">
+   888→                    <Loader2 className="h-7 w-7 animate-spin text-sky-500" />
+   889→                    <p className="text-xs text-muted-foreground mt-3">Loading community feed…</p>
+   890→                  </CardContent>
+   891→                </Card>
+   892→              ) : filteredPosts.length === 0 ? (
+   893→                <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+   894→                  <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
+   895→                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
+   896→                      <MessageCircle className="h-6 w-6 text-sky-500" />
+   897→                    </div>
+   898→                    <p className="text-sm font-medium text-foreground">
+   899→                      {activeCategory === 'All' ? 'Be the first to post' : `No ${activeCategory} posts yet`}
+   900→                    </p>
+   901→                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+   902→                      Share a question, story, or encouragement. The community grows when you take the first step.
+   903→                    </p>
+   904→                    <Button
+   905→                      size="sm"
+   906→                      className="mt-4 bg-sky-500 hover:bg-sky-600 text-white"
+   907→                      onClick={() => setDialogOpen(true)}
+   908→                    >
+   909→                      <Plus className="h-3.5 w-3.5 mr-1.5" /> Create the first post
+   910→                    </Button>
+   911→                  </CardContent>
+   912→                </Card>
+   913→              ) : (
+   914→                <ScrollArea className="max-h-[600px] chandracycle-scroll">
+   915→                  <div className="space-y-3">
+   916→                    {filteredPosts.map((post, idx) => (
+   917→                      <motion.div
+   918→                        key={post.id}
+   919→                        initial={{ opacity: 0, y: 10 }}
+   920→                        animate={{ opacity: 1, y: 0 }}
+   921→                        transition={{ delay: idx * 0.04 }}
+   922→                      >
+   923→                        <Card className="hover:shadow-md transition-shadow">
+   924→                          <CardContent className="py-4">
+   925→                            <div className="flex items-start gap-3">
+   926→                              <Avatar className="h-9 w-9 shrink-0">
+   927→                                <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-xs font-semibold">
+   928→                                  {post.username.split('_')[0][0]}{post.username.split('_')[1]?.[0] || ''}
+   929→                                </AvatarFallback>
+   930→                              </Avatar>
+   931→                              <div className="flex-1 min-w-0">
+   932→                                <div className="flex items-center gap-2 flex-wrap">
+   933→                                  <span className="text-sm font-semibold">{post.username}</span>
+   934→                                  <Badge
+   935→                                    variant="secondary"
+   936→                                    className={`text-[10px] border-0 ${categoryColors[post.category]}`}
+   937→                                  >
+   938→                                    {post.category}
+   939→                                  </Badge>
+   940→                                  {post.isOwn && post.reportedCount > 0 && (
+   941→                                    <Badge
+   942→                                      variant="secondary"
+   943→                                      className="text-[10px] border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 gap-1"
+   944→                                      title="Some members flagged this post — a moderator will review it"
+   945→                                    >
+   946→                                      <Flag className="h-2.5 w-2.5" />
+   947→                                      {post.reportedCount} report{post.reportedCount === 1 ? '' : 's'} · under review
+   948→                                    </Badge>
+   949→                                  )}
+   950→                                  <span className="text-[10px] text-muted-foreground">{post.timeAgo}</span>
+   951→                                </div>
+   952→                                <h3 className="font-semibold text-sm mt-1 leading-snug">{post.title}</h3>
+   953→                                <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{post.content}</p>
+   954→                                <div className="flex items-center gap-4 mt-3">
+   955→                                  <button
+   956→                                    onClick={() => toggleLike(post.id)}
+   957→                                    className={`flex items-center gap-1.5 text-xs h-9 px-1 -mx-1 rounded-md transition-colors ${
+   958→                                      post.liked
+   959→                                        ? 'text-sky-500 font-medium'
+   960→                                        : 'text-muted-foreground hover:text-sky-500'
+   961→                                    }`}
+   962→                                  >
+   963→                                    <Heart
+   964→                                      className={`h-3.5 w-3.5 transition-transform ${post.liked ? 'fill-sky-500 text-sky-500 scale-110' : ''}`}
+   965→                                    />
+   966→                                    {post.likes}
+   967→                                  </button>
+   968→                                  <button
+   969→                                    onClick={() => openComments(post.id)}
+   970→                                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-500 transition-colors h-9 px-1 -mx-1 rounded-md"
+   971→                                  >
+   972→                                    <MessageCircle className="h-3.5 w-3.5" />
+   973→                                    {post.comments}
+   974→                                  </button>
+   975→                                  {!post.isOwn && (
+   976→                                    <button
+   977→                                      onClick={() => {
+   978→                                        setReportReason(REPORT_REASONS[0])
+   979→                                        setReportPost(post)
+   980→                                      }}
+   981→                                      aria-label="Report post"
+   982→                                      title="Report post"
+   983→                                      className="group/flag flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors h-9 px-1 rounded-md ml-auto"
+   984→                                    >
+   985→                                      <Flag className="h-3.5 w-3.5 transition-transform group-hover/flag:scale-125 group-hover/flag:-rotate-12" />
+   986→                                    </button>
+   987→                                  )}
+   988→                                  {post.isOwn && (
+   989→                                    <AlertDialog>
+   990→                                      <AlertDialogTrigger asChild>
+   991→                                        <button
+   992→                                          aria-label="Delete post"
+   993→                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors h-9 px-1 rounded-md ml-auto"
+   994→                                        >
+   995→                                          <Trash2 className="h-3.5 w-3.5" />
+   996→                                        </button>
+   997→                                      </AlertDialogTrigger>
+   998→                                      <AlertDialogContent>
+   999→                                        <AlertDialogHeader>
+  1000→                                          <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+  1001→                                          <AlertDialogDescription>
+  1002→                                            &quot;{post.title}&quot; and all its comments will be permanently removed. This cannot be undone.
+  1003→                                          </AlertDialogDescription>
+  1004→                                        </AlertDialogHeader>
+  1005→                                        <AlertDialogFooter>
+  1006→                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+  1007→                                          <AlertDialogAction
+  1008→                                            className="bg-red-500 hover:bg-red-600 text-white"
+  1009→                                            onClick={() => handleDeletePost(post.id)}
+  1010→                                          >
+  1011→                                            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+  1012→                                          </AlertDialogAction>
+  1013→                                        </AlertDialogFooter>
+  1014→                                      </AlertDialogContent>
+  1015→                                    </AlertDialog>
+  1016→                                  )}
+  1017→                                </div>
+  1018→                              </div>
+  1019→                            </div>
+  1020→                          </CardContent>
+  1021→                        </Card>
+  1022→                      </motion.div>
+  1023→                    ))}
+  1024→
+  1025→                    {/* Load more — pagination footer */}
+  1026→                    {hasMore && (
+  1027→                      <button
+  1028→                        onClick={loadMorePosts}
+  1029→                        disabled={loadingMore}
+  1030→                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-sky-300 dark:border-sky-800 text-sm font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors disabled:opacity-60"
+  1031→                      >
+  1032→                        {loadingMore ? (
+  1033→                          <>
+  1034→                            <Loader2 className="h-4 w-4 animate-spin" /> Loading more…
+  1035→                          </>
+  1036→                        ) : (
+  1037→                          <>
+  1038→                            <Plus className="h-4 w-4" /> Load more posts
+  1039→                            <span className="text-[10px] text-muted-foreground">
+  1040→                              {posts.length} of {totalPosts}
+  1041→                            </span>
+  1042→                          </>
+  1043→                        )}
+  1044→                      </button>
+  1045→                    )}
+  1046→                    {!hasMore && posts.length > 0 && (
+  1047→                      <div className="text-center py-2">
+  1048→                        <p className="text-[11px] text-muted-foreground">
+  1049→                          You're all caught up 🌙 {totalPosts} post{totalPosts === 1 ? '' : 's'} in the community
+  1050→                        </p>
+  1051→                      </div>
+  1052→                    )}
+  1053→                  </div>
+  1054→                </ScrollArea>
+  1055→              )}
+  1056→            </div>
+  1057→
+  1058→            {/* Sidebar */}
+  1059→            <div className="space-y-4">
+  1060→              {/* Trending Topics */}
+  1061→              <Card>
+  1062→                <CardHeader>
+  1063→                  <CardTitle className="text-base flex items-center gap-2">
+  1064→                    <TrendingUp className="h-4 w-4 text-sky-500" />
+  1065→                    Trending Topics
+  1066→                  </CardTitle>
+  1067→                </CardHeader>
+  1068→                <CardContent>
+  1069→                  {trendingTopics.length === 0 ? (
+  1070→                    <div className="py-3 text-center">
+  1071→                      <p className="text-xs text-muted-foreground">
+  1072→                        No trending topics yet. As the community grows, popular topics will appear here.
+  1073→                      </p>
+  1074→                    </div>
+  1075→                  ) : (
+  1076→                    <div className="space-y-2.5">
+  1077→                      {trendingTopics.map((topic, idx) => (
+  1078→                        <motion.div
+  1079→                          key={topic.id}
+  1080→                          initial={{ opacity: 0, x: 10 }}
+  1081→                          animate={{ opacity: 1, x: 0 }}
+  1082→                          transition={{ delay: 0.1 + idx * 0.04 }}
+  1083→                          className="flex items-center justify-between group cursor-pointer"
+  1084→                          onClick={() => {
+  1085→                            const cat = topic.topic.replace('#', '') as Category
+  1086→                            const matched = categories.find(c => c.replace(' ', '') === cat.replace(' ', ''))
+  1087→                            if (matched) setActiveCategory(matched)
+  1088→                          }}
+  1089→                        >
+  1090→                          <div className="flex items-center gap-2">
+  1091→                            <span className="text-xs font-semibold text-muted-foreground w-5">{idx + 1}</span>
+  1092→                            <div>
+  1093→                              <p className="text-sm font-medium group-hover:text-sky-500 transition-colors">{topic.topic}</p>
+  1094→                              <p className="text-[10px] text-muted-foreground">{topic.posts} posts</p>
+  1095→                            </div>
+  1096→                          </div>
+  1097→                          {topic.trending && (
+  1098→                            <Flame className="h-3.5 w-3.5 text-orange-500" />
+  1099→                          )}
+  1100→                        </motion.div>
+  1101→                      ))}
+  1102→                    </div>
+  1103→                  )}
+  1104→                </CardContent>
+  1105→              </Card>
+  1106→
+  1107→              {/* Badges */}
+  1108→              <Card>
+  1109→                <CardHeader>
+  1110→                  <CardTitle className="text-base flex items-center gap-2">
+  1111→                    <Award className="h-4 w-4 text-sky-500" />
+  1112→                    Your Badges
+  1113→                  </CardTitle>
+  1114→                </CardHeader>
+  1115→                <CardContent>
+  1116→                  <div className="grid grid-cols-3 gap-2">
+  1117→                    {earnedBadges.map(badge => {
+  1118→                      const Icon = badge.icon
+  1119→                      return (
+  1120→                        <div
+  1121→                          key={badge.id}
+  1122→                          className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border ${
+  1123→                            badge.earned
+  1124→                              ? 'border-sky-200 bg-sky-50/50 dark:border-sky-800 dark:bg-sky-950/20'
+  1125→                              : 'border-dashed border-muted-foreground/20 opacity-50'
+  1126→                          }`}
+  1127→                          title={badge.description}
+  1128→                        >
+  1129→                          <Icon className={`h-5 w-5 ${badge.earned ? badge.color : 'text-muted-foreground'}`} />
+  1130→                          <span className="text-[9px] text-center font-medium leading-tight">{badge.name}</span>
+  1131→                        </div>
+  1132→                      )
+  1133→                    })}
+  1134→                  </div>
+  1135→                </CardContent>
+  1136→              </Card>
+  1137→            </div>
+  1138→          </motion.div>
+  1139→        )}
+  1140→
+  1141→        {activeTab === 'groups' && (
+  1142→          <motion.div
+  1143→            key="groups"
+  1144→            initial={{ opacity: 0, y: 10 }}
+  1145→            animate={{ opacity: 1, y: 0 }}
+  1146→            exit={{ opacity: 0, y: -10 }}
+  1147→          >
+  1148→            {supportGroups.length === 0 ? (
+  1149→              <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+  1150→                <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
+  1151→                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
+  1152→                    <Users className="h-6 w-6 text-sky-500" />
+  1153→                  </div>
+  1154→                  <p className="text-sm font-medium text-foreground">No support groups yet</p>
+  1155→                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+  1156→                    Support groups will appear here as they become available. In the meantime, head to the feed to connect with the community.
+  1157→                  </p>
+  1158→                  <Button
+  1159→                    size="sm"
+  1160→                    variant="outline"
+  1161→                    className="mt-4 border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
+  1162→                    onClick={() => setActiveTab('feed')}
+  1163→                  >
+  1164→                    Browse the feed
+  1165→                  </Button>
+  1166→                </CardContent>
+  1167→              </Card>
+  1168→            ) : (
+  1169→              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1170→                {supportGroups.map((group, idx) => {
+  1171→                  const Icon = group.icon
+  1172→                  return (
+  1173→                    <motion.div
+  1174→                      key={group.id}
+  1175→                      initial={{ opacity: 0, y: 10 }}
+  1176→                      animate={{ opacity: 1, y: 0 }}
+  1177→                      transition={{ delay: idx * 0.06 }}
+  1178→                    >
+  1179→                      <Card className="hover:shadow-md transition-shadow h-full flex flex-col">
+  1180→                        <CardHeader>
+  1181→                          <div className="flex items-start gap-3">
+  1182→                            <div className={`p-2.5 rounded-xl bg-gradient-to-br ${group.color} shadow-lg`}>
+  1183→                              <Icon className="h-5 w-5 text-white" />
+  1184→                            </div>
+  1185→                            <div className="flex-1">
+  1186→                              <CardTitle className="text-sm">{group.name}</CardTitle>
+  1187→                              <CardDescription className="text-xs mt-0.5">{group.description}</CardDescription>
+  1188→                            </div>
+  1189→                          </div>
+  1190→                        </CardHeader>
+  1191→                        <CardContent className="mt-auto">
+  1192→                          <div className="flex items-center justify-between">
+  1193→                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+  1194→                              <UserCircle className="h-3.5 w-3.5" />
+  1195→                              {group.members.toLocaleString()} members
+  1196→                            </div>
+  1197→                            <Button
+  1198→                              size="sm"
+  1199→                              variant={group.joined ? 'outline' : 'default'}
+  1200→                              className={`text-xs h-8 ${
+  1201→                                group.joined
+  1202→                                  ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
+  1203→                                  : 'bg-sky-500 hover:bg-sky-600 text-white'
+  1204→                              }`}
+  1205→                              onClick={() => toggleGroup(group.id)}
+  1206→                            >
+  1207→                              {group.joined ? (
+  1208→                                <>
+  1209→                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Joined
+  1210→                                </>
+  1211→                              ) : (
+  1212→                                <>
+  1213→                                  <Plus className="h-3 w-3 mr-1" /> Join
+  1214→                                </>
+  1215→                              )}
+  1216→                            </Button>
+  1217→                          </div>
+  1218→                        </CardContent>
+  1219→                      </Card>
+  1220→                    </motion.div>
+  1221→                  )
+  1222→                })}
+  1223→              </div>
+  1224→            )}
+  1225→          </motion.div>
+  1226→        )}
+  1227→
+  1228→        {activeTab === 'challenges' && (
+  1229→          <motion.div
+  1230→            key="challenges"
+  1231→            initial={{ opacity: 0, y: 10 }}
+  1232→            animate={{ opacity: 1, y: 0 }}
+  1233→            exit={{ opacity: 0, y: -10 }}
+  1234→          >
+  1235→            {challenges.length === 0 ? (
+  1236→              <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+  1237→                <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
+  1238→                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
+  1239→                    <Trophy className="h-6 w-6 text-sky-500" />
+  1240→                  </div>
+  1241→                  <p className="text-sm font-medium text-foreground">No challenges yet</p>
+  1242→                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+  1243→                    Community challenges will appear here when they launch. Check back soon for goals you can join.
+  1244→                  </p>
+  1245→                  <Button
+  1246→                    size="sm"
+  1247→                    variant="outline"
+  1248→                    className="mt-4 border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
+  1249→                    onClick={() => setActiveTab('feed')}
+  1250→                  >
+  1251→                    <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Explore the feed
+  1252→                  </Button>
+  1253→                </CardContent>
+  1254→              </Card>
+  1255→            ) : (
+  1256→              <div className="space-y-4">
+  1257→                {challenges.map((challenge, idx) => (
+  1258→                  <motion.div
+  1259→                    key={challenge.id}
+  1260→                    initial={{ opacity: 0, y: 10 }}
+  1261→                    animate={{ opacity: 1, y: 0 }}
+  1262→                    transition={{ delay: idx * 0.05 }}
+  1263→                  >
+  1264→                    <Card>
+  1265→                      <CardContent className="py-4">
+  1266→                        <div className="flex items-start justify-between gap-4">
+  1267→                          <div className="flex items-start gap-3 flex-1">
+  1268→                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shrink-0">
+  1269→                              <Target className="h-5 w-5 text-white" />
+  1270→                            </div>
+  1271→                            <div>
+  1272→                              <CardTitle className="text-sm">{challenge.name}</CardTitle>
+  1273→                              <CardDescription className="text-xs mt-0.5">{challenge.description}</CardDescription>
+  1274→                              <div className="flex items-center gap-3 mt-2">
+  1275→                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+  1276→                                  <Users className="h-3 w-3" /> {challenge.participants} joined
+  1277→                                </span>
+  1278→                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+  1279→                                  <Zap className="h-3 w-3" /> {challenge.daysLeft} days left
+  1280→                                </span>
+  1281→                              </div>
+  1282→                              <Progress value={challenge.progress} className="h-1.5 mt-2 max-w-xs" />
+  1283→                            </div>
+  1284→                          </div>
+  1285→                          <Button
+  1286→                            size="sm"
+  1287→                            variant={challenge.joined ? 'outline' : 'default'}
+  1288→                            className={`text-xs h-8 shrink-0 ${
+  1289→                              challenge.joined
+  1290→                                ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
+  1291→                                : 'bg-sky-500 hover:bg-sky-600 text-white'
+  1292→                            }`}
+  1293→                            onClick={() => toggleChallenge(challenge.id)}
+  1294→                          >
+  1295→                            {challenge.joined ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <ArrowRight className="h-3 w-3 mr-1" />}
+  1296→                            {challenge.joined ? 'Joined' : 'Join'}
+  1297→                          </Button>
+  1298→                        </div>
+  1299→                      </CardContent>
+  1300→                    </Card>
+  1301→                  </motion.div>
+  1302→                ))}
+  1303→              </div>
+  1304→            )}
+  1305→          </motion.div>
+  1306→        )}
+  1307→      </AnimatePresence>
+  1308→
+  1309→      {/* Comments Dialog */}
+  1310→      <Dialog open={!!commentsPostId} onOpenChange={(open) => !open && setCommentsPostId(null)}>
+  1311→        <DialogContent className="sm:max-w-md">
+  1312→          <DialogHeader>
+  1313→            <DialogTitle>Comments</DialogTitle>
+  1314→            <DialogDescription>Support others with a kind reply</DialogDescription>
+  1315→          </DialogHeader>
+  1316→          <div className="space-y-3 pt-1">
+  1317→            <ScrollArea className="max-h-64 chandracycle-scroll">
+  1318→              {commentsLoading ? (
+  1319→                <div className="flex items-center justify-center py-8">
+  1320→                  <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
+  1321→                </div>
+  1322→              ) : commentsList.length === 0 ? (
+  1323→                <p className="text-xs text-muted-foreground text-center py-6">
+  1324→                  No comments yet. Be the first to reply 💙
+  1325→                </p>
+  1326→              ) : (
+  1327→                <div className="space-y-3 pr-2">
+  1328→                  {commentsList.map(c => (
+  1329→                    <div key={c.id} className="group flex items-start gap-2.5">
+  1330→                      <Avatar className="h-7 w-7 shrink-0">
+  1331→                        <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-[10px] font-semibold">
+  1332→                          {c.author.split('_')[0][0]}{c.author.split('_')[1]?.[0] || ''}
+  1333→                        </AvatarFallback>
+  1334→                      </Avatar>
+  1335→                      <div className="flex-1 bg-muted/60 group-hover:bg-muted rounded-xl rounded-tl-sm px-3 py-2 transition-colors">
+  1336→                        <div className="flex items-center gap-2">
+  1337→                          <span className="text-xs font-semibold">{c.author}</span>
+  1338→                          <span className="text-[10px] text-muted-foreground">{c.timeAgo}</span>
+  1339→                        </div>
+  1340→                        <p className="text-xs text-foreground/90 mt-0.5 leading-relaxed">{c.content}</p>
+  1341→                      </div>
+  1342→                      {!c.isOwn && (
+  1343→                        <button
+  1344→                          onClick={() => { setReportReason(REPORT_REASONS[0]); setReportComment(c) }}
+  1345→                          className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 shrink-0 rounded-md p-1.5 text-muted-foreground/70 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-all"
+  1346→                          aria-label="Report comment"
+  1347→                          title="Report comment"
+  1348→                        >
+  1349→                          <Flag className="h-3 w-3" />
+  1350→                        </button>
+  1351→                      )}
+  1352→                    </div>
+  1353→                  ))}
+  1354→                </div>
+  1355→              )}
+  1356→            </ScrollArea>
+  1357→            <Separator />
+  1358→            <div className="flex items-center gap-2">
+  1359→              <Input
+  1360→                placeholder="Write a supportive comment…"
+  1361→                value={newComment}
+  1362→                onChange={(e) => setNewComment(e.target.value)}
+  1363→                onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+  1364→                disabled={commentPosting}
+  1365→              />
+  1366→              <Button
+  1367→                size="icon"
+  1368→                className="bg-sky-500 hover:bg-sky-600 text-white shrink-0 h-10 w-10"
+  1369→                onClick={handleAddComment}
+  1370→                disabled={!newComment.trim() || commentPosting}
+  1371→              >
+  1372→                {commentPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+  1373→              </Button>
+  1374→            </div>
+  1375→          </div>
+  1376→        </DialogContent>
+  1377→      </Dialog>
+  1378→
+  1379→      {/* Report Post / Comment Dialog */}
+  1380→      <Dialog
+  1381→        open={!!reportPost || !!reportComment}
+  1382→        onOpenChange={(open) => { if (!open) { setReportPost(null); setReportComment(null) } }}
+  1383→      >
+  1384→        <DialogContent className="sm:max-w-md">
+  1385→          <DialogHeader>
+  1386→            <DialogTitle className="flex items-center gap-2">
+  1387→              <Flag className="h-4 w-4 text-orange-500" />
+  1388→              {reportComment ? 'Report this comment?' : 'Report this post?'}
+  1389→            </DialogTitle>
+  1390→            <DialogDescription>
+  1391→              {reportComment
+  1392→                ? `"${reportComment.content.slice(0, 90)}${reportComment.content.length > 90 ? '…' : ''}" — your report is anonymous and helps keep this space safe.`
+  1393→                : `"${reportPost?.title}" — your report is anonymous and helps keep this space safe.`}
+  1394→            </DialogDescription>
+  1395→          </DialogHeader>
+  1396→          <div className="space-y-3 pt-1">
+  1397→            <div className="space-y-1.5">
+  1398→              {REPORT_REASONS.map(reason => (
+  1399→                <button
+  1400→                  key={reason}
+  1401→                  onClick={() => setReportReason(reason)}
+  1402→                  className={`w-full text-left text-xs rounded-lg border px-3 py-2.5 transition-colors ${
+  1403→                    reportReason === reason
+  1404→                      ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/30 text-foreground font-medium'
+  1405→                      : 'border-border hover:bg-accent text-muted-foreground'
+  1406→                  }`}
+  1407→                >
+  1408→                  {reason}
+  1409→                </button>
+  1410→              ))}
+  1411→            </div>
+  1412→            <div className="flex justify-end gap-2 pt-1">
+  1413→              <Button variant="ghost" size="sm" onClick={() => { setReportPost(null); setReportComment(null) }}>
+  1414→                Cancel
+  1415→              </Button>
+  1416→              <Button
+  1417→                size="sm"
+  1418→                className="bg-orange-500 hover:bg-orange-600 text-white"
+  1419→                onClick={() => {
+  1420→                  const postId = reportPost?.id
+  1421→                  const commentId = reportComment?.id
+  1422→                  setReportPost(null)
+  1423→                  setReportComment(null)
+  1424→                  if (postId) void handleReportPost(postId, reportReason)
+  1425→                  if (commentId) void handleReportComment(commentId, reportReason)
+  1426→                }}
+  1427→              >
+  1428→                <Flag className="h-3.5 w-3.5 mr-1.5" />
+  1429→                Submit report
+  1430→              </Button>
+  1431→            </div>
+  1432→          </div>
+  1433→        </DialogContent>
+  1434→      </Dialog>
+  1435→    </div>
+  1436→  )
+  1437→}
+  1438→

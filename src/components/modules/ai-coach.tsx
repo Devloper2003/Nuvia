@@ -179,34 +179,37 @@ export default function CoachModule() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold gradient-text">AI Health Coach</h2>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">AI Health Coach</h2>
+            <span className="gold-divider text-[10px]" aria-hidden><span>✦</span></span>
+          </div>
           <p className="text-sm text-muted-foreground">Powered by AI • Your wellness companion</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={resetConversation} className="text-muted-foreground">
+        <Button variant="ghost" size="sm" onClick={resetConversation} className="text-muted-foreground min-h-11 shrink-0">
           <RotateCcw className="h-4 w-4 mr-1" /> Reset
         </Button>
       </div>
 
       {/* Safety Banner */}
-      <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-2.5">
-        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+      <div className="flex items-center gap-2 rounded-xl bg-gold-soft border border-gold/40 px-4 py-2.5">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <p className="text-xs text-amber-700 dark:text-amber-400">
           AI Coach provides wellness guidance, not medical diagnosis. Always consult a healthcare professional for medical concerns.
         </p>
       </div>
 
       {/* Chat Container */}
-      <Card className="border-0 glass shadow-lg overflow-hidden">
+      <Card className="border-border bg-card shadow-lg overflow-hidden">
         <CardContent className="p-0">
           {/* Messages Area */}
           <ScrollArea className="h-[480px] p-4" ref={scrollRef}>
             <div className="space-y-4">
               {messages.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 mb-3">
-                    <Sparkles className="h-6 w-6 text-emerald-600" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                    <Sparkles className="h-6 w-6 text-gold" />
                   </div>
                   <p className="text-sm font-medium text-foreground">
                     Hi{userProfile?.name ? `, ${userProfile.name.split(' ')[0]}` : ''}! I&apos;m your AI Health Coach 💚
@@ -231,11 +234,11 @@ export default function CoachModule() {
                   <div className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
                     message.role === 'assistant'
-                      ? 'bg-emerald-100 dark:bg-emerald-900/50'
-                      : 'bg-primary/10'
+                      ? 'bg-plum-soft'
+                      : 'bg-blush'
                   )}>
                     {message.role === 'assistant' ? (
-                      <Bot className="h-4 w-4 text-emerald-600" />
+                      <Bot className="h-4 w-4 text-gold" />
                     ) : (
                       <User className="h-4 w-4 text-primary" />
                     )}
@@ -243,12 +246,12 @@ export default function CoachModule() {
 
                   {/* Message Bubble */}
                   <div className={cn(
-                    'max-w-[75%] rounded-2xl px-4 py-3',
+                    'min-w-0 max-w-[75%] rounded-3xl px-4 py-3',
                     message.role === 'assistant'
-                      ? 'bg-muted/50 rounded-tl-sm'
-                      : 'bg-primary text-primary-foreground rounded-tr-sm'
+                      ? 'bg-blush border border-border rounded-bl-lg'
+                      : 'bg-primary text-primary-foreground rounded-br-lg'
                   )}>
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{message.content}</p>
                     <p className={cn(
                       'text-[10px] mt-1.5',
                       message.role === 'assistant' ? 'text-muted-foreground' : 'text-primary-foreground/60'
@@ -268,14 +271,14 @@ export default function CoachModule() {
                     exit={{ opacity: 0, y: -10 }}
                     className="flex gap-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-                      <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-plum-soft">
+                      <Sparkles className="h-4 w-4 text-gold animate-pulse" />
                     </div>
-                    <div className="bg-muted/50 rounded-2xl rounded-tl-sm px-4 py-3">
+                    <div className="bg-blush border border-border rounded-3xl rounded-bl-lg px-4 py-3">
                       <div className="flex gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="h-2 w-2 rounded-full bg-primary animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
                     </div>
                   </motion.div>
@@ -288,13 +291,13 @@ export default function CoachModule() {
 
           {/* Quick Prompts */}
           <div className="px-4 py-3">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex flex-wrap gap-2">
               {quickPrompts.map((prompt) => (
                 <Button
                   key={prompt.label}
                   variant="outline"
                   size="sm"
-                  className="shrink-0 text-xs h-8 gap-1.5 rounded-full"
+                  className="chip-soft shrink-0 min-h-11 px-4 text-xs gap-1.5 rounded-full"
                   onClick={() => sendMessage(prompt.prompt)}
                   disabled={isLoading}
                 >
@@ -314,13 +317,13 @@ export default function CoachModule() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me anything about your health..."
-              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1"
+              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 min-h-11"
               disabled={isLoading}
             />
             <Button
               type="submit"
               size="icon"
-              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+              className="btn-plum rounded-full h-11 w-11 shrink-0"
               disabled={isLoading || !input.trim()}
             >
               <Send className="h-4 w-4" />
@@ -330,38 +333,39 @@ export default function CoachModule() {
       </Card>
 
       {/* Coaching Categories */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           { icon: '🩸', label: 'Period Health', desc: 'Cycle & period guidance' },
           { icon: '🧠', label: 'Mental Wellness', desc: 'Mood & stress support' },
           { icon: '🥗', label: 'Nutrition', desc: 'Diet & supplement tips' },
           { icon: '🏃‍♀️', label: 'Exercise', desc: 'Phase-based fitness' },
         ].map((cat) => (
-          <Card key={cat.label} className="glass border-0 cursor-pointer hover:shadow-md transition-shadow">
+          <Card key={cat.label} className="border-border bg-card cursor-pointer hover:shadow-md hover:border-primary/30 transition-all">
             <CardContent className="p-4 text-center">
-              <span className="text-2xl">{cat.icon}</span>
-              <p className="font-medium text-sm mt-1">{cat.label}</p>
-              <p className="text-[10px] text-muted-foreground">{cat.desc}</p>
+              <span aria-hidden className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-blush text-2xl">{cat.icon}</span>
+              <p className="font-medium text-sm mt-2">{cat.label}</p>
+              <p className="text-[11px] text-muted-foreground">{cat.desc}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Consult Doctor CTA */}
-      <Card className="border-0 bg-gradient-to-r from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 shadow-md">
-        <CardContent className="p-5 flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-900/50 shrink-0">
-            <Stethoscope className="h-6 w-6 text-teal-600" />
+      <Card className="card-medical relative overflow-hidden">
+        <div aria-hidden className="lotus-watermark absolute inset-0" />
+        <CardContent className="relative p-5 flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-medical-soft shrink-0">
+            <Stethoscope className="h-5 w-5 text-medical" />
           </div>
-          <div className="flex-1 text-center sm:text-left">
-            <h3 className="font-semibold text-sm">Facing a high-severity issue?</h3>
+          <div className="flex-1 min-w-0 text-center sm:text-left">
+            <h3 className="font-serif font-semibold text-sm">Facing a high-severity issue?</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Connect with trusted healthcare specialists near you. Book appointments or video consultations instantly.
             </p>
           </div>
           <Button
             onClick={() => useAppStore.getState().setActiveModule('doctors')}
-            className="bg-teal-600 hover:bg-teal-700 text-white shrink-0"
+            className="btn-plum rounded-full px-6 min-h-11 font-semibold shrink-0"
             size="sm"
           >
             <MapPin className="h-4 w-4 mr-1" /> Find a Doctor

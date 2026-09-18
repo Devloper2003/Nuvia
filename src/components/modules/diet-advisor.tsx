@@ -191,7 +191,7 @@ const conditions: ConditionMeta[] = [
     bg: 'bg-teal-50 dark:bg-teal-950/40',
     border: 'border-teal-200 dark:border-teal-800',
     ring: 'ring-teal-400 dark:ring-teal-500',
-    gradient: 'from-teal-400 to-cyan-500',
+    gradient: 'from-teal-400 to-teal-500',
     emoji: '⚖️',
   },
   {
@@ -211,11 +211,11 @@ const conditions: ConditionMeta[] = [
     label: 'General Wellness',
     short: 'Wellness',
     icon: Sparkle,
-    text: 'text-sky-600 dark:text-sky-400',
-    bg: 'bg-sky-50 dark:bg-sky-950/40',
-    border: 'border-sky-200 dark:border-sky-800',
-    ring: 'ring-sky-400 dark:ring-sky-500',
-    gradient: 'from-sky-400 to-blue-500',
+    text: 'text-fuchsia-600 dark:text-fuchsia-400',
+    bg: 'bg-fuchsia-50 dark:bg-fuchsia-950/40',
+    border: 'border-fuchsia-200 dark:border-fuchsia-800',
+    ring: 'ring-fuchsia-400 dark:ring-fuchsia-500',
+    gradient: 'from-fuchsia-400 to-purple-500',
     emoji: '✨',
   },
 ]
@@ -1248,13 +1248,16 @@ export default function DietAdvisorModule() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 bg-clip-text text-transparent">
+              <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
                 AI Diet Advisor
               </h2>
-              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300 hover:bg-emerald-100">
-                <Sparkles className="h-3 w-3 mr-1" /> AI-Powered
+              <Badge className="chip-soft text-primary">
+                <Sparkles className="h-3 w-3 mr-1 text-gold" /> AI-Powered
               </Badge>
             </div>
+            <span aria-hidden className="gold-divider text-[10px]">
+              <span>✦</span>
+            </span>
             <p className="text-sm md:text-base text-muted-foreground">
               Expert nutrition guidance for every phase of your health journey
             </p>
@@ -1265,7 +1268,7 @@ export default function DietAdvisorModule() {
       {/* ─── 2. Health Condition Selector ─────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
-          <Salad className="h-4 w-4 text-emerald-500" />
+          <Salad className="h-4 w-4 text-gold" />
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
             Choose Your Health Goal
           </h3>
@@ -1290,7 +1293,7 @@ export default function DietAdvisorModule() {
                 <div className="flex items-center justify-between mb-2">
                   <div
                     className={cn(
-                      'flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm',
+                      'flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-sm',
                       c.gradient
                     )}
                   >
@@ -1323,24 +1326,20 @@ export default function DietAdvisorModule() {
           className="space-y-4"
         >
           {/* Plan header card */}
-          <Card
-            className={cn(
-              'border-0 shadow-lg overflow-hidden',
-              conditionMeta.bg
-            )}
-          >
-            <CardContent className="p-5 md:p-6">
-              <div className="flex items-start gap-3 mb-2">
+          <Card className="card-peach shadow-lg overflow-hidden">
+            <CardContent className="relative p-5 md:p-6">
+              <div aria-hidden className="lotus-watermark absolute inset-0" />
+              <div className="relative flex items-start gap-3 mb-2">
                 <div
                   className={cn(
-                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow',
+                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-white shadow',
                     conditionMeta.gradient
                   )}
                 >
                   <conditionMeta.icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className={cn('text-xl font-bold', conditionMeta.text)}>
+                  <h3 className={cn('font-serif text-xl font-bold', conditionMeta.text)}>
                     {plan.title}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-0.5">
@@ -1352,17 +1351,17 @@ export default function DietAdvisorModule() {
           </Card>
 
           {/* Calorie target + Macros */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {/* Daily Calorie Target */}
             <Card className="glass border-0 shadow-sm">
               <CardContent className="p-5 flex flex-col items-center text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 mb-2">
-                  <Flame className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gold-soft mb-2">
+                  <Flame className="h-5 w-5 text-gold" />
                 </div>
                 <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                   Daily Calories
                 </p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">
                   {plan.dailyCalories}
                 </p>
                 <p className="text-[11px] text-muted-foreground">kcal / day</p>
@@ -1394,7 +1393,7 @@ export default function DietAdvisorModule() {
               label="Fat"
               pct={plan.macros.fat.pct}
               grams={plan.macros.fat.grams}
-              gradient="from-teal-400 to-cyan-500"
+              gradient="from-teal-400 to-teal-500"
               bgIcon="bg-teal-100 dark:bg-teal-900/40"
               textIcon="text-teal-600 dark:text-teal-400"
               icon={Droplets}
@@ -1410,7 +1409,7 @@ export default function DietAdvisorModule() {
                     <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <CardTitle className="text-base">Foods to Eat</CardTitle>
-                  <Badge variant="secondary" className="text-[10px]">
+                  <Badge variant="secondary" className="chip-soft text-foreground text-[10px]">
                     {plan.foodsToEat.length} foods
                   </Badge>
                 </div>
@@ -1481,13 +1480,13 @@ export default function DietAdvisorModule() {
           <Card className="glass border-0 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                  <Utensils className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-peach-soft">
+                  <Utensils className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
                 <CardTitle className="text-base">Sample Daily Meal Plan</CardTitle>
                 <Badge
                   variant="secondary"
-                  className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                  className="chip-soft text-foreground text-[10px]"
                 >
                   {plan.mealPlan.reduce((s, m) => s + m.calories, 0)} kcal
                 </Badge>
@@ -1510,7 +1509,7 @@ export default function DietAdvisorModule() {
                       <span className="text-2xl">{meal.emoji}</span>
                       <Badge
                         variant="secondary"
-                        className="text-[10px] h-5"
+                        className="chip-soft text-foreground text-[10px] h-5"
                       >
                         {meal.calories} kcal
                       </Badge>
@@ -1542,8 +1541,8 @@ export default function DietAdvisorModule() {
           <Card className="glass border-0 shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                  <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-lilac">
+                  <Sparkles className="h-4 w-4 text-primary" />
                 </div>
                 <CardTitle className="text-base">Nutrition Tips</CardTitle>
               </div>
@@ -1560,8 +1559,8 @@ export default function DietAdvisorModule() {
                       transition={{ duration: 0.25, delay: i * 0.06 }}
                       className="flex gap-3 rounded-xl border border-border/60 bg-card/50 p-4"
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                        <TipIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-peach-soft">
+                        <TipIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div>
                         <p className="font-semibold text-sm">{tip.title}</p>
@@ -1583,8 +1582,8 @@ export default function DietAdvisorModule() {
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow">
-                <Apple className="h-5 w-5" />
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-plum-soft shadow">
+                <Apple className="h-5 w-5 text-gold" />
               </div>
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
@@ -1615,8 +1614,8 @@ export default function DietAdvisorModule() {
             <div className="space-y-4 py-2">
               {messages.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 mb-3">
-                    <Apple className="h-6 w-6 text-emerald-600" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                    <Apple className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-sm font-medium text-foreground">
                     Your AI Diet Advisor is ready 🥑
@@ -1641,12 +1640,12 @@ export default function DietAdvisorModule() {
                     className={cn(
                       'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
                       message.role === 'assistant'
-                        ? 'bg-emerald-100 dark:bg-emerald-900/50'
+                        ? 'bg-blush'
                         : 'bg-primary/10'
                     )}
                   >
                     {message.role === 'assistant' ? (
-                      <Apple className="h-4 w-4 text-emerald-600" />
+                      <Apple className="h-4 w-4 text-primary" />
                     ) : (
                       <User className="h-4 w-4 text-primary" />
                     )}
@@ -1686,21 +1685,21 @@ export default function DietAdvisorModule() {
                     exit={{ opacity: 0, y: -10 }}
                     className="flex gap-3"
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/50">
-                      <Sparkles className="h-4 w-4 text-emerald-600 animate-pulse" />
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush">
+                      <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                     </div>
                     <div className="bg-muted/60 rounded-2xl rounded-tl-sm px-4 py-3">
                       <div className="flex gap-1.5">
                         <span
-                          className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-gold animate-bounce"
                           style={{ animationDelay: '0ms' }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-gold animate-bounce"
                           style={{ animationDelay: '150ms' }}
                         />
                         <span
-                          className="h-2 w-2 rounded-full bg-emerald-400 animate-bounce"
+                          className="h-2 w-2 rounded-full bg-gold animate-bounce"
                           style={{ animationDelay: '300ms' }}
                         />
                       </div>
@@ -1721,7 +1720,7 @@ export default function DietAdvisorModule() {
                   key={p.label}
                   variant="outline"
                   size="sm"
-                  className="shrink-0 text-xs h-8 gap-1.5 rounded-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                  className="chip-soft shrink-0 text-xs h-9 gap-1.5 rounded-full text-primary"
                   onClick={() => sendMessage(p.prompt)}
                   disabled={isLoading}
                 >
@@ -1741,13 +1740,13 @@ export default function DietAdvisorModule() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me about nutrition, foods, meal ideas..."
-              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-emerald-400"
+              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
               disabled={isLoading}
             />
             <Button
               type="submit"
               size="icon"
-              className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+              className="btn-plum rounded-full h-11 w-11 shrink-0"
               disabled={isLoading || !input.trim()}
             >
               <Send className="h-4 w-4" />
@@ -1770,11 +1769,11 @@ export default function DietAdvisorModule() {
       <Card className="glass border-0 shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gold-soft">
+              <TrendingUp className="h-4 w-4 text-gold" />
             </div>
             <CardTitle className="text-base">Today&apos;s Nutrition Tracker</CardTitle>
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="chip-soft text-foreground text-[10px]">
               {new Date().toLocaleDateString('en-US', {
                 month: 'short',
                 day: 'numeric',
@@ -1790,12 +1789,12 @@ export default function DietAdvisorModule() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Droplets className="h-4 w-4 text-sky-500" />
+                <Droplets className="h-4 w-4 text-medical" />
                 <p className="text-sm font-medium">Water Intake</p>
               </div>
               <Badge
                 variant="secondary"
-                className="text-[11px] bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                className="chip-soft text-foreground text-[11px]"
               >
                 {waterGlasses} / 8 glasses
               </Badge>
@@ -1812,8 +1811,8 @@ export default function DietAdvisorModule() {
                     className={cn(
                       'flex h-11 w-9 items-end justify-center rounded-md border-2 transition-all overflow-hidden',
                       filled
-                        ? 'bg-gradient-to-t from-sky-400 to-sky-300 border-sky-300 dark:border-sky-700'
-                        : 'bg-transparent border-border hover:border-sky-300'
+                        ? 'bg-gradient-to-t from-medical to-teal-300 border-teal-300 dark:border-teal-700'
+                        : 'bg-transparent border-border hover:border-teal-300'
                     )}
                     aria-label={`Glass ${i + 1} of 8`}
                   >
@@ -1832,7 +1831,7 @@ export default function DietAdvisorModule() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs"
+                className="h-9 text-xs"
                 onClick={() => setWaterGlasses(Math.max(0, waterGlasses - 1))}
               >
                 −1 glass
@@ -1840,7 +1839,7 @@ export default function DietAdvisorModule() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs"
+                className="h-9 text-xs"
                 onClick={() => setWaterGlasses(Math.min(8, waterGlasses + 1))}
               >
                 +1 glass
@@ -1848,7 +1847,7 @@ export default function DietAdvisorModule() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs text-muted-foreground"
+                className="h-9 text-xs text-muted-foreground"
                 onClick={() => setWaterGlasses(0)}
               >
                 Reset
@@ -1889,10 +1888,10 @@ export default function DietAdvisorModule() {
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Utensils className="h-4 w-4 text-emerald-500" />
+                <Utensils className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 <p className="text-sm font-medium">Today&apos;s Meals</p>
               </div>
-              <Badge variant="secondary" className="text-[11px]">
+              <Badge variant="secondary" className="chip-soft text-foreground text-[11px]">
                 {loggedMeals.length} logged
               </Badge>
             </div>
@@ -1903,7 +1902,7 @@ export default function DietAdvisorModule() {
                 value={newMeal}
                 onChange={(e) => setNewMeal(e.target.value)}
                 placeholder="Meal name..."
-                className="col-span-12 sm:col-span-5 h-9 text-sm"
+                className="col-span-12 sm:col-span-5 h-10 text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -1918,7 +1917,7 @@ export default function DietAdvisorModule() {
                 }
                 placeholder="kcal"
                 inputMode="numeric"
-                className="col-span-6 sm:col-span-3 h-9 text-sm"
+                className="col-span-6 sm:col-span-3 h-10 text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
@@ -1929,7 +1928,7 @@ export default function DietAdvisorModule() {
               <select
                 value={newMealType}
                 onChange={(e) => setNewMealType(e.target.value)}
-                className="col-span-6 sm:col-span-2 h-9 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                className="col-span-6 sm:col-span-2 h-10 rounded-md border border-input bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option>Breakfast</option>
                 <option>Lunch</option>
@@ -1939,7 +1938,7 @@ export default function DietAdvisorModule() {
               <Button
                 onClick={addMeal}
                 size="sm"
-                className="col-span-12 sm:col-span-2 h-9 bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="col-span-12 sm:col-span-2 h-10 btn-plum rounded-full px-4 font-semibold text-sm"
                 disabled={!newMeal.trim() || !newMealCalories}
               >
                 <Plus className="h-4 w-4 mr-1" /> Add
@@ -1962,8 +1961,8 @@ export default function DietAdvisorModule() {
                       exit={{ opacity: 0, x: 8 }}
                       className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/50 px-3 py-2"
                     >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-100 dark:bg-emerald-900/40">
-                        <Utensils className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-peach-soft">
+                        <Utensils className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{m.name}</p>

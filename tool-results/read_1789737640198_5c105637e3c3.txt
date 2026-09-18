@@ -1,0 +1,564 @@
+  1900→              className={cn(accentClasses.bg, accentClasses.bgHover)}
+  1901→              size="sm"
+  1902→            >
+  1903→              See Results
+  1904→            </Button>
+  1905→          </div>
+  1906→        </>
+  1907→      ) : (
+  1908→        <motion.div
+  1909→          initial={{ opacity: 0, y: 10 }}
+  1910→          animate={{ opacity: 1, y: 0 }}
+  1911→          className="space-y-4"
+  1912→        >
+  1913→          <div className={cn('rounded-xl p-5 text-center text-white shadow-md bg-gradient-to-br', result.color)}>
+  1914→            <div className="text-xs uppercase tracking-wide opacity-90 mb-1">Your Score</div>
+  1915→            <div className="text-5xl font-bold mb-1">{score}</div>
+  1916→            <div className="text-sm opacity-90 mb-2">out of {total * 3}</div>
+  1917→            <div className="inline-block rounded-full bg-white/20 px-4 py-1.5 text-sm font-semibold backdrop-blur-sm">
+  1918→              {result.label}
+  1919→            </div>
+  1920→          </div>
+  1921→
+  1922→          <div className="rounded-xl border border-border p-4">
+  1923→            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Recommendation</div>
+  1924→            <p className="text-sm leading-relaxed">{result.recommendation}</p>
+  1925→          </div>
+  1926→
+  1927→          {crisisNote && score >= 1 && (
+  1928→            <div className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 p-4">
+  1929→              <div className="flex items-start gap-2">
+  1930→                <ShieldAlert className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+  1931→                <div>
+  1932→                  <p className="text-sm font-medium text-rose-700 dark:text-rose-300">Important</p>
+  1933→                  <p className="text-xs text-rose-600 dark:text-rose-400 mt-1">{crisisNote}</p>
+  1934→                </div>
+  1935→              </div>
+  1936→            </div>
+  1937→          )}
+  1938→
+  1939→          <div className="flex items-center gap-2">
+  1940→            <Button variant="outline" size="sm" onClick={reset} className="flex-1">
+  1941→              <RotateCcw className="h-3.5 w-3.5 mr-1" /> Retake
+  1942→            </Button>
+  1943→          </div>
+  1944→
+  1945→          <p className="text-[10px] text-muted-foreground text-center">
+  1946→            This screening tool is for educational purposes only and is not a diagnosis. Please consult a healthcare professional for proper evaluation.
+  1947→          </p>
+  1948→        </motion.div>
+  1949→      )}
+  1950→    </div>
+  1951→  )
+  1952→}
+  1953→
+  1954→function TherapySupport() {
+  1955→  const { setActiveModule } = useAppStore()
+  1956→  const [activeQuiz, setActiveQuiz] = useState<'none' | 'phq9' | 'gad7'>('none')
+  1957→
+  1958→  return (
+  1959→    <motion.div
+  1960→      initial={{ opacity: 0, y: 20 }}
+  1961→      animate={{ opacity: 1, y: 0 }}
+  1962→      transition={{ duration: 0.5, delay: 0.3 }}
+  1963→    >
+  1964→      <Card className="glass border-violet-200/50">
+  1965→        <CardHeader className="pb-3">
+  1966→          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+  1967→            <LifeBuoy className="h-5 w-5" />
+  1968→            Therapy &amp; Support
+  1969→          </CardTitle>
+  1970→          <CardDescription>You deserve support — you don't have to do this alone</CardDescription>
+  1971→        </CardHeader>
+  1972→        <CardContent className="space-y-6">
+  1973→          {/* Therapist CTA */}
+  1974→          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 p-5 md:p-6 text-white shadow-md">
+  1975→            <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+  1976→            <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  1977→              <div>
+  1978→                <Badge className="bg-white/20 text-white border-white/30 mb-2">
+  1979→                  <Stethoscope className="h-3 w-3 mr-1" />
+  1980→                  Professional Support
+  1981→                </Badge>
+  1982→                <h3 className="text-xl md:text-2xl font-bold mb-1">Connect with a Therapist</h3>
+  1983→                <p className="text-sm text-white/85 max-w-md">
+  1984→                  Find licensed mental health professionals, counselors, and psychologists near you. Telehealth and in-person options available.
+  1985→                </p>
+  1986→              </div>
+  1987→              <Button
+  1988→                onClick={() => setActiveModule('doctors')}
+  1989→                className="bg-white text-violet-700 hover:bg-white/90 shrink-0"
+  1990→              >
+  1991→                <Stethoscope className="h-4 w-4 mr-1.5" />
+  1992→                Find a Therapist
+  1993→              </Button>
+  1994→            </div>
+  1995→          </div>
+  1996→
+  1997→          {/* Crisis support resources */}
+  1998→          <div>
+  1999→            <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
+  2000→              <Siren className="h-4 w-4 text-rose-500" />
+  2001→              Crisis Support Resources
+  2002→            </h3>
+  2003→            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+  2004→              <div className="rounded-xl border border-rose-200 bg-rose-50/50 dark:bg-rose-950/20 dark:border-rose-900 p-4">
+  2005→                <div className="flex items-center gap-2 mb-2">
+  2006→                  <div className="h-9 w-9 rounded-full bg-rose-500 flex items-center justify-center">
+  2007→                    <Phone className="h-4 w-4 text-white" />
+  2008→                  </div>
+  2009→                  <div>
+  2010→                    <div className="text-xs text-muted-foreground">Helpline</div>
+  2011→                    <div className="text-sm font-semibold">India</div>
+  2012→                  </div>
+  2013→                </div>
+  2014→                <div className="space-y-1 text-sm">
+  2015→                  <div>
+  2016→                    <div className="font-mono font-bold text-rose-600">iCall: 9152987821</div>
+  2017→                    <div className="text-[10px] text-muted-foreground">Mon–Sat, 8 AM – 10 PM</div>
+  2018→                  </div>
+  2019→                  <Separator className="my-1" />
+  2020→                  <div>
+  2021→                    <div className="font-mono font-bold text-rose-600">Vandrevala: 1860-2662-345</div>
+  2022→                    <div className="text-[10px] text-muted-foreground">24/7</div>
+  2023→                  </div>
+  2024→                  <Separator className="my-1" />
+  2025→                  <div>
+  2026→                    <div className="font-mono font-bold text-rose-600">Kiran: 1800-599-0019</div>
+  2027→                    <div className="text-[10px] text-muted-foreground">Govt. of India, 24/7</div>
+  2028→                  </div>
+  2029→                </div>
+  2030→              </div>
+  2031→
+  2032→              <div className="rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-900 p-4">
+  2033→                <div className="flex items-center gap-2 mb-2">
+  2034→                  <div className="h-9 w-9 rounded-full bg-amber-500 flex items-center justify-center">
+  2035→                    <MessageSquare className="h-4 w-4 text-white" />
+  2036→                  </div>
+  2037→                  <div>
+  2038→                    <div className="text-xs text-muted-foreground">Crisis Text Line</div>
+  2039→                    <div className="text-sm font-semibold">Text Support</div>
+  2040→                  </div>
+  2041→                </div>
+  2042→                <div className="space-y-1 text-sm">
+  2043→                  <div>
+  2044→                    <div className="font-mono font-bold text-amber-600">Text HOME to 741741</div>
+  2045→                    <div className="text-[10px] text-muted-foreground">Crisis Text Line (US)</div>
+  2046→                  </div>
+  2047→                  <Separator className="my-1" />
+  2048→                  <div>
+  2049→                    <div className="font-mono font-bold text-amber-600">Text CONNECT to 68878</div>
+  2050→                    <div className="text-[10px] text-muted-foreground">Trevor Project (LGBTQ+)</div>
+  2051→                  </div>
+  2052→                  <Separator className="my-1" />
+  2053→                  <div>
+  2054→                    <div className="font-mono font-bold text-amber-600">WhatsApp iCall</div>
+  2055→                    <div className="text-[10px] text-muted-foreground">+91 9152987821</div>
+  2056→                  </div>
+  2057→                </div>
+  2058→              </div>
+  2059→
+  2060→              <div className="rounded-xl border border-violet-200 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-900 p-4">
+  2061→                <div className="flex items-center gap-2 mb-2">
+  2062→                  <div className="h-9 w-9 rounded-full bg-violet-500 flex items-center justify-center">
+  2063→                    <Siren className="h-4 w-4 text-white" />
+  2064→                  </div>
+  2065→                  <div>
+  2066→                    <div className="text-xs text-muted-foreground">Emergency</div>
+  2067→                    <div className="text-sm font-semibold">Immediate Help</div>
+  2068→                  </div>
+  2069→                </div>
+  2070→                <div className="space-y-1 text-sm">
+  2071→                  <div>
+  2072→                    <div className="font-mono font-bold text-violet-600">Emergency: 112</div>
+  2073→                    <div className="text-[10px] text-muted-foreground">India (ambulance, police, fire)</div>
+  2074→                  </div>
+  2075→                  <Separator className="my-1" />
+  2076→                  <div>
+  2077→                    <div className="font-mono font-bold text-violet-600">Women Helpline: 1091</div>
+  2078→                    <div className="text-[10px] text-muted-foreground">24/7</div>
+  2079→                  </div>
+  2080→                  <Separator className="my-1" />
+  2081→                  <div>
+  2082→                    <div className="font-mono font-bold text-violet-600">AASRA: 9820466726</div>
+  2083→                    <div className="text-[10px] text-muted-foreground">Suicide prevention, 24/7</div>
+  2084→                  </div>
+  2085→                </div>
+  2086→              </div>
+  2087→            </div>
+  2088→            <div className="mt-3 rounded-lg bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 p-3">
+  2089→              <p className="text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+  2090→                <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5" />
+  2091→                <span><strong>If you are in immediate danger or having thoughts of self-harm, please call your local emergency number (112 in India, 911 in US) or go to the nearest emergency room. You matter, and help is available.</strong></span>
+  2092→              </p>
+  2093→            </div>
+  2094→          </div>
+  2095→
+  2096→          {/* Self-assessment quizzes */}
+  2097→          <div>
+  2098→            <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
+  2099→              <Activity className="h-4 w-4 text-violet-500" />
+  2100→              Self-Assessment Quizzes
+  2101→            </h3>
+  2102→            <p className="text-xs text-muted-foreground mb-3">
+  2103→              Validated screening tools used by clinicians worldwide. Choose a quiz to begin.
+  2104→            </p>
+  2105→
+  2106→            {activeQuiz === 'none' ? (
+  2107→              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+  2108→                <button
+  2109→                  onClick={() => setActiveQuiz('phq9')}
+  2110→                  className="group text-left rounded-2xl border-2 border-violet-200 dark:border-violet-800 p-4 hover:border-violet-500 hover:bg-violet-50/50 dark:hover:bg-violet-950/20 transition-all"
+  2111→                >
+  2112→                  <div className="flex items-center justify-between mb-2">
+  2113→                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+  2114→                      <Brain className="h-5 w-5 text-white" />
+  2115→                    </div>
+  2116→                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-violet-500 group-hover:translate-x-1 transition-all" />
+  2117→                  </div>
+  2118→                  <div className="font-semibold">PHQ-9</div>
+  2119→                  <div className="text-xs text-muted-foreground">Depression Screening</div>
+  2120→                  <div className="text-[10px] text-muted-foreground mt-2">9 questions • ~3 minutes</div>
+  2121→                </button>
+  2122→                <button
+  2123→                  onClick={() => setActiveQuiz('gad7')}
+  2124→                  className="group text-left rounded-2xl border-2 border-rose-200 dark:border-rose-800 p-4 hover:border-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-all"
+  2125→                >
+  2126→                  <div className="flex items-center justify-between mb-2">
+  2127→                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center">
+  2128→                      <HeartPulse className="h-5 w-5 text-white" />
+  2129→                    </div>
+  2130→                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-rose-500 group-hover:translate-x-1 transition-all" />
+  2131→                  </div>
+  2132→                  <div className="font-semibold">GAD-7</div>
+  2133→                  <div className="text-xs text-muted-foreground">Anxiety Screening</div>
+  2134→                  <div className="text-[10px] text-muted-foreground mt-2">7 questions • ~2 minutes</div>
+  2135→                </button>
+  2136→              </div>
+  2137→            ) : (
+  2138→              <div className="space-y-3">
+  2139→                <Button variant="ghost" size="sm" onClick={() => setActiveQuiz('none')}>
+  2140→                  <ChevronLeft className="h-4 w-4 mr-1" /> Back to quiz selection
+  2141→                </Button>
+  2142→                {activeQuiz === 'phq9' && (
+  2143→                  <QuizRunner
+  2144→                    questions={PHQ9_QUESTIONS}
+  2145→                    title="PHQ-9 Depression Screening"
+  2146→                    description="Over the last 2 weeks, how often have you been bothered by any of the following problems?"
+  2147→                    accentColor="violet"
+  2148→                    crisisNote="If you indicated any thoughts of self-harm on question 9, please reach out to a crisis line or mental health professional immediately. Your life has value."
+  2149→                    scoring={[
+  2150→                      { min: 0, max: 4, label: 'Minimal Depression', color: 'from-emerald-400 to-teal-500', recommendation: 'Your results suggest minimal symptoms of depression. Continue your self-care practices — meditation, journaling, and connection with loved ones. Monitor how you feel over the coming weeks.' },
+  2151→                      { min: 5, max: 9, label: 'Mild Depression', color: 'from-amber-400 to-orange-500', recommendation: 'Your results suggest mild depressive symptoms. Consider increasing self-care activities like the meditations and breathing exercises in this app. If symptoms persist or worsen, consider speaking with a mental health professional.' },
+  2152→                      { min: 10, max: 14, label: 'Moderate Depression', color: 'from-orange-400 to-rose-500', recommendation: 'Your results suggest moderate depressive symptoms. We recommend talking to a healthcare provider or mental health professional. The meditations and journaling tools here can support you alongside professional care.' },
+  2153→                      { min: 15, max: 19, label: 'Moderately Severe', color: 'from-rose-500 to-red-600', recommendation: 'Your results suggest moderately severe depression. Please consult a mental health professional for proper evaluation and treatment. You can use our Find a Therapist tool to connect with someone who can help.' },
+  2154→                      { min: 20, max: 27, label: 'Severe Depression', color: 'from-red-500 to-rose-700', recommendation: 'Your results suggest severe depression. We strongly encourage you to seek professional help as soon as possible. Please consider reaching out to a mental health professional today, or contact one of the crisis resources listed above.' },
+  2155→                    ]}
+  2156→                  />
+  2157→                )}
+  2158→                {activeQuiz === 'gad7' && (
+  2159→                  <QuizRunner
+  2160→                    questions={GAD7_QUESTIONS}
+  2161→                    title="GAD-7 Anxiety Screening"
+  2162→                    description="Over the last 2 weeks, how often have you been bothered by the following problems?"
+  2163→                    accentColor="rose"
+  2164→                    scoring={[
+  2165→                      { min: 0, max: 4, label: 'Minimal Anxiety', color: 'from-emerald-400 to-teal-500', recommendation: 'Your results suggest minimal anxiety. The breathing exercises and meditations in this app can help you maintain your sense of calm. Continue what you are doing.' },
+  2166→                      { min: 5, max: 9, label: 'Mild Anxiety', color: 'from-amber-400 to-orange-500', recommendation: 'Your results suggest mild anxiety. Try the 4-7-8 breathing technique and our Anxiety Release meditation. If symptoms persist, consider talking with a mental health professional.' },
+  2167→                      { min: 10, max: 14, label: 'Moderate Anxiety', color: 'from-orange-400 to-rose-500', recommendation: 'Your results suggest moderate anxiety. We recommend a consultation with a mental health professional. The tools in this app can be a helpful supplement to professional care.' },
+  2168→                      { min: 15, max: 21, label: 'Severe Anxiety', color: 'from-rose-500 to-red-600', recommendation: 'Your results suggest severe anxiety. Please seek evaluation from a mental health professional. You deserve support — consider using our Find a Therapist tool to connect with someone today.' },
+  2169→                    ]}
+  2170→                  />
+  2171→                )}
+  2172→              </div>
+  2173→            )}
+  2174→          </div>
+  2175→        </CardContent>
+  2176→      </Card>
+  2177→    </motion.div>
+  2178→  )
+  2179→}
+  2180→
+  2181→// ─── 8. Wellness Stats ────────────────────────────────────────────────────────
+  2182→function WellnessStats() {
+  2183→  const meditationsThisWeek = WEEKLY_MED_MINUTES.filter(d => d.minutes > 0).length
+  2184→  const totalMinutes = WEEKLY_MED_MINUTES.reduce((s, d) => s + d.minutes, 0)
+  2185→  const currentStreak = 0
+  2186→  const recentMoodEntries = MOOD_HISTORY.slice(-7)
+  2187→  const avgMood =
+  2188→    recentMoodEntries.length > 0
+  2189→      ? recentMoodEntries.reduce((s, e) => s + e.moodScore, 0) / recentMoodEntries.length
+  2190→      : 0
+  2191→
+  2192→  const stats = [
+  2193→    {
+  2194→      label: 'Meditations This Week',
+  2195→      value: meditationsThisWeek,
+  2196→      suffix: '',
+  2197→      icon: Flower2,
+  2198→      gradient: 'from-violet-500 to-purple-600',
+  2199→      sublabel: `${meditationsThisWeek} sessions completed`,
+  2200→    },
+  2201→    {
+  2202→      label: 'Total Mindful Minutes',
+  2203→      value: totalMinutes,
+  2204→      suffix: ' min',
+  2205→      icon: Clock,
+  2206→      gradient: 'from-fuchsia-500 to-pink-600',
+  2207→      sublabel: 'This week',
+  2208→    },
+  2209→    {
+  2210→      label: 'Current Streak',
+  2211→      value: currentStreak,
+  2212→      suffix: ' days',
+  2213→      icon: Flame,
+  2214→      gradient: 'from-amber-500 to-orange-600',
+  2215→      sublabel: 'Keep it going!',
+  2216→    },
+  2217→    {
+  2218→      label: 'Mood Average',
+  2219→      value: avgMood.toFixed(1),
+  2220→      suffix: '/5',
+  2221→      icon: Smile,
+  2222→      gradient: 'from-emerald-500 to-teal-600',
+  2223→      sublabel: 'Last 7 days',
+  2224→    },
+  2225→  ]
+  2226→
+  2227→  return (
+  2228→    <motion.div
+  2229→      initial={{ opacity: 0, y: 20 }}
+  2230→      animate={{ opacity: 1, y: 0 }}
+  2231→      transition={{ duration: 0.5, delay: 0.35 }}
+  2232→    >
+  2233→      <Card className="glass border-violet-200/50">
+  2234→        <CardHeader className="pb-3">
+  2235→          <CardTitle className="flex items-center gap-2 text-violet-700 dark:text-violet-300">
+  2236→            <Award className="h-5 w-5" />
+  2237→            Your Wellness Journey
+  2238→          </CardTitle>
+  2239→          <CardDescription>This week at a glance</CardDescription>
+  2240→        </CardHeader>
+  2241→        <CardContent className="space-y-6">
+  2242→          {/* Stats grid */}
+  2243→          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+  2244→            {stats.map((stat, i) => (
+  2245→              <motion.div
+  2246→                key={stat.label}
+  2247→                initial={{ opacity: 0, y: 10 }}
+  2248→                animate={{ opacity: 1, y: 0 }}
+  2249→                transition={{ delay: 0.4 + i * 0.05 }}
+  2250→                className={cn(
+  2251→                  'relative overflow-hidden rounded-2xl bg-gradient-to-br p-4 text-white shadow-md',
+  2252→                  stat.gradient
+  2253→                )}
+  2254→              >
+  2255→                <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-white/15 blur-xl" />
+  2256→                <div className="relative">
+  2257→                  <stat.icon className="h-6 w-6 mb-2 opacity-90" />
+  2258→                  <div className="text-2xl md:text-3xl font-bold">
+  2259→                    {stat.value}<span className="text-base font-medium opacity-90">{stat.suffix}</span>
+  2260→                  </div>
+  2261→                  <div className="text-[11px] text-white/85 font-medium mt-0.5">{stat.label}</div>
+  2262→                  <div className="text-[10px] text-white/70 mt-0.5">{stat.sublabel}</div>
+  2263→                </div>
+  2264→              </motion.div>
+  2265→            ))}
+  2266→          </div>
+  2267→
+  2268→          {/* Weekly meditation minutes chart */}
+  2269→          <div>
+  2270→            <h3 className="font-semibold text-sm flex items-center gap-1.5 mb-3">
+  2271→              <TrendingUp className="h-4 w-4 text-violet-500" />
+  2272→              Weekly Meditation Minutes
+  2273→            </h3>
+  2274→            <div className="rounded-xl border border-violet-100 dark:border-violet-900/50 p-4 bg-card/50">
+  2275→              {meditationsThisWeek > 0 ? (
+  2276→                <ResponsiveContainer width="100%" height={220}>
+  2277→                  <BarChart data={WEEKLY_MED_MINUTES} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+  2278→                    <defs>
+  2279→                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+  2280→                        <stop offset="0%" stopColor="#8b5cf6" />
+  2281→                        <stop offset="100%" stopColor="#a855f7" />
+  2282→                      </linearGradient>
+  2283→                    </defs>
+  2284→                    <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.91 0.02 325)" vertical={false} />
+  2285→                    <XAxis
+  2286→                      dataKey="day"
+  2287→                      tick={{ fontSize: 11, fill: 'oklch(0.5 0.03 325)' }}
+  2288→                      tickLine={false}
+  2289→                      axisLine={false}
+  2290→                    />
+  2291→                    <YAxis
+  2292→                      tick={{ fontSize: 11, fill: 'oklch(0.5 0.03 325)' }}
+  2293→                      tickLine={false}
+  2294→                      axisLine={false}
+  2295→                    />
+  2296→                    <RechartsTooltip
+  2297→                      cursor={{ fill: 'oklch(0.94 0.035 325)' }}
+  2298→                      contentStyle={{
+  2299→                        borderRadius: 12,
+  2300→                        border: '1px solid oklch(0.91 0.02 325)',
+  2301→                        background: 'oklch(1 0 0)',
+  2302→                        fontSize: 12,
+  2303→                        padding: '8px 12px',
+  2304→                      }}
+  2305→                      formatter={(value: number) => [`${value} min`, 'Meditated']}
+  2306→                    />
+  2307→                    <Bar
+  2308→                      dataKey="minutes"
+  2309→                      fill="url(#barGradient)"
+  2310→                      radius={[8, 8, 0, 0]}
+  2311→                      maxBarSize={48}
+  2312→                    />
+  2313→                  </BarChart>
+  2314→                </ResponsiveContainer>
+  2315→              ) : (
+  2316→                <div className="flex flex-col items-center justify-center py-10 px-4 text-center h-[220px]">
+  2317→                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-3">
+  2318→                    <Flower2 className="h-6 w-6 text-muted-foreground" />
+  2319→                  </div>
+  2320→                  <p className="text-sm font-medium text-foreground">No meditation minutes yet</p>
+  2321→                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+  2322→                    Complete a meditation session to see your weekly minutes fill in here.
+  2323→                  </p>
+  2324→                </div>
+  2325→              )}
+  2326→            </div>
+  2327→          </div>
+  2328→
+  2329→          {/* Encouragement banner */}
+  2330→          <div className="rounded-2xl bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-950/30 dark:to-fuchsia-950/30 border border-violet-100 dark:border-violet-900 p-4 flex items-center gap-3">
+  2331→            <motion.div
+  2332→              animate={{ rotate: [0, 10, -10, 0] }}
+  2333→              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+  2334→              className="h-11 w-11 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shrink-0"
+  2335→            >
+  2336→              <Sparkles className="h-5 w-5 text-white" />
+  2337→            </motion.div>
+  2338→            <div>
+  2339→              <p className="text-sm font-semibold text-violet-700 dark:text-violet-300">
+  2340→                {currentStreak > 0
+  2341→                  ? `${currentStreak}-day streak — you're amazing!`
+  2342→                  : 'Begin your wellness streak today'}
+  2343→              </p>
+  2344→              <p className="text-xs text-muted-foreground">
+  2345→                {currentStreak > 0
+  2346→                  ? 'Even a few minutes of mindfulness each day rewires your brain for calm. Keep showing up for yourself.'
+  2347→                  : 'A single mindful breath is the start of a habit. Try a 1-minute meditation or a few rounds of box breathing to begin.'}
+  2348→              </p>
+  2349→            </div>
+  2350→          </div>
+  2351→        </CardContent>
+  2352→      </Card>
+  2353→    </motion.div>
+  2354→  )
+  2355→}
+  2356→
+  2357→// ─── Quick mood banner (top of page) ──────────────────────────────────────────
+  2358→function QuickMoodBanner() {
+  2359→  const [quickMood, setQuickMood] = useState<MoodLevel | null>(null)
+  2360→  return (
+  2361→    <motion.div
+  2362→      initial={{ opacity: 0, y: 10 }}
+  2363→      animate={{ opacity: 1, y: 0 }}
+  2364→      transition={{ duration: 0.4, delay: 0.15 }}
+  2365→      className="flex flex-wrap items-center gap-2 rounded-2xl glass border border-violet-200/50 px-4 py-3"
+  2366→    >
+  2367→      <span className="text-sm font-medium text-muted-foreground mr-2">Quick check-in:</span>
+  2368→      {MOODS.map(mood => (
+  2369→        <button
+  2370→          key={mood.level}
+  2371→          onClick={() => setQuickMood(mood.level)}
+  2372→          className={cn(
+  2373→            'h-10 w-10 rounded-full text-xl flex items-center justify-center transition-all hover:scale-110',
+  2374→            quickMood === mood.level && cn('ring-2 ring-offset-2', mood.ringClass)
+  2375→          )}
+  2376→          title={mood.label}
+  2377→        >
+  2378→          {mood.emoji}
+  2379→        </button>
+  2380→      ))}
+  2381→      <AnimatePresence>
+  2382→        {quickMood && (
+  2383→          <motion.span
+  2384→            initial={{ opacity: 0, x: -8 }}
+  2385→            animate={{ opacity: 1, x: 0 }}
+  2386→            exit={{ opacity: 0 }}
+  2387→            className="text-sm text-violet-700 dark:text-violet-300 font-medium"
+  2388→          >
+  2389→            {getMoodByLevel(quickMood).message}
+  2390→          </motion.span>
+  2391→        )}
+  2392→      </AnimatePresence>
+  2393→    </motion.div>
+  2394→  )
+  2395→}
+  2396→
+  2397→// ═══════════════════════════════════════════════════════════════════════════════
+  2398→// MAIN MODULE
+  2399→// ═══════════════════════════════════════════════════════════════════════════════
+  2400→
+  2401→export default function MentalWellnessModule() {
+  2402→  return (
+  2403→    <div className="space-y-6 pb-8">
+  2404→      <HeaderSection />
+  2405→      <QuickMoodBanner />
+  2406→
+  2407→      <Tabs defaultValue="meditate" className="w-full">
+  2408→        <TabsList className="h-auto flex-wrap bg-violet-50/50 dark:bg-violet-950/30 p-1 gap-1">
+  2409→          <TabsTrigger value="meditate" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2410→            <Flower2 className="h-3.5 w-3.5" />
+  2411→            <span className="hidden sm:inline">Meditate</span>
+  2412→          </TabsTrigger>
+  2413→          <TabsTrigger value="breathe" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2414→            <Wind className="h-3.5 w-3.5" />
+  2415→            <span className="hidden sm:inline">Breathe</span>
+  2416→          </TabsTrigger>
+  2417→          <TabsTrigger value="journal" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2418→            <BookOpen className="h-3.5 w-3.5" />
+  2419→            <span className="hidden sm:inline">Journal</span>
+  2420→          </TabsTrigger>
+  2421→          <TabsTrigger value="affirm" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2422→            <Quote className="h-3.5 w-3.5" />
+  2423→            <span className="hidden sm:inline">Affirm</span>
+  2424→          </TabsTrigger>
+  2425→          <TabsTrigger value="support" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2426→            <LifeBuoy className="h-3.5 w-3.5" />
+  2427→            <span className="hidden sm:inline">Support</span>
+  2428→          </TabsTrigger>
+  2429→          <TabsTrigger value="stats" className="gap-1.5 data-[state=active]:bg-gradient-to-r data-[state=active]:from-violet-600 data-[state=active]:to-purple-600 data-[state=active]:text-white">
+  2430→            <Award className="h-3.5 w-3.5" />
+  2431→            <span className="hidden sm:inline">Stats</span>
+  2432→          </TabsTrigger>
+  2433→        </TabsList>
+  2434→
+  2435→        <TabsContent value="meditate" className="space-y-6 mt-4">
+  2436→          <MoodCheckIn />
+  2437→          <MeditationLibrary />
+  2438→        </TabsContent>
+  2439→
+  2440→        <TabsContent value="breathe" className="space-y-6 mt-4">
+  2441→          <BreathingExercise />
+  2442→        </TabsContent>
+  2443→
+  2444→        <TabsContent value="journal" className="space-y-6 mt-4">
+  2445→          <MoodJournal />
+  2446→        </TabsContent>
+  2447→
+  2448→        <TabsContent value="affirm" className="space-y-6 mt-4">
+  2449→          <AffirmationsWall />
+  2450→        </TabsContent>
+  2451→
+  2452→        <TabsContent value="support" className="space-y-6 mt-4">
+  2453→          <TherapySupport />
+  2454→        </TabsContent>
+  2455→
+  2456→        <TabsContent value="stats" className="space-y-6 mt-4">
+  2457→          <WellnessStats />
+  2458→        </TabsContent>
+  2459→      </Tabs>
+  2460→    </div>
+  2461→  )
+  2462→}
+  2463→

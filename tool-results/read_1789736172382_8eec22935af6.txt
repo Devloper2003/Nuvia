@@ -1,0 +1,960 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→@custom-variant dark (&:is(.dark *));
+     5→
+     6→/* Prevent horizontal scroll document-wide. Placed OUTSIDE @layer base so it
+     7→   has higher priority than Tailwind preflight/resets. Third-party widgets
+     8→   (Google Identity Services iframe) and decorative orbs can extend beyond
+     9→   the viewport; this guarantees no horizontal swipe/scroll on any screen. */
+    10→html,
+    11→body {
+    12→  overflow-x: hidden;
+    13→  max-width: 100vw;
+    14→}
+    15→
+    16→/* ─── Cross-device friendliness layer (Android & iOS) ─────────────────────
+    17→   Kills the grey tap flash on Android, prevents iOS font inflation when the
+    18→   device rotates, and stops rubber-band chaining inside nested scrollers. */
+    19→html {
+    20→  -webkit-text-size-adjust: 100%;
+    21→  text-size-adjust: 100%;
+    22→  -webkit-tap-highlight-color: transparent;
+    23→}
+    24→body {
+    25→  overscroll-behavior-y: contain;
+    26→}
+    27→/* Legacy iOS momentum scrolling inside app-level scroll containers */
+    28→.chandracycle-scroll,
+    29→[class*="overflow-y-"] {
+    30→  -webkit-overflow-scrolling: touch;
+    31→}
+    32→/* iOS Safari zooms any focused input smaller than 16px — keep form fields
+    33→   at 16px on touch/coarse devices so tapping a field never zoom-jumps. */
+    34→@media (pointer: coarse) {
+    35→  input,
+    36→  textarea,
+    37→  select {
+    38→    font-size: 16px !important;
+    39→  }
+    40→}
+    41→/* Minimum comfortable touch target helper (44×44 Apple HIG / 48dp Material).
+    42→   Applied via .tap-target where dense controls exist. */
+    43→.tap-target {
+    44→  min-height: 44px;
+    45→  min-width: 44px;
+    46→}
+    47→@media (pointer: coarse) {
+    48→  .tap-target {
+    49→    min-height: 48px;
+    50→    min-width: 48px;
+    51→  }
+    52→}
+    53→
+    54→@theme inline {
+    55→  --color-background: var(--background);
+    56→  --color-foreground: var(--foreground);
+    57→  --font-sans: var(--font-geist-sans);
+    58→  --font-mono: var(--font-geist-mono);
+    59→  --font-serif: var(--font-playfair);
+    60→  --color-sidebar-ring: var(--sidebar-ring);
+    61→  --color-sidebar-border: var(--sidebar-border);
+    62→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    63→  --color-sidebar-accent: var(--sidebar-accent);
+    64→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    65→  --color-sidebar-primary: var(--sidebar-primary);
+    66→  --color-sidebar-foreground: var(--sidebar-foreground);
+    67→  --color-sidebar: var(--sidebar);
+    68→  --color-chart-5: var(--chart-5);
+    69→  --color-chart-4: var(--chart-4);
+    70→  --color-chart-3: var(--chart-3);
+    71→  --color-chart-2: var(--chart-2);
+    72→  --color-chart-1: var(--chart-1);
+    73→  --color-ring: var(--ring);
+    74→  --color-input: var(--input);
+    75→  --color-border: var(--border);
+    76→  --color-destructive: var(--destructive);
+    77→  --color-accent-foreground: var(--accent-foreground);
+    78→  --color-accent: var(--accent);
+    79→  --color-muted-foreground: var(--muted-foreground);
+    80→  --color-muted: var(--muted);
+    81→  --color-secondary-foreground: var(--secondary-foreground);
+    82→  --color-secondary: var(--secondary);
+    83→  --color-primary-foreground: var(--primary-foreground);
+    84→  --color-primary: var(--primary);
+    85→  --color-popover-foreground: var(--popover-foreground);
+    86→  --color-popover: var(--popover);
+    87→  --color-card-foreground: var(--card-foreground);
+    88→  --color-card: var(--card);
+    89→  --radius-sm: calc(var(--radius) - 4px);
+    90→  --radius-md: calc(var(--radius) - 2px);
+    91→  --radius-lg: var(--radius);
+    92→  --radius-xl: calc(var(--radius) + 4px);
+    93→  --color-rose: var(--rose);
+    94→  --color-rose-foreground: var(--rose-foreground);
+    95→  --color-rose-light: var(--rose-light);
+    96→  --color-rose-dark: var(--rose-dark);
+    97→  --color-wellness: var(--wellness);
+    98→  --color-wellness-foreground: var(--wellness-foreground);
+    99→  --color-fertility: var(--fertility);
+   100→  --color-fertility-foreground: var(--fertility-foreground);
+   101→  --color-pregnancy: var(--pregnancy);
+   102→  --color-pregnancy-foreground: var(--pregnancy-foreground);
+   103→  --color-menopause: var(--menopause);
+   104→  --color-menopause-foreground: var(--menopause-foreground);
+   105→  --color-medical: var(--medical);
+   106→  --color-medical-foreground: var(--medical-foreground);
+   107→  --color-medical-soft: var(--medical-soft);
+   108→  --color-peach: var(--peach);
+   109→  --color-peach-soft: var(--peach-soft);
+   110→  --color-blush: var(--blush);
+   111→  --color-lilac: var(--lilac);
+   112→  --color-plum: var(--plum);
+   113→  --color-plum-soft: var(--plum-soft);
+   114→  --color-gold: var(--gold);
+   115→  --color-gold-soft: var(--gold-soft);
+   116→}
+   117→
+   118→:root {
+   119→  /* ── Nuvia “Plum & Gold” theme (Nuvia brand-kit reference) ──
+   120→     Blush-cream canvas · deep plum primary (#4B1D3F→#6E366F family)
+   121→     · antique gold (#D4AF37) ornaments · rose highlights.
+   122→     Larger radius = the pillowy card language from the brand kit. */
+   123→  --radius: 1rem;
+   124→  --background: oklch(0.978 0.014 350);
+   125→  --foreground: oklch(0.21 0.03 345);
+   126→  --card: oklch(0.998 0.004 350);
+   127→  --card-foreground: oklch(0.21 0.03 345);
+   128→  --popover: oklch(0.998 0.004 350);
+   129→  --popover-foreground: oklch(0.21 0.03 345);
+   130→  /* Deep plum-rose primary (brand #6E366F/#8E4463 band) — white text ≥5:1 */
+   131→  --primary: oklch(0.47 0.135 352);
+   132→  --primary-foreground: oklch(0.99 0.005 355);
+   133→  --secondary: oklch(0.945 0.04 350);
+   134→  --secondary-foreground: oklch(0.38 0.1 350);
+   135→  --muted: oklch(0.955 0.02 350);
+   136→  --muted-foreground: oklch(0.52 0.05 345);
+   137→  --accent: oklch(0.94 0.05 355);
+   138→  --accent-foreground: oklch(0.38 0.1 350);
+   139→  --destructive: oklch(0.577 0.245 27.325);
+   140→  --border: oklch(0.93 0.035 350);
+   141→  --input: oklch(0.93 0.035 350);
+   142→  --ring: oklch(0.47 0.135 352);
+   143→  --chart-1: oklch(0.55 0.2 352);
+   144→  --chart-2: oklch(0.78 0.13 85);
+   145→  --chart-3: oklch(0.68 0.15 300);
+   146→  --chart-4: oklch(0.62 0.12 200);
+   147→  --chart-5: oklch(0.72 0.16 5);
+   148→  --sidebar: oklch(0.972 0.024 350);
+   149→  --sidebar-foreground: oklch(0.21 0.03 345);
+   150→  --sidebar-primary: oklch(0.47 0.135 352);
+   151→  --sidebar-primary-foreground: oklch(0.99 0.005 355);
+   152→  --sidebar-accent: oklch(0.94 0.05 355);
+   153→  --sidebar-accent-foreground: oklch(0.38 0.1 350);
+   154→  --sidebar-border: oklch(0.93 0.035 350);
+   155→  --sidebar-ring: oklch(0.47 0.135 352);
+   156→
+   157→  /* Reference palette: teal medical (doctor pages), peach & blush & lilac surfaces */
+   158→  --medical: oklch(0.52 0.1 205);
+   159→  --medical-foreground: oklch(0.985 0.01 205);
+   160→  --medical-soft: oklch(0.94 0.035 205);
+   161→  --peach: oklch(0.78 0.12 50);
+   162→  --peach-soft: oklch(0.95 0.045 50);
+   163→  --blush: oklch(0.94 0.05 355);
+   164→  --lilac: oklch(0.9 0.06 300);
+   165→
+   166→  /* Nuvia brand kit: deep plum + antique gold (light) */
+   167→  --plum: oklch(0.28 0.055 335);
+   168→  --plum-soft: oklch(0.42 0.075 335);
+   169→  --gold: oklch(0.72 0.115 85);
+   170→  --gold-soft: oklch(0.94 0.06 90);
+   171→
+   172→  --rose: oklch(0.62 0.22 355);
+   173→  --rose-foreground: oklch(0.99 0.005 355);
+   174→  --rose-light: oklch(0.92 0.06 355);
+   175→  --rose-dark: oklch(0.45 0.17 350);
+   176→  --wellness: oklch(0.6 0.15 160);
+   177→  --wellness-foreground: oklch(0.98 0.005 160);
+   178→  --fertility: oklch(0.68 0.17 35);
+   179→  --fertility-foreground: oklch(0.98 0.005 35);
+   180→  --pregnancy: oklch(0.62 0.15 300);
+   181→  --pregnancy-foreground: oklch(0.98 0.005 300);
+   182→  --menopause: oklch(0.55 0.12 20);
+   183→  --menopause-foreground: oklch(0.98 0.005 20);
+   184→
+   185→  /* Premium palette tokens — used by glow / gradient utilities */
+   186→  --premium-rose: oklch(0.64 0.22 355);
+   187→  --premium-pink: oklch(0.68 0.21 5);
+   188→  --premium-fuchsia: oklch(0.6 0.24 330);
+   189→  --premium-amber: oklch(0.78 0.16 70);
+   190→  --premium-violet: oklch(0.6 0.19 305);
+   191→}
+   192→
+   193→.dark {
+   194→  /* Night “Moonlit Rose” — warm dark plum instead of cold neutral */
+   195→  --background: oklch(0.14 0.02 345);
+   196→  --foreground: oklch(0.96 0.01 350);
+   197→  --card: oklch(0.19 0.028 348);
+   198→  --card-foreground: oklch(0.96 0.01 350);
+   199→  --popover: oklch(0.19 0.028 348);
+   200→  --popover-foreground: oklch(0.96 0.01 350);
+   201→  --primary: oklch(0.76 0.14 352);
+   202→  --primary-foreground: oklch(0.16 0.04 350);
+   203→  --secondary: oklch(0.26 0.04 348);
+   204→  --secondary-foreground: oklch(0.92 0.02 350);
+   205→  --muted: oklch(0.26 0.035 348);
+   206→  --muted-foreground: oklch(0.68 0.04 348);
+   207→  --accent: oklch(0.3 0.05 350);
+   208→  --accent-foreground: oklch(0.92 0.02 350);
+   209→  --destructive: oklch(0.704 0.191 22.216);
+   210→  --border: oklch(1 0 0 / 10%);
+   211→  --input: oklch(1 0 0 / 15%);
+   212→  --ring: oklch(0.76 0.14 352);
+   213→  --chart-1: oklch(0.7 0.18 350);
+   214→  --chart-2: oklch(0.8 0.13 85);
+   215→  --chart-3: oklch(0.65 0.14 160);
+   216→  --chart-4: oklch(0.7 0.14 280);
+   217→  --chart-5: oklch(0.75 0.12 60);
+   218→  --sidebar: oklch(0.17 0.026 346);
+   219→  --sidebar-foreground: oklch(0.96 0.01 350);
+   220→  --sidebar-primary: oklch(0.76 0.14 352);
+   221→  --sidebar-primary-foreground: oklch(0.16 0.04 350);
+   222→  --sidebar-accent: oklch(0.3 0.05 350);
+   223→  --sidebar-accent-foreground: oklch(0.92 0.02 350);
+   224→  --sidebar-border: oklch(1 0 0 / 10%);
+   225→  --sidebar-ring: oklch(0.76 0.14 352);
+   226→
+   227→  /* Dark-mode reference palette */
+   228→  --medical: oklch(0.68 0.1 205);
+   229→  --medical-foreground: oklch(0.14 0.03 205);
+   230→  --medical-soft: oklch(0.28 0.05 205);
+   231→  --peach: oklch(0.8 0.12 50);
+   232→  --peach-soft: oklch(0.3 0.05 50);
+   233→  --blush: oklch(0.3 0.05 350);
+   234→  --lilac: oklch(0.32 0.06 300);
+   235→
+   236→  /* Nuvia brand kit: plum + gold (dark) — gilded against the night plum */
+   237→  --plum: oklch(0.86 0.05 340);
+   238→  --plum-soft: oklch(0.32 0.06 335);
+   239→  --gold: oklch(0.82 0.13 88);
+   240→  --gold-soft: oklch(0.32 0.05 85);
+   241→
+   242→  --rose: oklch(0.72 0.18 355);
+   243→  --rose-foreground: oklch(0.16 0.04 350);
+   244→  --rose-light: oklch(0.3 0.06 352);
+   245→  --rose-dark: oklch(0.55 0.18 350);
+   246→  --wellness: oklch(0.65 0.14 160);
+   247→  --wellness-foreground: oklch(0.15 0.03 160);
+   248→  --fertility: oklch(0.75 0.16 35);
+   249→  --fertility-foreground: oklch(0.15 0.03 35);
+   250→  --pregnancy: oklch(0.7 0.14 300);
+   251→  --pregnancy-foreground: oklch(0.15 0.03 300);
+   252→  --menopause: oklch(0.65 0.12 20);
+   253→  --menopause-foreground: oklch(0.15 0.03 20);
+   254→
+   255→  --premium-rose: oklch(0.72 0.2 350);
+   256→  --premium-pink: oklch(0.74 0.19 5);
+   257→  --premium-fuchsia: oklch(0.7 0.22 330);
+   258→  --premium-amber: oklch(0.82 0.15 70);
+   259→  --premium-violet: oklch(0.72 0.17 305);
+   260→}
+   261→
+   262→@layer base {
+   263→  * {
+   264→    @apply border-border outline-ring/50;
+   265→  }
+   266→  body {
+   267→    @apply bg-background text-foreground;
+   268→    position: relative;
+   269→    min-height: 100dvh;
+   270→    /* “Blush Petal” mesh — rose halo top-left, peach glow top-right,
+   271→       lilac wash bottom (matches the reference app canvases). */
+   272→    background-image:
+   273→      radial-gradient(62rem 62rem at 6% -12%, oklch(0.93 0.06 355 / 0.75), transparent 58%),
+   274→      radial-gradient(52rem 52rem at 112% 8%, oklch(0.94 0.06 55 / 0.6), transparent 58%),
+   275→      radial-gradient(56rem 56rem at 50% 122%, oklch(0.91 0.06 305 / 0.42), transparent 62%);
+   276→    background-attachment: fixed;
+   277→    background-repeat: no-repeat;
+   278→  }
+   279→  .dark body {
+   280→    background-image:
+   281→      radial-gradient(62rem 62rem at 6% -12%, oklch(0.5 0.16 350 / 0.26), transparent 58%),
+   282→      radial-gradient(52rem 52rem at 112% 8%, oklch(0.54 0.13 55 / 0.18), transparent 58%),
+   283→      radial-gradient(56rem 56rem at 50% 122%, oklch(0.47 0.16 305 / 0.2), transparent 62%);
+   284→  }
+   285→}
+   286→
+   287→/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+   288→::-webkit-scrollbar {
+   289→  width: 6px;
+   290→  height: 6px;
+   291→}
+   292→
+   293→::-webkit-scrollbar-track {
+   294→  background: transparent;
+   295→}
+   296→
+   297→::-webkit-scrollbar-thumb {
+   298→  background: oklch(0.7 0.05 325);
+   299→  border-radius: 3px;
+   300→}
+   301→
+   302→::-webkit-scrollbar-thumb:hover {
+   303→  background: oklch(0.6 0.08 325);
+   304→}
+   305→
+   306→/* ─── Glass morphism utilities ────────────────────────────────────────────── */
+   307→.glass {
+   308→  background: oklch(1 0 0 / 70%);
+   309→  backdrop-filter: blur(12px);
+   310→  -webkit-backdrop-filter: blur(12px);
+   311→  border: 1px solid oklch(1 0 0 / 20%);
+   312→  /* Subtle inner border highlight + faint top-edge light reflection */
+   313→  box-shadow:
+   314→    inset 0 1px 0 oklch(1 0 0 / 35%),
+   315→    inset 0 0 0 1px oklch(1 0 0 / 5%);
+   316→}
+   317→
+   318→.dark .glass {
+   319→  background: oklch(0.2 0.02 325 / 70%);
+   320→  border: 1px solid oklch(1 0 0 / 8%);
+   321→  box-shadow:
+   322→    inset 0 1px 0 oklch(1 0 0 / 10%),
+   323→    inset 0 0 0 1px oklch(1 0 0 / 3%);
+   324→}
+   325→
+   326→/* Premium glass — stronger blur, layered highlights, used on hero cards */
+   327→.glass-premium {
+   328→  background: linear-gradient(
+   329→    135deg,
+   330→    oklch(1 0 0 / 78%) 0%,
+   331→    oklch(0.99 0.01 350 / 68%) 100%
+   332→  );
+   333→  backdrop-filter: blur(22px) saturate(140%);
+   334→  -webkit-backdrop-filter: blur(22px) saturate(140%);
+   335→  border: 1px solid oklch(1 0 0 / 40%);
+   336→  box-shadow:
+   337→    inset 0 1px 0 oklch(1 0 0 / 60%),
+   338→    inset 0 0 0 1px oklch(1 0 0 / 8%),
+   339→    0 18px 50px -18px oklch(0.55 0.2 350 / 18%),
+   340→    0 8px 24px -12px oklch(0.4 0.05 325 / 20%);
+   341→}
+   342→
+   343→.dark .glass-premium {
+   344→  background: linear-gradient(
+   345→    135deg,
+   346→    oklch(0.22 0.025 325 / 82%) 0%,
+   347→    oklch(0.18 0.03 350 / 72%) 100%
+   348→  );
+   349→  border: 1px solid oklch(1 0 0 / 14%);
+   350→  box-shadow:
+   351→    inset 0 1px 0 oklch(1 0 0 / 14%),
+   352→    inset 0 0 0 1px oklch(1 0 0 / 4%),
+   353→    0 18px 50px -18px oklch(0.7 0.18 350 / 22%),
+   354→    0 8px 24px -12px oklch(0 0 0 / 50%);
+   355→}
+   356→
+   357→/* ─── Gradient text utilities ─────────────────────────────────────────────── */
+   358→.gradient-text {
+   359→  background: linear-gradient(
+   360→    135deg,
+   361→    oklch(0.55 0.2 350) 0%,
+   362→    oklch(0.62 0.22 5) 45%,
+   363→    oklch(0.6 0.24 330) 75%,
+   364→    oklch(0.65 0.18 30) 100%
+   365→  );
+   366→  -webkit-background-clip: text;
+   367→  -webkit-text-fill-color: transparent;
+   368→  background-clip: text;
+   369→}
+   370→
+   371→/* Animated shimmer gradient text — premium accent for hero headings */
+   372→.gradient-text-shimmer {
+   373→  background: linear-gradient(
+   374→    100deg,
+   375→    oklch(0.55 0.2 350) 0%,
+   376→    oklch(0.62 0.22 5) 30%,
+   377→    oklch(0.6 0.24 330) 50%,
+   378→    oklch(0.7 0.18 60) 65%,
+   379→    oklch(0.55 0.2 350) 100%
+   380→  );
+   381→  background-size: 220% 100%;
+   382→  -webkit-background-clip: text;
+   383→  -webkit-text-fill-color: transparent;
+   384→  background-clip: text;
+   385→  animation: gradient-shift 6s ease-in-out infinite;
+   386→}
+   387→
+   388→/* ─── Glow utilities (soft colored box-shadow) ────────────────────────────── */
+   389→.glow-rose {
+   390→  box-shadow: 0 10px 36px -10px oklch(0.55 0.2 350 / 55%);
+   391→}
+   392→.glow-amber {
+   393→  box-shadow: 0 10px 36px -10px oklch(0.78 0.16 60 / 55%);
+   394→}
+   395→.glow-fuchsia {
+   396→  box-shadow: 0 10px 36px -10px oklch(0.6 0.24 330 / 55%);
+   397→}
+   398→.glow-violet {
+   399→  box-shadow: 0 10px 36px -10px oklch(0.6 0.19 305 / 55%);
+   400→}
+   401→
+   402→/* Hover glow (applies glow on hover; combine with element to add lift) */
+   403→.glow-rose-hover {
+   404→  transition: box-shadow 0.3s ease, transform 0.3s ease;
+   405→}
+   406→.glow-rose-hover:hover {
+   407→  box-shadow: 0 18px 48px -12px oklch(0.55 0.2 350 / 65%);
+   408→}
+   409→
+   410→/* ─── Premium button ──────────────────────────────────────────────────────── */
+   411→.btn-premium {
+   412→  position: relative;
+   413→  background: linear-gradient(135deg, oklch(0.58 0.21 350) 0%, oklch(0.6 0.23 330) 55%, oklch(0.62 0.2 5) 100%);
+   414→  color: oklch(0.99 0.005 350);
+   415→  border: 1px solid oklch(1 0 0 / 18%);
+   416→  box-shadow:
+   417→    inset 0 1px 0 oklch(1 0 0 / 38%),
+   418→    inset 0 -1px 0 oklch(0 0 0 / 12%),
+   419→    0 10px 30px -10px oklch(0.55 0.2 350 / 50%);
+   420→  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, filter 0.25s ease;
+   421→}
+   422→.btn-premium:hover {
+   423→  transform: translateY(-1px) scale(1.012);
+   424→  box-shadow:
+   425→    inset 0 1px 0 oklch(1 0 0 / 45%),
+   426→    inset 0 -1px 0 oklch(0 0 0 / 12%),
+   427→    0 18px 44px -12px oklch(0.55 0.2 350 / 70%),
+   428→    0 6px 18px -8px oklch(0.6 0.24 330 / 55%);
+   429→  filter: saturate(1.08) brightness(1.03);
+   430→}
+   431→.btn-premium:active {
+   432→  transform: translateY(0) scale(0.995);
+   433→}
+   434→.btn-premium:disabled {
+   435→  opacity: 0.7;
+   436→  cursor: not-allowed;
+   437→  transform: none;
+   438→  filter: saturate(0.7) brightness(0.95);
+   439→}
+   440→.btn-premium::after {
+   441→  content: "";
+   442→  position: absolute;
+   443→  inset: 0;
+   444→  border-radius: inherit;
+   445→  pointer-events: none;
+   446→  background: linear-gradient(180deg, oklch(1 0 0 / 18%) 0%, transparent 35%);
+   447→}
+   448→
+   449→/* ─── Premium card (gradient border + glass + layered shadow) ──────────────── */
+   450→.card-premium {
+   451→  position: relative;
+   452→  background: linear-gradient(180deg, oklch(1 0 0 / 92%) 0%, oklch(0.99 0.01 350 / 88%) 100%);
+   453→  border-radius: var(--radius-xl);
+   454→  box-shadow:
+   455→    inset 0 1px 0 oklch(1 0 0 / 70%),
+   456→    0 1px 0 oklch(1 0 0 / 30%),
+   457→    0 24px 60px -28px oklch(0.5 0.2 350 / 28%),
+   458→    0 8px 24px -16px oklch(0.4 0.05 325 / 22%);
+   459→}
+   460→.card-premium::before {
+   461→  content: "";
+   462→  position: absolute;
+   463→  inset: 0;
+   464→  border-radius: inherit;
+   465→  padding: 1px;
+   466→  background: linear-gradient(135deg, oklch(0.85 0.12 350 / 70%), oklch(0.88 0.1 60 / 55%) 50%, oklch(0.8 0.12 330 / 70%));
+   467→  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+   468→  -webkit-mask-composite: xor;
+   469→          mask-composite: exclude;
+   470→  pointer-events: none;
+   471→}
+   472→.dark .card-premium {
+   473→  background: linear-gradient(180deg, oklch(0.21 0.025 325 / 90%) 0%, oklch(0.17 0.03 350 / 85%) 100%);
+   474→  box-shadow:
+   475→    inset 0 1px 0 oklch(1 0 0 / 14%),
+   476→    0 24px 60px -28px oklch(0 0 0 / 55%),
+   477→    0 8px 24px -16px oklch(0 0 0 / 40%);
+   478→}
+   479→.dark .card-premium::before {
+   480→  background: linear-gradient(135deg, oklch(0.7 0.18 350 / 55%), oklch(0.78 0.14 60 / 40%) 50%, oklch(0.65 0.18 330 / 55%));
+   481→}
+   482→
+   483→/* ─── Animated gradient background utility ─────────────────────────────────── */
+   484→.bg-animated-gradient {
+   485→  background: linear-gradient(
+   486→    125deg,
+   487→    oklch(0.62 0.22 350) 0%,
+   488→    oklch(0.65 0.21 5) 25%,
+   489→    oklch(0.6 0.24 330) 50%,
+   490→    oklch(0.58 0.19 305) 72%,
+   491→    oklch(0.7 0.18 60) 100%
+   492→  );
+   493→  background-size: 280% 280%;
+   494→  animation: gradient-shift 14s ease-in-out infinite;
+   495→  will-change: background-position;
+   496→}
+   497→
+   498→@keyframes gradient-shift {
+   499→  0% { background-position: 0% 50%; }
+   500→  50% { background-position: 100% 50%; }
+   501→  100% { background-position: 0% 50%; }
+   502→}
+   503→
+   504→/* ─── Shimmer animation (loading / premium accents) ───────────────────────── */
+   505→@keyframes shimmer {
+   506→  0% { transform: translateX(-100%); }
+   507→  100% { transform: translateX(100%); }
+   508→}
+   509→.shimmer {
+   510→  position: relative;
+   511→  overflow: hidden;
+   512→}
+   513→.shimmer::after {
+   514→  content: "";
+   515→  position: absolute;
+   516→  inset: 0;
+   517→  background: linear-gradient(
+   518→    90deg,
+   519→    transparent 0%,
+   520→    oklch(1 0 0 / 45%) 50%,
+   521→    transparent 100%
+   522→  );
+   523→  transform: translateX(-100%);
+   524→  animation: shimmer 2.4s ease-in-out infinite;
+   525→  pointer-events: none;
+   526→}
+   527→
+   528→/* ─── Cycle wheel / soft animations ───────────────────────────────────────── */
+   529→@keyframes pulse-soft {
+   530→  0%, 100% { opacity: 1; }
+   531→  50% { opacity: 0.7; }
+   532→}
+   533→
+   534→.animate-pulse-soft {
+   535→  animation: pulse-soft 3s ease-in-out infinite;
+   536→}
+   537→
+   538→@keyframes float {
+   539→  0%, 100% { transform: translateY(0px); }
+   540→  50% { transform: translateY(-6px); }
+   541→}
+   542→
+   543→.animate-float {
+   544→  animation: float 4s ease-in-out infinite;
+   545→}
+   546→
+   547→/* Slow drift for premium orbs (used by auth hero) */
+   548→@keyframes drift-slow {
+   549→  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+   550→  33% { transform: translate3d(3%, -4%, 0) scale(1.06); }
+   551→  66% { transform: translate3d(-2%, 3%, 0) scale(0.97); }
+   552→}
+   553→.animate-drift-slow {
+   554→  animation: drift-slow 18s ease-in-out infinite;
+   555→}
+   556→
+   557→/* ─── Nuvia brand animations (logo mark + wordmark + tagline) ─────────────── */
+   558→/* Gentle levitation with a whisper of tilt — the mark feels alive, not bouncy */
+   559→@keyframes brand-float-soft {
+   560→  0%, 100% { transform: translateY(0) rotate(0deg); }
+   561→  50% { transform: translateY(-3px) rotate(-1.4deg); }
+   562→}
+   563→.animate-brand-float {
+   564→  animation: brand-float-soft 5s ease-in-out infinite;
+   565→}
+   566→
+   567→/* Breathing glow halo behind the mark tile */
+   568→@keyframes brand-halo {
+   569→  0%, 100% { opacity: 0.4; transform: scale(0.96); }
+   570→  50% { opacity: 0.9; transform: scale(1.1); }
+   571→}
+   572→.animate-brand-halo {
+   573→  animation: brand-halo 3.8s ease-in-out infinite;
+   574→}
+   575→
+   576→/* Diagonal light sweep across the mark tile (glass reflection) */
+   577→@keyframes brand-sheen {
+   578→  0% { transform: translateX(-160%) skewX(-18deg); }
+   579→  55%, 100% { transform: translateX(260%) skewX(-18deg); }
+   580→}
+   581→.animate-brand-sheen {
+   582→  animation: brand-sheen 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+   583→}
+   584→
+   585→/* Pulsing separator dots in the tagline (stagger via inline animation-delay) */
+   586→@keyframes brand-dot {
+   587→  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+   588→  50% { opacity: 1; transform: scale(1.3); }
+   589→}
+   590→.brand-dot {
+   591→  animation: brand-dot 2.4s ease-in-out infinite;
+   592→}
+   593→
+   594→/* Slow spin for the decorative ring around hero-sized marks */
+   595→@keyframes brand-spin {
+   596→  to { transform: rotate(360deg); }
+   597→}
+   598→.animate-brand-spin {
+   599→  animation: brand-spin 14s linear infinite;
+   600→}
+   601→
+   602→/* Nuvia wordmark — deep plum → rose round-trip shimmer (matches logo) */
+   603→.brand-wordmark {
+   604→  background: linear-gradient(
+   605→    100deg,
+   606→    oklch(0.36 0.1 345) 0%,
+   607→    oklch(0.5 0.18 355) 38%,
+   608→    oklch(0.6 0.2 8) 62%,
+   609→    oklch(0.45 0.15 335) 85%,
+   610→    oklch(0.36 0.1 345) 100%
+   611→  );
+   612→  background-size: 220% 100%;
+   613→  -webkit-background-clip: text;
+   614→  background-clip: text;
+   615→  -webkit-text-fill-color: transparent;
+   616→  color: transparent;
+   617→  animation: gradient-shift 6s ease-in-out infinite;
+   618→}
+   619→.dark .brand-wordmark {
+   620→  background: linear-gradient(
+   621→    100deg,
+   622→    oklch(0.8 0.09 345) 0%,
+   623→    oklch(0.86 0.11 355) 38%,
+   624→    oklch(0.88 0.09 12) 62%,
+   625→    oklch(0.82 0.1 330) 85%,
+   626→    oklch(0.8 0.09 345) 100%
+   627→  );
+   628→  background-size: 220% 100%;
+   629→  -webkit-background-clip: text;
+   630→  background-clip: text;
+   631→}
+   632→
+   633→/* ─── Premium focus ring (rose gradient, accessible) ──────────────────────── */
+   634→*:focus-visible {
+   635→  outline: 2px solid oklch(0.55 0.2 350);
+   636→  outline-offset: 2px;
+   637→  border-radius: 4px;
+   638→}
+   639→/* Premium gradient ring for interactive controls */
+   640→input:focus-visible,
+   641→textarea:focus-visible,
+   642→select:focus-visible,
+   643→button:focus-visible,
+   644→a:focus-visible,
+   645→[role="button"]:focus-visible {
+   646→  outline: 2px solid transparent;
+   647→  outline-offset: 2px;
+   648→  box-shadow:
+   649→    0 0 0 2px var(--background, oklch(0.985 0.002 325)),
+   650→    0 0 0 4px oklch(0.47 0.135 352 / 75%),
+   651→    0 0 0 5px oklch(0.72 0.115 85 / 40%);
+   652→}
+   653→
+   654→/* ─── Luxury custom scrollbar (chandracycle-scroll) ───────────────────────── */
+   655→.chandracycle-scroll {
+   656→  scrollbar-width: thin;
+   657→  scrollbar-color: oklch(0.7 0.15 30) transparent;
+   658→}
+   659→.chandracycle-scroll::-webkit-scrollbar {
+   660→  width: 6px;
+   661→  height: 6px;
+   662→}
+   663→.chandracycle-scroll::-webkit-scrollbar-track {
+   664→  background: transparent;
+   665→}
+   666→.chandracycle-scroll::-webkit-scrollbar-thumb {
+   667→  background: linear-gradient(to bottom, oklch(0.78 0.16 60), oklch(0.68 0.21 5), oklch(0.6 0.22 350));
+   668→  border-radius: 999px;
+   669→  border: 1px solid oklch(1 0 0 / 12%);
+   670→}
+   671→.chandracycle-scroll::-webkit-scrollbar-thumb:hover {
+   672→  background: linear-gradient(to bottom, oklch(0.7 0.17 60), oklch(0.6 0.2 5), oklch(0.5 0.2 350));
+   673→}
+   674→
+   675→/* ─── Premium serif font (Playfair Display via next/font) ──────────────────── */
+   676→.font-serif {
+   677→  font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+   678→  font-feature-settings: "liga" 1, "calt" 1;
+   679→  letter-spacing: -0.01em;
+   680→}
+   681→
+   682→/* ─── Scoped smooth transitions on interactive elements only ──────────────── */
+   683→/* (Avoid applying transitions to all elements — that hurts perf.) */
+   684→a, button, input, textarea, select,
+   685→[role="button"], [role="tab"],
+   686→summary, label {
+   687→  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+   688→}
+   689→
+   690→/* Respect reduced-motion preferences */
+   691→@media (prefers-reduced-motion: reduce) {
+   692→  .animate-float,
+   693→  .animate-pulse-soft,
+   694→  .animate-drift-slow,
+   695→  .animate-brand-float,
+   696→  .animate-brand-halo,
+   697→  .animate-brand-sheen,
+   698→  .animate-brand-spin,
+   699→  .brand-dot,
+   700→  .brand-wordmark,
+   701→  .bg-animated-gradient,
+   702→  .gradient-text-shimmer,
+   703→  .shimmer::after {
+   704→    animation: none !important;
+   705→  }
+   706→}
+   707→
+   708→/* ─── Soft elevation cards (reference-style tinted surfaces) ───────────────── */
+   709→/* Pillowy rose card: for hero/summary panels sitting on the blush canvas.   */
+   710→.card-blush {
+   711→  background: linear-gradient(165deg, oklch(0.99 0.008 350 / 88%) 0%, oklch(0.965 0.03 352 / 92%) 100%);
+   712→  border-radius: calc(var(--radius) + 0.5rem);
+   713→  border: 1px solid oklch(0.92 0.05 352 / 70%);
+   714→  box-shadow:
+   715→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   716→    0 20px 50px -24px oklch(0.62 0.2 355 / 30%),
+   717→    0 6px 18px -10px oklch(0.5 0.08 345 / 14%);
+   718→}
+   719→.dark .card-blush {
+   720→  background: linear-gradient(165deg, oklch(0.22 0.034 348 / 92%) 0%, oklch(0.19 0.03 350 / 88%) 100%);
+   721→  border: 1px solid oklch(1 0 0 / 10%);
+   722→  box-shadow:
+   723→    inset 0 1px 0 oklch(1 0 0 / 12%),
+   724→    0 20px 50px -24px oklch(0.1 0.02 350 / 60%);
+   725→}
+   726→
+   727→/* Peach sister card (warm accent panel — fertile days, nutrition, etc.) */
+   728→.card-peach {
+   729→  background: linear-gradient(165deg, oklch(0.99 0.012 60 / 88%) 0%, oklch(0.965 0.045 55 / 92%) 100%);
+   730→  border-radius: calc(var(--radius) + 0.5rem);
+   731→  border: 1px solid oklch(0.92 0.06 60 / 70%);
+   732→  box-shadow:
+   733→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   734→    0 20px 50px -24px oklch(0.72 0.14 55 / 32%),
+   735→    0 6px 18px -10px oklch(0.5 0.08 345 / 12%);
+   736→}
+   737→.dark .card-peach {
+   738→  background: linear-gradient(165deg, oklch(0.23 0.04 55 / 92%) 0%, oklch(0.19 0.035 52 / 88%) 100%);
+   739→  border: 1px solid oklch(1 0 0 / 10%);
+   740→}
+   741→
+   742→/* Teal medical card — doctor/clinical surfaces (reference #3) */
+   743→.card-medical {
+   744→  background: linear-gradient(165deg, oklch(0.99 0.008 200 / 88%) 0%, oklch(0.962 0.03 205 / 92%) 100%);
+   745→  border-radius: calc(var(--radius) + 0.5rem);
+   746→  border: 1px solid oklch(0.9 0.05 205 / 65%);
+   747→  box-shadow:
+   748→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   749→    0 20px 50px -24px oklch(0.52 0.1 205 / 30%),
+   750→    0 6px 18px -10px oklch(0.4 0.06 210 / 12%);
+   751→}
+   752→.dark .card-medical {
+   753→  background: linear-gradient(165deg, oklch(0.21 0.035 205 / 92%) 0%, oklch(0.18 0.03 205 / 88%) 100%);
+   754→  border: 1px solid oklch(1 0 0 / 10%);
+   755→}
+   756→
+   757→/* Soft tinted chip — pill-shaped phase/legend chips from the references.
+   758→   NOTE: solid (opaque) colors only — alpha-composited lab colors mis-render
+   759→   (hue flip) in some headless/Chromium builds when combined with element
+   760→   opacity (e.g. opacity-70 phase chips rendered cyan). Solid = safe. */
+   761→.chip-soft {
+   762→  border-radius: 999px;
+   763→  border: 1px solid #f6bcd2;
+   764→  background: #fce4ee;
+   765→  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+   766→}
+   767→.dark .chip-soft {
+   768→  border: 1px solid oklch(1 0 0 / 14%);
+   769→  background: oklch(0.3 0.05 350);
+   770→}
+   771→.chip-soft:hover {
+   772→  transform: translateY(-1px);
+   773→  box-shadow: 0 6px 16px -8px rgba(214, 51, 132, 0.45);
+   774→}
+   775→
+   776→/* ─── Nuvia “Plum & Gold” signature pieces (brand-kit reference) ──────────── */
+   777→
+   778→/* Deep-plum pill CTA — the “Get Started / Next →” button from the kit.
+   779→   Plum→rose gradient, gilded top highlight, soft plum shadow. */
+   780→.btn-plum {
+   781→  background: linear-gradient(
+   782→    135deg,
+   783→    oklch(0.42 0.09 335) 0%,
+   784→    oklch(0.47 0.135 352) 55%,
+   785→    oklch(0.52 0.16 350) 100%
+   786→  );
+   787→  color: oklch(0.99 0.005 355);
+   788→  border: 1px solid oklch(0.42 0.1 340 / 60%);
+   789→  box-shadow:
+   790→    inset 0 1px 0 oklch(1 0 0 / 22%),
+   791→    0 10px 26px -12px oklch(0.42 0.12 345 / 55%);
+   792→  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+   793→}
+   794→.btn-plum:hover {
+   795→  transform: translateY(-1px);
+   796→  filter: brightness(1.06);
+   797→  box-shadow:
+   798→    inset 0 1px 0 oklch(1 0 0 / 28%),
+   799→    0 14px 32px -12px oklch(0.42 0.12 345 / 65%);
+   800→}
+   801→.btn-plum:active {
+   802→  transform: translateY(0);
+   803→}
+   804→.dark .btn-plum {
+   805→  background: linear-gradient(
+   806→    135deg,
+   807→    oklch(0.34 0.07 335) 0%,
+   808→    oklch(0.4 0.1 345) 55%,
+   809→    oklch(0.45 0.12 350) 100%
+   810→  );
+   811→  border: 1px solid oklch(1 0 0 / 14%);
+   812→  color: oklch(0.97 0.01 350);
+   813→}
+   814→
+   815→/* Antique-gold hairline divider with a centre lotus bud — used under
+   816→   serif page titles (“A Healthier You Every Cycle” ornament in the kit). */
+   817→.gold-divider {
+   818→  display: inline-flex;
+   819→  align-items: center;
+   820→  gap: 0.625rem;
+   821→}
+   822→.gold-divider::before,
+   823→.gold-divider::after {
+   824→  content: "";
+   825→  height: 1px;
+   826→  width: 2.25rem;
+   827→  background: linear-gradient(
+   828→    to right,
+   829→    transparent,
+   830→    oklch(0.72 0.115 85 / 75%),
+   831→    transparent
+   832→  );
+   833→}
+   834→.gold-divider > span {
+   835→  color: oklch(0.72 0.115 85);
+   836→}
+   837→
+   838→/* Gilded shimmer text — premium/gold moments (“Selfcare…” card headings). */
+   839→.gold-shine {
+   840→  background: linear-gradient(
+   841→    100deg,
+   842→    oklch(0.62 0.1 85) 0%,
+   843→    oklch(0.82 0.14 90) 35%,
+   844→    oklch(0.72 0.125 85) 60%,
+   845→    oklch(0.55 0.08 80) 100%
+   846→  );
+   847→  background-size: 220% 100%;
+   848→  -webkit-background-clip: text;
+   849→  background-clip: text;
+   850→  -webkit-text-fill-color: transparent;
+   851→  color: transparent;
+   852→  animation: gradient-shift 6s ease-in-out infinite;
+   853→}
+   854→
+   855→/* Arch frame — the tall rounded arch from the splash/onboarding art.
+   856→   Wrap imagery inside a div.arch-frame (overflow-hidden). */
+   857→.arch-frame {
+   858→  border-radius: 999px 999px calc(var(--radius) + 0.75rem) calc(var(--radius) + 0.75rem);
+   859→  border: 1px solid oklch(0.72 0.115 85 / 45%);
+   860→  box-shadow:
+   861→    inset 0 1px 0 oklch(1 0 0 / 70%),
+   862→    0 24px 60px -28px oklch(0.45 0.14 345 / 35%);
+   863→}
+   864→.dark .arch-frame {
+   865→  border-color: oklch(0.82 0.13 88 / 30%);
+   866→  box-shadow:
+   867→    inset 0 1px 0 oklch(1 0 0 / 10%),
+   868→    0 24px 60px -28px oklch(0.1 0.02 345 / 70%);
+   869→}
+   870→
+   871→/* Deep plum showcase card — “Selfcare is a form of Selflove” panel:
+   872→   night-plum gradient, gilded heading, faint lotus watermark. */
+   873→.card-plum {
+   874→  position: relative;
+   875→  overflow: hidden;
+   876→  border-radius: calc(var(--radius) + 0.5rem);
+   877→  background:
+   878→    radial-gradient(120% 140% at 85% -10%, oklch(0.5 0.13 350 / 55%), transparent 55%),
+   879→    linear-gradient(160deg, oklch(0.3 0.07 332) 0%, oklch(0.24 0.06 335) 55%, oklch(0.2 0.05 338) 100%);
+   880→  border: 1px solid oklch(0.72 0.115 85 / 35%);
+   881→  color: oklch(0.97 0.01 350);
+   882→  box-shadow:
+   883→    inset 0 1px 0 oklch(1 0 0 / 12%),
+   884→    0 22px 50px -22px oklch(0.25 0.06 335 / 65%);
+   885→}
+   886→
+   887→/* Decorative lotus watermark (inline SVG data-URI), ~6% ink.
+   888→   Usage: <div aria-hidden class="lotus-watermark absolute inset-0" /> */
+   889→.lotus-watermark {
+   890→  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' fill='none'%3E%3Cpath d='M60 14c7 10 11 21 11 32 0 15-5 27-11 34-6-7-11-19-11-34 0-11 4-22 11-32z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M26 44c11 4 20 12 26 22 4 8 6 16 5 24-9-2-19-8-26-17-7-9-9-19-5-29z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M94 44c-11 4-20 12-26 22-4 8-6 16-5 24 9-2 19-8 26-17 7-9 9-19 5-29z' stroke='%23b06a93' stroke-width='1.6'/%3E%3Cpath d='M14 78c8 10 22 17 46 17s38-7 46-17c-14 4-28 6-46 6s-32-2-46-6z' stroke='%23b06a93' stroke-width='1.6'/%3E%3C/svg%3E");
+   891→  background-size: 130px 130px;
+   892→  background-repeat: repeat;
+   893→  opacity: 0.08;
+   894→  pointer-events: none;
+   895→}
+   896→.dark .lotus-watermark {
+   897→  opacity: 0.06;
+   898→}
+   899→
+   900→/* ─── Brand text selection ─────────────────────────────────────────────────── */
+   901→::selection {
+   902→  background: oklch(0.78 0.16 350 / 38%);
+   903→  color: inherit;
+   904→}
+   905→.dark ::selection {
+   906→  background: oklch(0.45 0.18 350 / 55%);
+   907→}
+   908→
+   909→/* ─── Document-level scrollbar (thin, brand-tinted) ───────────────────────── */
+   910→html {
+   911→  scrollbar-width: thin;
+   912→  scrollbar-color: oklch(0.78 0.1 350 / 55%) transparent;
+   913→}
+   914→html::-webkit-scrollbar {
+   915→  width: 8px;
+   916→  height: 8px;
+   917→}
+   918→html::-webkit-scrollbar-thumb {
+   919→  background: linear-gradient(to bottom, oklch(0.82 0.1 350 / 70%), oklch(0.7 0.16 350 / 70%));
+   920→  border-radius: 999px;
+   921→}
+   922→html::-webkit-scrollbar-track {
+   923→  background: transparent;
+   924→}
+   925→
+   926→/* ─── iOS safe-area helper for fixed bottom bars ───────────────────────────── */
+   927→.safe-bottom {
+   928→  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+   929→}
+   930→
+   931→/* ─── Reminder CTA wiggle (notification panel "Enable reminders" pill) ────── */
+   932→@keyframes bell-wiggle {
+   933→  0%, 100% { transform: rotate(0deg); }
+   934→  15% { transform: rotate(14deg); }
+   935→  30% { transform: rotate(-11deg); }
+   936→  45% { transform: rotate(8deg); }
+   937→  60% { transform: rotate(-6deg); }
+   938→  75% { transform: rotate(3deg); }
+   939→}
+   940→.hover-wiggle:hover .wiggle-target {
+   941→  animation: bell-wiggle 0.7s ease-in-out;
+   942→}
+   943→@media (prefers-reduced-motion: reduce) {
+   944→  .hover-wiggle:hover .wiggle-target {
+   945→    animation: none !important;
+   946→  }
+   947→}
+   948→
+   949→/* ─── Brand focus ring for keyboard users (a11y + polish) ──────────────────── */
+   950→:focus-visible {
+   951→  outline: 2px solid oklch(0.72 0.15 350 / 85%);
+   952→  outline-offset: 2px;
+   953→  border-radius: 6px;
+   954→}
+   955→
+   956→/* ─── Smooth image + card rendering on retina ─────────────────────────────── */
+   957→img {
+   958→  content-visibility: auto;
+   959→}
+   960→

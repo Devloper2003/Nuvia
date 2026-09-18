@@ -1,0 +1,780 @@
+     1→@import "tailwindcss";
+     2→@import "tw-animate-css";
+     3→
+     4→@custom-variant dark (&:is(.dark *));
+     5→
+     6→/* Prevent horizontal scroll document-wide. Placed OUTSIDE @layer base so it
+     7→   has higher priority than Tailwind preflight/resets. Third-party widgets
+     8→   (Google Identity Services iframe) and decorative orbs can extend beyond
+     9→   the viewport; this guarantees no horizontal swipe/scroll on any screen. */
+    10→html,
+    11→body {
+    12→  overflow-x: hidden;
+    13→  max-width: 100vw;
+    14→}
+    15→
+    16→@theme inline {
+    17→  --color-background: var(--background);
+    18→  --color-foreground: var(--foreground);
+    19→  --font-sans: var(--font-geist-sans);
+    20→  --font-mono: var(--font-geist-mono);
+    21→  --font-serif: var(--font-playfair);
+    22→  --color-sidebar-ring: var(--sidebar-ring);
+    23→  --color-sidebar-border: var(--sidebar-border);
+    24→  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    25→  --color-sidebar-accent: var(--sidebar-accent);
+    26→  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    27→  --color-sidebar-primary: var(--sidebar-primary);
+    28→  --color-sidebar-foreground: var(--sidebar-foreground);
+    29→  --color-sidebar: var(--sidebar);
+    30→  --color-chart-5: var(--chart-5);
+    31→  --color-chart-4: var(--chart-4);
+    32→  --color-chart-3: var(--chart-3);
+    33→  --color-chart-2: var(--chart-2);
+    34→  --color-chart-1: var(--chart-1);
+    35→  --color-ring: var(--ring);
+    36→  --color-input: var(--input);
+    37→  --color-border: var(--border);
+    38→  --color-destructive: var(--destructive);
+    39→  --color-accent-foreground: var(--accent-foreground);
+    40→  --color-accent: var(--accent);
+    41→  --color-muted-foreground: var(--muted-foreground);
+    42→  --color-muted: var(--muted);
+    43→  --color-secondary-foreground: var(--secondary-foreground);
+    44→  --color-secondary: var(--secondary);
+    45→  --color-primary-foreground: var(--primary-foreground);
+    46→  --color-primary: var(--primary);
+    47→  --color-popover-foreground: var(--popover-foreground);
+    48→  --color-popover: var(--popover);
+    49→  --color-card-foreground: var(--card-foreground);
+    50→  --color-card: var(--card);
+    51→  --radius-sm: calc(var(--radius) - 4px);
+    52→  --radius-md: calc(var(--radius) - 2px);
+    53→  --radius-lg: var(--radius);
+    54→  --radius-xl: calc(var(--radius) + 4px);
+    55→  --color-rose: var(--rose);
+    56→  --color-rose-foreground: var(--rose-foreground);
+    57→  --color-rose-light: var(--rose-light);
+    58→  --color-rose-dark: var(--rose-dark);
+    59→  --color-wellness: var(--wellness);
+    60→  --color-wellness-foreground: var(--wellness-foreground);
+    61→  --color-fertility: var(--fertility);
+    62→  --color-fertility-foreground: var(--fertility-foreground);
+    63→  --color-pregnancy: var(--pregnancy);
+    64→  --color-pregnancy-foreground: var(--pregnancy-foreground);
+    65→  --color-menopause: var(--menopause);
+    66→  --color-menopause-foreground: var(--menopause-foreground);
+    67→  --color-medical: var(--medical);
+    68→  --color-medical-foreground: var(--medical-foreground);
+    69→  --color-medical-soft: var(--medical-soft);
+    70→  --color-peach: var(--peach);
+    71→  --color-peach-soft: var(--peach-soft);
+    72→  --color-blush: var(--blush);
+    73→  --color-lilac: var(--lilac);
+    74→}
+    75→
+    76→:root {
+    77→  /* ── Nuvia “Blush Petal” theme (redesigned from user references) ──
+    78→     Soft rose-cream canvas, hot-pink primary, peach + lilac accents.
+    79→     Larger radius = the pillowy card language from the references. */
+    80→  --radius: 1rem;
+    81→  --background: oklch(0.978 0.014 350);
+    82→  --foreground: oklch(0.21 0.03 345);
+    83→  --card: oklch(0.998 0.004 350);
+    84→  --card-foreground: oklch(0.21 0.03 345);
+    85→  --popover: oklch(0.998 0.004 350);
+    86→  --popover-foreground: oklch(0.21 0.03 345);
+    87→  --primary: oklch(0.62 0.22 355);
+    88→  --primary-foreground: oklch(0.99 0.005 355);
+    89→  --secondary: oklch(0.945 0.04 350);
+    90→  --secondary-foreground: oklch(0.38 0.1 350);
+    91→  --muted: oklch(0.955 0.02 350);
+    92→  --muted-foreground: oklch(0.52 0.05 345);
+    93→  --accent: oklch(0.94 0.05 355);
+    94→  --accent-foreground: oklch(0.38 0.1 350);
+    95→  --destructive: oklch(0.577 0.245 27.325);
+    96→  --border: oklch(0.93 0.035 350);
+    97→  --input: oklch(0.93 0.035 350);
+    98→  --ring: oklch(0.62 0.22 355);
+    99→  --chart-1: oklch(0.62 0.22 355);
+   100→  --chart-2: oklch(0.78 0.13 55);
+   101→  --chart-3: oklch(0.68 0.15 300);
+   102→  --chart-4: oklch(0.62 0.12 200);
+   103→  --chart-5: oklch(0.72 0.16 5);
+   104→  --sidebar: oklch(0.972 0.024 350);
+   105→  --sidebar-foreground: oklch(0.21 0.03 345);
+   106→  --sidebar-primary: oklch(0.62 0.22 355);
+   107→  --sidebar-primary-foreground: oklch(0.99 0.005 355);
+   108→  --sidebar-accent: oklch(0.94 0.05 355);
+   109→  --sidebar-accent-foreground: oklch(0.38 0.1 350);
+   110→  --sidebar-border: oklch(0.93 0.035 350);
+   111→  --sidebar-ring: oklch(0.62 0.22 355);
+   112→
+   113→  /* Reference palette: teal medical (doctor pages), peach & blush & lilac surfaces */
+   114→  --medical: oklch(0.52 0.1 205);
+   115→  --medical-foreground: oklch(0.985 0.01 205);
+   116→  --medical-soft: oklch(0.94 0.035 205);
+   117→  --peach: oklch(0.78 0.12 50);
+   118→  --peach-soft: oklch(0.95 0.045 50);
+   119→  --blush: oklch(0.94 0.05 355);
+   120→  --lilac: oklch(0.9 0.06 300);
+   121→
+   122→  --rose: oklch(0.62 0.22 355);
+   123→  --rose-foreground: oklch(0.99 0.005 355);
+   124→  --rose-light: oklch(0.92 0.06 355);
+   125→  --rose-dark: oklch(0.45 0.17 350);
+   126→  --wellness: oklch(0.6 0.15 160);
+   127→  --wellness-foreground: oklch(0.98 0.005 160);
+   128→  --fertility: oklch(0.68 0.17 35);
+   129→  --fertility-foreground: oklch(0.98 0.005 35);
+   130→  --pregnancy: oklch(0.62 0.15 300);
+   131→  --pregnancy-foreground: oklch(0.98 0.005 300);
+   132→  --menopause: oklch(0.55 0.12 20);
+   133→  --menopause-foreground: oklch(0.98 0.005 20);
+   134→
+   135→  /* Premium palette tokens — used by glow / gradient utilities */
+   136→  --premium-rose: oklch(0.64 0.22 355);
+   137→  --premium-pink: oklch(0.68 0.21 5);
+   138→  --premium-fuchsia: oklch(0.6 0.24 330);
+   139→  --premium-amber: oklch(0.78 0.16 70);
+   140→  --premium-violet: oklch(0.6 0.19 305);
+   141→}
+   142→
+   143→.dark {
+   144→  /* Night “Moonlit Rose” — warm dark plum instead of cold neutral */
+   145→  --background: oklch(0.14 0.02 345);
+   146→  --foreground: oklch(0.96 0.01 350);
+   147→  --card: oklch(0.19 0.028 348);
+   148→  --card-foreground: oklch(0.96 0.01 350);
+   149→  --popover: oklch(0.19 0.028 348);
+   150→  --popover-foreground: oklch(0.96 0.01 350);
+   151→  --primary: oklch(0.72 0.18 355);
+   152→  --primary-foreground: oklch(0.16 0.04 350);
+   153→  --secondary: oklch(0.26 0.04 348);
+   154→  --secondary-foreground: oklch(0.92 0.02 350);
+   155→  --muted: oklch(0.26 0.035 348);
+   156→  --muted-foreground: oklch(0.68 0.04 348);
+   157→  --accent: oklch(0.3 0.05 350);
+   158→  --accent-foreground: oklch(0.92 0.02 350);
+   159→  --destructive: oklch(0.704 0.191 22.216);
+   160→  --border: oklch(1 0 0 / 10%);
+   161→  --input: oklch(1 0 0 / 15%);
+   162→  --ring: oklch(0.72 0.18 355);
+   163→  --chart-1: oklch(0.7 0.18 350);
+   164→  --chart-2: oklch(0.75 0.16 30);
+   165→  --chart-3: oklch(0.65 0.14 160);
+   166→  --chart-4: oklch(0.7 0.14 280);
+   167→  --chart-5: oklch(0.75 0.12 60);
+   168→  --sidebar: oklch(0.17 0.026 346);
+   169→  --sidebar-foreground: oklch(0.96 0.01 350);
+   170→  --sidebar-primary: oklch(0.72 0.18 355);
+   171→  --sidebar-primary-foreground: oklch(0.16 0.04 350);
+   172→  --sidebar-accent: oklch(0.3 0.05 350);
+   173→  --sidebar-accent-foreground: oklch(0.92 0.02 350);
+   174→  --sidebar-border: oklch(1 0 0 / 10%);
+   175→  --sidebar-ring: oklch(0.72 0.18 355);
+   176→
+   177→  /* Dark-mode reference palette */
+   178→  --medical: oklch(0.68 0.1 205);
+   179→  --medical-foreground: oklch(0.14 0.03 205);
+   180→  --medical-soft: oklch(0.28 0.05 205);
+   181→  --peach: oklch(0.8 0.12 50);
+   182→  --peach-soft: oklch(0.3 0.05 50);
+   183→  --blush: oklch(0.3 0.05 350);
+   184→  --lilac: oklch(0.32 0.06 300);
+   185→
+   186→  --rose: oklch(0.72 0.18 355);
+   187→  --rose-foreground: oklch(0.16 0.04 350);
+   188→  --rose-light: oklch(0.3 0.06 352);
+   189→  --rose-dark: oklch(0.55 0.18 350);
+   190→  --wellness: oklch(0.65 0.14 160);
+   191→  --wellness-foreground: oklch(0.15 0.03 160);
+   192→  --fertility: oklch(0.75 0.16 35);
+   193→  --fertility-foreground: oklch(0.15 0.03 35);
+   194→  --pregnancy: oklch(0.7 0.14 300);
+   195→  --pregnancy-foreground: oklch(0.15 0.03 300);
+   196→  --menopause: oklch(0.65 0.12 20);
+   197→  --menopause-foreground: oklch(0.15 0.03 20);
+   198→
+   199→  --premium-rose: oklch(0.72 0.2 350);
+   200→  --premium-pink: oklch(0.74 0.19 5);
+   201→  --premium-fuchsia: oklch(0.7 0.22 330);
+   202→  --premium-amber: oklch(0.82 0.15 70);
+   203→  --premium-violet: oklch(0.72 0.17 305);
+   204→}
+   205→
+   206→@layer base {
+   207→  * {
+   208→    @apply border-border outline-ring/50;
+   209→  }
+   210→  body {
+   211→    @apply bg-background text-foreground;
+   212→    position: relative;
+   213→    min-height: 100dvh;
+   214→    /* “Blush Petal” mesh — rose halo top-left, peach glow top-right,
+   215→       lilac wash bottom (matches the reference app canvases). */
+   216→    background-image:
+   217→      radial-gradient(62rem 62rem at 6% -12%, oklch(0.93 0.06 355 / 0.75), transparent 58%),
+   218→      radial-gradient(52rem 52rem at 112% 8%, oklch(0.94 0.06 55 / 0.6), transparent 58%),
+   219→      radial-gradient(56rem 56rem at 50% 122%, oklch(0.91 0.06 305 / 0.42), transparent 62%);
+   220→    background-attachment: fixed;
+   221→    background-repeat: no-repeat;
+   222→  }
+   223→  .dark body {
+   224→    background-image:
+   225→      radial-gradient(62rem 62rem at 6% -12%, oklch(0.5 0.16 350 / 0.26), transparent 58%),
+   226→      radial-gradient(52rem 52rem at 112% 8%, oklch(0.54 0.13 55 / 0.18), transparent 58%),
+   227→      radial-gradient(56rem 56rem at 50% 122%, oklch(0.47 0.16 305 / 0.2), transparent 62%);
+   228→  }
+   229→}
+   230→
+   231→/* ─── Custom scrollbar ────────────────────────────────────────────────────── */
+   232→::-webkit-scrollbar {
+   233→  width: 6px;
+   234→  height: 6px;
+   235→}
+   236→
+   237→::-webkit-scrollbar-track {
+   238→  background: transparent;
+   239→}
+   240→
+   241→::-webkit-scrollbar-thumb {
+   242→  background: oklch(0.7 0.05 325);
+   243→  border-radius: 3px;
+   244→}
+   245→
+   246→::-webkit-scrollbar-thumb:hover {
+   247→  background: oklch(0.6 0.08 325);
+   248→}
+   249→
+   250→/* ─── Glass morphism utilities ────────────────────────────────────────────── */
+   251→.glass {
+   252→  background: oklch(1 0 0 / 70%);
+   253→  backdrop-filter: blur(12px);
+   254→  -webkit-backdrop-filter: blur(12px);
+   255→  border: 1px solid oklch(1 0 0 / 20%);
+   256→  /* Subtle inner border highlight + faint top-edge light reflection */
+   257→  box-shadow:
+   258→    inset 0 1px 0 oklch(1 0 0 / 35%),
+   259→    inset 0 0 0 1px oklch(1 0 0 / 5%);
+   260→}
+   261→
+   262→.dark .glass {
+   263→  background: oklch(0.2 0.02 325 / 70%);
+   264→  border: 1px solid oklch(1 0 0 / 8%);
+   265→  box-shadow:
+   266→    inset 0 1px 0 oklch(1 0 0 / 10%),
+   267→    inset 0 0 0 1px oklch(1 0 0 / 3%);
+   268→}
+   269→
+   270→/* Premium glass — stronger blur, layered highlights, used on hero cards */
+   271→.glass-premium {
+   272→  background: linear-gradient(
+   273→    135deg,
+   274→    oklch(1 0 0 / 78%) 0%,
+   275→    oklch(0.99 0.01 350 / 68%) 100%
+   276→  );
+   277→  backdrop-filter: blur(22px) saturate(140%);
+   278→  -webkit-backdrop-filter: blur(22px) saturate(140%);
+   279→  border: 1px solid oklch(1 0 0 / 40%);
+   280→  box-shadow:
+   281→    inset 0 1px 0 oklch(1 0 0 / 60%),
+   282→    inset 0 0 0 1px oklch(1 0 0 / 8%),
+   283→    0 18px 50px -18px oklch(0.55 0.2 350 / 18%),
+   284→    0 8px 24px -12px oklch(0.4 0.05 325 / 20%);
+   285→}
+   286→
+   287→.dark .glass-premium {
+   288→  background: linear-gradient(
+   289→    135deg,
+   290→    oklch(0.22 0.025 325 / 82%) 0%,
+   291→    oklch(0.18 0.03 350 / 72%) 100%
+   292→  );
+   293→  border: 1px solid oklch(1 0 0 / 14%);
+   294→  box-shadow:
+   295→    inset 0 1px 0 oklch(1 0 0 / 14%),
+   296→    inset 0 0 0 1px oklch(1 0 0 / 4%),
+   297→    0 18px 50px -18px oklch(0.7 0.18 350 / 22%),
+   298→    0 8px 24px -12px oklch(0 0 0 / 50%);
+   299→}
+   300→
+   301→/* ─── Gradient text utilities ─────────────────────────────────────────────── */
+   302→.gradient-text {
+   303→  background: linear-gradient(
+   304→    135deg,
+   305→    oklch(0.55 0.2 350) 0%,
+   306→    oklch(0.62 0.22 5) 45%,
+   307→    oklch(0.6 0.24 330) 75%,
+   308→    oklch(0.65 0.18 30) 100%
+   309→  );
+   310→  -webkit-background-clip: text;
+   311→  -webkit-text-fill-color: transparent;
+   312→  background-clip: text;
+   313→}
+   314→
+   315→/* Animated shimmer gradient text — premium accent for hero headings */
+   316→.gradient-text-shimmer {
+   317→  background: linear-gradient(
+   318→    100deg,
+   319→    oklch(0.55 0.2 350) 0%,
+   320→    oklch(0.62 0.22 5) 30%,
+   321→    oklch(0.6 0.24 330) 50%,
+   322→    oklch(0.7 0.18 60) 65%,
+   323→    oklch(0.55 0.2 350) 100%
+   324→  );
+   325→  background-size: 220% 100%;
+   326→  -webkit-background-clip: text;
+   327→  -webkit-text-fill-color: transparent;
+   328→  background-clip: text;
+   329→  animation: gradient-shift 6s ease-in-out infinite;
+   330→}
+   331→
+   332→/* ─── Glow utilities (soft colored box-shadow) ────────────────────────────── */
+   333→.glow-rose {
+   334→  box-shadow: 0 10px 36px -10px oklch(0.55 0.2 350 / 55%);
+   335→}
+   336→.glow-amber {
+   337→  box-shadow: 0 10px 36px -10px oklch(0.78 0.16 60 / 55%);
+   338→}
+   339→.glow-fuchsia {
+   340→  box-shadow: 0 10px 36px -10px oklch(0.6 0.24 330 / 55%);
+   341→}
+   342→.glow-violet {
+   343→  box-shadow: 0 10px 36px -10px oklch(0.6 0.19 305 / 55%);
+   344→}
+   345→
+   346→/* Hover glow (applies glow on hover; combine with element to add lift) */
+   347→.glow-rose-hover {
+   348→  transition: box-shadow 0.3s ease, transform 0.3s ease;
+   349→}
+   350→.glow-rose-hover:hover {
+   351→  box-shadow: 0 18px 48px -12px oklch(0.55 0.2 350 / 65%);
+   352→}
+   353→
+   354→/* ─── Premium button ──────────────────────────────────────────────────────── */
+   355→.btn-premium {
+   356→  position: relative;
+   357→  background: linear-gradient(135deg, oklch(0.58 0.21 350) 0%, oklch(0.6 0.23 330) 55%, oklch(0.62 0.2 5) 100%);
+   358→  color: oklch(0.99 0.005 350);
+   359→  border: 1px solid oklch(1 0 0 / 18%);
+   360→  box-shadow:
+   361→    inset 0 1px 0 oklch(1 0 0 / 38%),
+   362→    inset 0 -1px 0 oklch(0 0 0 / 12%),
+   363→    0 10px 30px -10px oklch(0.55 0.2 350 / 50%);
+   364→  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, filter 0.25s ease;
+   365→}
+   366→.btn-premium:hover {
+   367→  transform: translateY(-1px) scale(1.012);
+   368→  box-shadow:
+   369→    inset 0 1px 0 oklch(1 0 0 / 45%),
+   370→    inset 0 -1px 0 oklch(0 0 0 / 12%),
+   371→    0 18px 44px -12px oklch(0.55 0.2 350 / 70%),
+   372→    0 6px 18px -8px oklch(0.6 0.24 330 / 55%);
+   373→  filter: saturate(1.08) brightness(1.03);
+   374→}
+   375→.btn-premium:active {
+   376→  transform: translateY(0) scale(0.995);
+   377→}
+   378→.btn-premium:disabled {
+   379→  opacity: 0.7;
+   380→  cursor: not-allowed;
+   381→  transform: none;
+   382→  filter: saturate(0.7) brightness(0.95);
+   383→}
+   384→.btn-premium::after {
+   385→  content: "";
+   386→  position: absolute;
+   387→  inset: 0;
+   388→  border-radius: inherit;
+   389→  pointer-events: none;
+   390→  background: linear-gradient(180deg, oklch(1 0 0 / 18%) 0%, transparent 35%);
+   391→}
+   392→
+   393→/* ─── Premium card (gradient border + glass + layered shadow) ──────────────── */
+   394→.card-premium {
+   395→  position: relative;
+   396→  background: linear-gradient(180deg, oklch(1 0 0 / 92%) 0%, oklch(0.99 0.01 350 / 88%) 100%);
+   397→  border-radius: var(--radius-xl);
+   398→  box-shadow:
+   399→    inset 0 1px 0 oklch(1 0 0 / 70%),
+   400→    0 1px 0 oklch(1 0 0 / 30%),
+   401→    0 24px 60px -28px oklch(0.5 0.2 350 / 28%),
+   402→    0 8px 24px -16px oklch(0.4 0.05 325 / 22%);
+   403→}
+   404→.card-premium::before {
+   405→  content: "";
+   406→  position: absolute;
+   407→  inset: 0;
+   408→  border-radius: inherit;
+   409→  padding: 1px;
+   410→  background: linear-gradient(135deg, oklch(0.85 0.12 350 / 70%), oklch(0.88 0.1 60 / 55%) 50%, oklch(0.8 0.12 330 / 70%));
+   411→  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+   412→  -webkit-mask-composite: xor;
+   413→          mask-composite: exclude;
+   414→  pointer-events: none;
+   415→}
+   416→.dark .card-premium {
+   417→  background: linear-gradient(180deg, oklch(0.21 0.025 325 / 90%) 0%, oklch(0.17 0.03 350 / 85%) 100%);
+   418→  box-shadow:
+   419→    inset 0 1px 0 oklch(1 0 0 / 14%),
+   420→    0 24px 60px -28px oklch(0 0 0 / 55%),
+   421→    0 8px 24px -16px oklch(0 0 0 / 40%);
+   422→}
+   423→.dark .card-premium::before {
+   424→  background: linear-gradient(135deg, oklch(0.7 0.18 350 / 55%), oklch(0.78 0.14 60 / 40%) 50%, oklch(0.65 0.18 330 / 55%));
+   425→}
+   426→
+   427→/* ─── Animated gradient background utility ─────────────────────────────────── */
+   428→.bg-animated-gradient {
+   429→  background: linear-gradient(
+   430→    125deg,
+   431→    oklch(0.62 0.22 350) 0%,
+   432→    oklch(0.65 0.21 5) 25%,
+   433→    oklch(0.6 0.24 330) 50%,
+   434→    oklch(0.58 0.19 305) 72%,
+   435→    oklch(0.7 0.18 60) 100%
+   436→  );
+   437→  background-size: 280% 280%;
+   438→  animation: gradient-shift 14s ease-in-out infinite;
+   439→  will-change: background-position;
+   440→}
+   441→
+   442→@keyframes gradient-shift {
+   443→  0% { background-position: 0% 50%; }
+   444→  50% { background-position: 100% 50%; }
+   445→  100% { background-position: 0% 50%; }
+   446→}
+   447→
+   448→/* ─── Shimmer animation (loading / premium accents) ───────────────────────── */
+   449→@keyframes shimmer {
+   450→  0% { transform: translateX(-100%); }
+   451→  100% { transform: translateX(100%); }
+   452→}
+   453→.shimmer {
+   454→  position: relative;
+   455→  overflow: hidden;
+   456→}
+   457→.shimmer::after {
+   458→  content: "";
+   459→  position: absolute;
+   460→  inset: 0;
+   461→  background: linear-gradient(
+   462→    90deg,
+   463→    transparent 0%,
+   464→    oklch(1 0 0 / 45%) 50%,
+   465→    transparent 100%
+   466→  );
+   467→  transform: translateX(-100%);
+   468→  animation: shimmer 2.4s ease-in-out infinite;
+   469→  pointer-events: none;
+   470→}
+   471→
+   472→/* ─── Cycle wheel / soft animations ───────────────────────────────────────── */
+   473→@keyframes pulse-soft {
+   474→  0%, 100% { opacity: 1; }
+   475→  50% { opacity: 0.7; }
+   476→}
+   477→
+   478→.animate-pulse-soft {
+   479→  animation: pulse-soft 3s ease-in-out infinite;
+   480→}
+   481→
+   482→@keyframes float {
+   483→  0%, 100% { transform: translateY(0px); }
+   484→  50% { transform: translateY(-6px); }
+   485→}
+   486→
+   487→.animate-float {
+   488→  animation: float 4s ease-in-out infinite;
+   489→}
+   490→
+   491→/* Slow drift for premium orbs (used by auth hero) */
+   492→@keyframes drift-slow {
+   493→  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+   494→  33% { transform: translate3d(3%, -4%, 0) scale(1.06); }
+   495→  66% { transform: translate3d(-2%, 3%, 0) scale(0.97); }
+   496→}
+   497→.animate-drift-slow {
+   498→  animation: drift-slow 18s ease-in-out infinite;
+   499→}
+   500→
+   501→/* ─── Nuvia brand animations (logo mark + wordmark + tagline) ─────────────── */
+   502→/* Gentle levitation with a whisper of tilt — the mark feels alive, not bouncy */
+   503→@keyframes brand-float-soft {
+   504→  0%, 100% { transform: translateY(0) rotate(0deg); }
+   505→  50% { transform: translateY(-3px) rotate(-1.4deg); }
+   506→}
+   507→.animate-brand-float {
+   508→  animation: brand-float-soft 5s ease-in-out infinite;
+   509→}
+   510→
+   511→/* Breathing glow halo behind the mark tile */
+   512→@keyframes brand-halo {
+   513→  0%, 100% { opacity: 0.4; transform: scale(0.96); }
+   514→  50% { opacity: 0.9; transform: scale(1.1); }
+   515→}
+   516→.animate-brand-halo {
+   517→  animation: brand-halo 3.8s ease-in-out infinite;
+   518→}
+   519→
+   520→/* Diagonal light sweep across the mark tile (glass reflection) */
+   521→@keyframes brand-sheen {
+   522→  0% { transform: translateX(-160%) skewX(-18deg); }
+   523→  55%, 100% { transform: translateX(260%) skewX(-18deg); }
+   524→}
+   525→.animate-brand-sheen {
+   526→  animation: brand-sheen 4.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+   527→}
+   528→
+   529→/* Pulsing separator dots in the tagline (stagger via inline animation-delay) */
+   530→@keyframes brand-dot {
+   531→  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+   532→  50% { opacity: 1; transform: scale(1.3); }
+   533→}
+   534→.brand-dot {
+   535→  animation: brand-dot 2.4s ease-in-out infinite;
+   536→}
+   537→
+   538→/* Slow spin for the decorative ring around hero-sized marks */
+   539→@keyframes brand-spin {
+   540→  to { transform: rotate(360deg); }
+   541→}
+   542→.animate-brand-spin {
+   543→  animation: brand-spin 14s linear infinite;
+   544→}
+   545→
+   546→/* Nuvia wordmark — deep plum → rose round-trip shimmer (matches logo) */
+   547→.brand-wordmark {
+   548→  background: linear-gradient(
+   549→    100deg,
+   550→    oklch(0.36 0.1 345) 0%,
+   551→    oklch(0.5 0.18 355) 38%,
+   552→    oklch(0.6 0.2 8) 62%,
+   553→    oklch(0.45 0.15 335) 85%,
+   554→    oklch(0.36 0.1 345) 100%
+   555→  );
+   556→  background-size: 220% 100%;
+   557→  -webkit-background-clip: text;
+   558→  background-clip: text;
+   559→  -webkit-text-fill-color: transparent;
+   560→  color: transparent;
+   561→  animation: gradient-shift 6s ease-in-out infinite;
+   562→}
+   563→.dark .brand-wordmark {
+   564→  background: linear-gradient(
+   565→    100deg,
+   566→    oklch(0.8 0.09 345) 0%,
+   567→    oklch(0.86 0.11 355) 38%,
+   568→    oklch(0.88 0.09 12) 62%,
+   569→    oklch(0.82 0.1 330) 85%,
+   570→    oklch(0.8 0.09 345) 100%
+   571→  );
+   572→  background-size: 220% 100%;
+   573→  -webkit-background-clip: text;
+   574→  background-clip: text;
+   575→}
+   576→
+   577→/* ─── Premium focus ring (rose gradient, accessible) ──────────────────────── */
+   578→*:focus-visible {
+   579→  outline: 2px solid oklch(0.55 0.2 350);
+   580→  outline-offset: 2px;
+   581→  border-radius: 4px;
+   582→}
+   583→/* Premium gradient ring for interactive controls */
+   584→input:focus-visible,
+   585→textarea:focus-visible,
+   586→select:focus-visible,
+   587→button:focus-visible,
+   588→a:focus-visible,
+   589→[role="button"]:focus-visible {
+   590→  outline: 2px solid transparent;
+   591→  outline-offset: 2px;
+   592→  box-shadow:
+   593→    0 0 0 2px var(--background, oklch(0.985 0.002 325)),
+   594→    0 0 0 4px oklch(0.6 0.22 350 / 70%),
+   595→    0 0 0 5px oklch(0.6 0.18 60 / 35%);
+   596→}
+   597→
+   598→/* ─── Luxury custom scrollbar (chandracycle-scroll) ───────────────────────── */
+   599→.chandracycle-scroll {
+   600→  scrollbar-width: thin;
+   601→  scrollbar-color: oklch(0.7 0.15 30) transparent;
+   602→}
+   603→.chandracycle-scroll::-webkit-scrollbar {
+   604→  width: 6px;
+   605→  height: 6px;
+   606→}
+   607→.chandracycle-scroll::-webkit-scrollbar-track {
+   608→  background: transparent;
+   609→}
+   610→.chandracycle-scroll::-webkit-scrollbar-thumb {
+   611→  background: linear-gradient(to bottom, oklch(0.78 0.16 60), oklch(0.68 0.21 5), oklch(0.6 0.22 350));
+   612→  border-radius: 999px;
+   613→  border: 1px solid oklch(1 0 0 / 12%);
+   614→}
+   615→.chandracycle-scroll::-webkit-scrollbar-thumb:hover {
+   616→  background: linear-gradient(to bottom, oklch(0.7 0.17 60), oklch(0.6 0.2 5), oklch(0.5 0.2 350));
+   617→}
+   618→
+   619→/* ─── Premium serif font (Playfair Display via next/font) ──────────────────── */
+   620→.font-serif {
+   621→  font-family: var(--font-playfair), Georgia, 'Times New Roman', serif;
+   622→  font-feature-settings: "liga" 1, "calt" 1;
+   623→  letter-spacing: -0.01em;
+   624→}
+   625→
+   626→/* ─── Scoped smooth transitions on interactive elements only ──────────────── */
+   627→/* (Avoid applying transitions to all elements — that hurts perf.) */
+   628→a, button, input, textarea, select,
+   629→[role="button"], [role="tab"],
+   630→summary, label {
+   631→  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+   632→}
+   633→
+   634→/* Respect reduced-motion preferences */
+   635→@media (prefers-reduced-motion: reduce) {
+   636→  .animate-float,
+   637→  .animate-pulse-soft,
+   638→  .animate-drift-slow,
+   639→  .animate-brand-float,
+   640→  .animate-brand-halo,
+   641→  .animate-brand-sheen,
+   642→  .animate-brand-spin,
+   643→  .brand-dot,
+   644→  .brand-wordmark,
+   645→  .bg-animated-gradient,
+   646→  .gradient-text-shimmer,
+   647→  .shimmer::after {
+   648→    animation: none !important;
+   649→  }
+   650→}
+   651→
+   652→/* ─── Soft elevation cards (reference-style tinted surfaces) ───────────────── */
+   653→/* Pillowy rose card: for hero/summary panels sitting on the blush canvas.   */
+   654→.card-blush {
+   655→  background: linear-gradient(165deg, oklch(0.99 0.008 350 / 88%) 0%, oklch(0.965 0.03 352 / 92%) 100%);
+   656→  border-radius: calc(var(--radius) + 0.5rem);
+   657→  border: 1px solid oklch(0.92 0.05 352 / 70%);
+   658→  box-shadow:
+   659→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   660→    0 20px 50px -24px oklch(0.62 0.2 355 / 30%),
+   661→    0 6px 18px -10px oklch(0.5 0.08 345 / 14%);
+   662→}
+   663→.dark .card-blush {
+   664→  background: linear-gradient(165deg, oklch(0.22 0.034 348 / 92%) 0%, oklch(0.19 0.03 350 / 88%) 100%);
+   665→  border: 1px solid oklch(1 0 0 / 10%);
+   666→  box-shadow:
+   667→    inset 0 1px 0 oklch(1 0 0 / 12%),
+   668→    0 20px 50px -24px oklch(0.1 0.02 350 / 60%);
+   669→}
+   670→
+   671→/* Peach sister card (warm accent panel — fertile days, nutrition, etc.) */
+   672→.card-peach {
+   673→  background: linear-gradient(165deg, oklch(0.99 0.012 60 / 88%) 0%, oklch(0.965 0.045 55 / 92%) 100%);
+   674→  border-radius: calc(var(--radius) + 0.5rem);
+   675→  border: 1px solid oklch(0.92 0.06 60 / 70%);
+   676→  box-shadow:
+   677→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   678→    0 20px 50px -24px oklch(0.72 0.14 55 / 32%),
+   679→    0 6px 18px -10px oklch(0.5 0.08 345 / 12%);
+   680→}
+   681→.dark .card-peach {
+   682→  background: linear-gradient(165deg, oklch(0.23 0.04 55 / 92%) 0%, oklch(0.19 0.035 52 / 88%) 100%);
+   683→  border: 1px solid oklch(1 0 0 / 10%);
+   684→}
+   685→
+   686→/* Teal medical card — doctor/clinical surfaces (reference #3) */
+   687→.card-medical {
+   688→  background: linear-gradient(165deg, oklch(0.99 0.008 200 / 88%) 0%, oklch(0.962 0.03 205 / 92%) 100%);
+   689→  border-radius: calc(var(--radius) + 0.5rem);
+   690→  border: 1px solid oklch(0.9 0.05 205 / 65%);
+   691→  box-shadow:
+   692→    inset 0 1px 0 oklch(1 0 0 / 80%),
+   693→    0 20px 50px -24px oklch(0.52 0.1 205 / 30%),
+   694→    0 6px 18px -10px oklch(0.4 0.06 210 / 12%);
+   695→}
+   696→.dark .card-medical {
+   697→  background: linear-gradient(165deg, oklch(0.21 0.035 205 / 92%) 0%, oklch(0.18 0.03 205 / 88%) 100%);
+   698→  border: 1px solid oklch(1 0 0 / 10%);
+   699→}
+   700→
+   701→/* Soft tinted chip — pill-shaped phase/legend chips from the references.
+   702→   NOTE: solid (opaque) colors only — alpha-composited lab colors mis-render
+   703→   (hue flip) in some headless/Chromium builds when combined with element
+   704→   opacity (e.g. opacity-70 phase chips rendered cyan). Solid = safe. */
+   705→.chip-soft {
+   706→  border-radius: 999px;
+   707→  border: 1px solid #f6bcd2;
+   708→  background: #fce4ee;
+   709→  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+   710→}
+   711→.dark .chip-soft {
+   712→  border: 1px solid oklch(1 0 0 / 14%);
+   713→  background: oklch(0.3 0.05 350);
+   714→}
+   715→.chip-soft:hover {
+   716→  transform: translateY(-1px);
+   717→  box-shadow: 0 6px 16px -8px rgba(214, 51, 132, 0.45);
+   718→}
+   719→
+   720→/* ─── Brand text selection ─────────────────────────────────────────────────── */
+   721→::selection {
+   722→  background: oklch(0.78 0.16 350 / 38%);
+   723→  color: inherit;
+   724→}
+   725→.dark ::selection {
+   726→  background: oklch(0.45 0.18 350 / 55%);
+   727→}
+   728→
+   729→/* ─── Document-level scrollbar (thin, brand-tinted) ───────────────────────── */
+   730→html {
+   731→  scrollbar-width: thin;
+   732→  scrollbar-color: oklch(0.78 0.1 350 / 55%) transparent;
+   733→}
+   734→html::-webkit-scrollbar {
+   735→  width: 8px;
+   736→  height: 8px;
+   737→}
+   738→html::-webkit-scrollbar-thumb {
+   739→  background: linear-gradient(to bottom, oklch(0.82 0.1 350 / 70%), oklch(0.7 0.16 350 / 70%));
+   740→  border-radius: 999px;
+   741→}
+   742→html::-webkit-scrollbar-track {
+   743→  background: transparent;
+   744→}
+   745→
+   746→/* ─── iOS safe-area helper for fixed bottom bars ───────────────────────────── */
+   747→.safe-bottom {
+   748→  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+   749→}
+   750→
+   751→/* ─── Reminder CTA wiggle (notification panel "Enable reminders" pill) ────── */
+   752→@keyframes bell-wiggle {
+   753→  0%, 100% { transform: rotate(0deg); }
+   754→  15% { transform: rotate(14deg); }
+   755→  30% { transform: rotate(-11deg); }
+   756→  45% { transform: rotate(8deg); }
+   757→  60% { transform: rotate(-6deg); }
+   758→  75% { transform: rotate(3deg); }
+   759→}
+   760→.hover-wiggle:hover .wiggle-target {
+   761→  animation: bell-wiggle 0.7s ease-in-out;
+   762→}
+   763→@media (prefers-reduced-motion: reduce) {
+   764→  .hover-wiggle:hover .wiggle-target {
+   765→    animation: none !important;
+   766→  }
+   767→}
+   768→
+   769→/* ─── Brand focus ring for keyboard users (a11y + polish) ──────────────────── */
+   770→:focus-visible {
+   771→  outline: 2px solid oklch(0.72 0.15 350 / 85%);
+   772→  outline-offset: 2px;
+   773→  border-radius: 6px;
+   774→}
+   775→
+   776→/* ─── Smooth image + card rendering on retina ─────────────────────────────── */
+   777→img {
+   778→  content-visibility: auto;
+   779→}
+   780→

@@ -651,12 +651,15 @@ export default function DashboardModule() {
       >
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <GreetingIcon className="h-6 w-6 text-amber-500" />
-            <h1 className="text-2xl sm:text-3xl font-bold">
+            <GreetingIcon className="h-6 w-6 text-gold" />
+            <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
               <span className="gradient-text">{greeting}</span>, {displayName}
             </h1>
           </div>
-          <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="gold-divider text-[9px]"><span>✦</span></span>
+            <p className="text-sm text-muted-foreground">{formattedDate}</p>
+          </div>
         </div>
         {cycleInfo && (
           <div className="flex items-center gap-2">

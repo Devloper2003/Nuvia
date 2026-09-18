@@ -143,7 +143,7 @@ interface Badge_ {
 const categories: Category[] = ['General', 'PCOS', 'Fertility', 'Pregnancy', 'Menopause', 'Mental Health']
 
 const categoryColors: Record<Category, string> = {
-  General: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+  General: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/30 dark:text-fuchsia-300',
   PCOS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   Fertility: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
   Pregnancy: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
@@ -252,7 +252,7 @@ const initialSupportGroups: SupportGroup[] = []
 const initialChallenges: Challenge[] = []
 
 const userBadges: Badge_[] = [
-  { id: '1', name: 'First Post', description: 'Created your first post', icon: Send, earned: false, color: 'text-sky-500' },
+  { id: '1', name: 'First Post', description: 'Created your first post', icon: Send, earned: false, color: 'text-primary' },
   { id: '2', name: 'Helpful', description: 'Received 10+ likes on a comment', icon: HandHeart, earned: false, color: 'text-emerald-500' },
   { id: '3', name: 'Supportive', description: 'Commented on 25+ posts', icon: Heart, earned: false, color: 'text-pink-500' },
   { id: '4', name: 'Challenger', description: 'Completed a community challenge', icon: Trophy, earned: false, color: 'text-amber-500' },
@@ -694,15 +694,18 @@ export default function CommunityModule() {
         className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-7 w-7 text-sky-500" />
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-blush text-primary shrink-0">
+              <Users className="h-5 w-5" aria-hidden="true" />
+            </span>
             Community
           </h1>
           <p className="text-muted-foreground mt-1">Connect, share, and support each other</p>
+          <span aria-hidden="true" className="gold-divider text-[10px] mt-1.5"><span>✦</span></span>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-sky-500 hover:bg-sky-600 text-white">
+            <Button className="btn-plum rounded-full px-6 min-h-11 font-semibold">
               <Plus className="h-4 w-4 mr-1.5" /> Create Post
             </Button>
           </DialogTrigger>
@@ -747,7 +750,7 @@ export default function CommunityModule() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {newPost.anonymous ? <EyeOff className="h-4 w-4 text-sky-500" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  {newPost.anonymous ? <EyeOff className="h-4 w-4 text-primary" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                   <Label className="text-sm">Post anonymously</Label>
                 </div>
                 <Switch
@@ -765,7 +768,7 @@ export default function CommunityModule() {
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                 <Button
                   onClick={handleCreatePost}
-                  className="bg-sky-500 hover:bg-sky-600 text-white"
+                  className="btn-plum rounded-full px-6 min-h-11 font-semibold"
                   disabled={!newPost.title.trim() || !newPost.content.trim() || posting}
                 >
                   {posting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
@@ -783,11 +786,12 @@ export default function CommunityModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="border-sky-200 dark:border-sky-900/50 bg-gradient-to-r from-sky-50/80 to-blue-50/80 dark:from-sky-950/20 dark:to-blue-950/20">
-          <CardContent className="py-4">
+        <Card className="card-blush relative overflow-hidden">
+          <CardContent className="relative py-4">
+            <div aria-hidden="true" className="lotus-watermark absolute inset-0" />
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                <div className="h-12 w-12 rounded-full bg-plum-soft flex items-center justify-center text-gold font-bold text-lg shadow-sm shrink-0">
                   {level}
                 </div>
                 <div>
@@ -804,7 +808,7 @@ export default function CommunityModule() {
                   return (
                     <div
                       key={badge.id}
-                      className="h-8 w-8 rounded-full bg-white dark:bg-card border border-sky-200 dark:border-sky-800 flex items-center justify-center shadow-sm"
+                      className="h-8 w-8 rounded-full bg-card border border-gold/40 flex items-center justify-center shadow-sm"
                       title={`${badge.name}: ${badge.description}`}
                     >
                       <Icon className={`h-4 w-4 ${badge.color}`} />
@@ -821,7 +825,7 @@ export default function CommunityModule() {
       </motion.div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-muted rounded-lg p-1 w-fit">
+      <div className="flex flex-wrap gap-1 bg-muted rounded-lg p-1 w-fit max-w-full">
         {[
           { key: 'feed' as const, label: 'Feed', icon: MessageCircle },
           { key: 'groups' as const, label: 'Groups', icon: Users },
@@ -831,7 +835,7 @@ export default function CommunityModule() {
             key={tab.key}
             size="sm"
             variant={activeTab === tab.key ? 'default' : 'ghost'}
-            className={`text-xs px-4 ${activeTab === tab.key ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+            className="text-xs px-4 min-h-11"
             onClick={() => setActiveTab(tab.key)}
           >
             <tab.icon className="h-3.5 w-3.5 mr-1.5" />
@@ -847,20 +851,20 @@ export default function CommunityModule() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6"
           >
             {/* Feed Column */}
             <div className="lg:col-span-2 space-y-4">
               {/* Category Filters */}
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
                   variant={activeCategory === 'All' ? 'default' : 'outline'}
-                  className={`text-xs shrink-0 rounded-full ${activeCategory === 'All' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+                  className={`text-xs shrink-0 rounded-full min-h-11 ${activeCategory === 'All' ? '' : 'chip-soft text-muted-foreground hover:text-primary'}`}
                   onClick={() => setActiveCategory('All')}
                 >
                   <Filter className="h-3 w-3 mr-1" /> All
-                  <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === 'All' ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+                  <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === 'All' ? 'bg-primary-foreground/20' : 'bg-muted text-muted-foreground'}`}>
                     {totalPosts}
                   </span>
                 </Button>
@@ -869,12 +873,12 @@ export default function CommunityModule() {
                     key={cat}
                     size="sm"
                     variant={activeCategory === cat ? 'default' : 'outline'}
-                    className={`text-xs shrink-0 rounded-full ${activeCategory === cat ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+                    className={`text-xs shrink-0 rounded-full min-h-11 ${activeCategory === cat ? '' : 'chip-soft text-muted-foreground hover:text-primary'}`}
                     onClick={() => setActiveCategory(cat)}
                   >
                     <Hash className="h-3 w-3 mr-1" />
                     {cat}
-                    <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === cat ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === cat ? 'bg-primary-foreground/20' : 'bg-muted text-muted-foreground'}`}>
                       {categoryCounts[cat] ?? 0}
                     </span>
                   </Button>
@@ -885,15 +889,15 @@ export default function CommunityModule() {
               {loading ? (
                 <Card>
                   <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Loader2 className="h-7 w-7 animate-spin text-sky-500" />
+                    <Loader2 className="h-7 w-7 animate-spin text-primary" />
                     <p className="text-xs text-muted-foreground mt-3">Loading community feed…</p>
                   </CardContent>
                 </Card>
               ) : filteredPosts.length === 0 ? (
-                <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+                <Card className="border-dashed border-primary/30">
                   <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
-                      <MessageCircle className="h-6 w-6 text-sky-500" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                      <MessageCircle className="h-6 w-6 text-primary" />
                     </div>
                     <p className="text-sm font-medium text-foreground">
                       {activeCategory === 'All' ? 'Be the first to post' : `No ${activeCategory} posts yet`}
@@ -903,7 +907,7 @@ export default function CommunityModule() {
                     </p>
                     <Button
                       size="sm"
-                      className="mt-4 bg-sky-500 hover:bg-sky-600 text-white"
+                      className="btn-plum mt-4 rounded-full px-6 min-h-11 font-semibold"
                       onClick={() => setDialogOpen(true)}
                     >
                       <Plus className="h-3.5 w-3.5 mr-1.5" /> Create the first post
@@ -924,7 +928,7 @@ export default function CommunityModule() {
                           <CardContent className="py-4">
                             <div className="flex items-start gap-3">
                               <Avatar className="h-9 w-9 shrink-0">
-                                <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-xs font-semibold">
+                                <AvatarFallback className="bg-blush text-primary text-xs font-semibold">
                                   {post.username.split('_')[0][0]}{post.username.split('_')[1]?.[0] || ''}
                                 </AvatarFallback>
                               </Avatar>
@@ -954,20 +958,20 @@ export default function CommunityModule() {
                                 <div className="flex items-center gap-4 mt-3">
                                   <button
                                     onClick={() => toggleLike(post.id)}
-                                    className={`flex items-center gap-1.5 text-xs h-9 px-1 -mx-1 rounded-md transition-colors ${
+                                    className={`flex items-center gap-1.5 text-xs min-h-11 px-1 -mx-1 rounded-md transition-colors ${
                                       post.liked
-                                        ? 'text-sky-500 font-medium'
-                                        : 'text-muted-foreground hover:text-sky-500'
+                                        ? 'text-primary font-medium'
+                                        : 'text-muted-foreground hover:text-primary'
                                     }`}
                                   >
                                     <Heart
-                                      className={`h-3.5 w-3.5 transition-transform ${post.liked ? 'fill-sky-500 text-sky-500 scale-110' : ''}`}
+                                      className={`h-3.5 w-3.5 transition-transform ${post.liked ? 'fill-primary text-primary scale-110' : ''}`}
                                     />
                                     {post.likes}
                                   </button>
                                   <button
                                     onClick={() => openComments(post.id)}
-                                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-500 transition-colors h-9 px-1 -mx-1 rounded-md"
+                                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors min-h-11 px-1 -mx-1 rounded-md"
                                   >
                                     <MessageCircle className="h-3.5 w-3.5" />
                                     {post.comments}
@@ -980,7 +984,7 @@ export default function CommunityModule() {
                                       }}
                                       aria-label="Report post"
                                       title="Report post"
-                                      className="group/flag flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors h-9 px-1 rounded-md ml-auto"
+                                      className="group/flag flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors min-h-11 px-1 rounded-md ml-auto"
                                     >
                                       <Flag className="h-3.5 w-3.5 transition-transform group-hover/flag:scale-125 group-hover/flag:-rotate-12" />
                                     </button>
@@ -990,7 +994,7 @@ export default function CommunityModule() {
                                       <AlertDialogTrigger asChild>
                                         <button
                                           aria-label="Delete post"
-                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors h-9 px-1 rounded-md ml-auto"
+                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors min-h-11 px-1 rounded-md ml-auto"
                                         >
                                           <Trash2 className="h-3.5 w-3.5" />
                                         </button>
@@ -1027,7 +1031,7 @@ export default function CommunityModule() {
                       <button
                         onClick={loadMorePosts}
                         disabled={loadingMore}
-                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-sky-300 dark:border-sky-800 text-sm font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors disabled:opacity-60"
+                        className="w-full flex items-center justify-center gap-2 py-3 min-h-11 rounded-xl border border-dashed border-primary/40 text-sm font-medium text-primary hover:bg-blush/60 dark:hover:bg-primary/10 transition-colors disabled:opacity-60"
                       >
                         {loadingMore ? (
                           <>
@@ -1061,7 +1065,7 @@ export default function CommunityModule() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-sky-500" />
+                    <TrendingUp className="h-4 w-4 text-primary" />
                     Trending Topics
                   </CardTitle>
                 </CardHeader>
@@ -1090,7 +1094,7 @@ export default function CommunityModule() {
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold text-muted-foreground w-5">{idx + 1}</span>
                             <div>
-                              <p className="text-sm font-medium group-hover:text-sky-500 transition-colors">{topic.topic}</p>
+                              <p className="text-sm font-medium group-hover:text-primary transition-colors">{topic.topic}</p>
                               <p className="text-[10px] text-muted-foreground">{topic.posts} posts</p>
                             </div>
                           </div>
@@ -1108,7 +1112,7 @@ export default function CommunityModule() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Award className="h-4 w-4 text-sky-500" />
+                    <Award className="h-4 w-4 text-gold" />
                     Your Badges
                   </CardTitle>
                 </CardHeader>
@@ -1121,13 +1125,13 @@ export default function CommunityModule() {
                           key={badge.id}
                           className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border ${
                             badge.earned
-                              ? 'border-sky-200 bg-sky-50/50 dark:border-sky-800 dark:bg-sky-950/20'
+                              ? 'border-gold/40 bg-gold-soft/50'
                               : 'border-dashed border-muted-foreground/20 opacity-50'
                           }`}
                           title={badge.description}
                         >
                           <Icon className={`h-5 w-5 ${badge.earned ? badge.color : 'text-muted-foreground'}`} />
-                          <span className="text-[9px] text-center font-medium leading-tight">{badge.name}</span>
+                          <span className="text-[11px] text-center font-medium leading-tight">{badge.name}</span>
                         </div>
                       )
                     })}
@@ -1146,10 +1150,10 @@ export default function CommunityModule() {
             exit={{ opacity: 0, y: -10 }}
           >
             {supportGroups.length === 0 ? (
-              <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+              <Card className="border-dashed border-primary/30">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
-                    <Users className="h-6 w-6 text-sky-500" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                    <Users className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No support groups yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1158,7 +1162,7 @@ export default function CommunityModule() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="mt-4 border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
+                    className="mt-4 rounded-full px-5 min-h-11 border-primary/40 text-primary hover:bg-blush/60 dark:hover:bg-primary/10"
                     onClick={() => setActiveTab('feed')}
                   >
                     Browse the feed
@@ -1197,10 +1201,10 @@ export default function CommunityModule() {
                             <Button
                               size="sm"
                               variant={group.joined ? 'outline' : 'default'}
-                              className={`text-xs h-8 ${
+                              className={`text-xs rounded-full min-h-11 px-5 font-semibold ${
                                 group.joined
-                                  ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
-                                  : 'bg-sky-500 hover:bg-sky-600 text-white'
+                                  ? 'border-primary/40 text-primary'
+                                  : 'btn-plum'
                               }`}
                               onClick={() => toggleGroup(group.id)}
                             >
@@ -1233,10 +1237,10 @@ export default function CommunityModule() {
             exit={{ opacity: 0, y: -10 }}
           >
             {challenges.length === 0 ? (
-              <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
+              <Card className="border-dashed border-primary/30">
                 <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
-                    <Trophy className="h-6 w-6 text-sky-500" />
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blush mb-3">
+                    <Trophy className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No challenges yet</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
@@ -1245,7 +1249,7 @@ export default function CommunityModule() {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="mt-4 border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
+                    className="mt-4 rounded-full px-5 min-h-11 border-primary/40 text-primary hover:bg-blush/60 dark:hover:bg-primary/10"
                     onClick={() => setActiveTab('feed')}
                   >
                     <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Explore the feed
@@ -1285,10 +1289,10 @@ export default function CommunityModule() {
                           <Button
                             size="sm"
                             variant={challenge.joined ? 'outline' : 'default'}
-                            className={`text-xs h-8 shrink-0 ${
+                            className={`text-xs rounded-full min-h-11 px-5 font-semibold shrink-0 ${
                               challenge.joined
-                                ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
-                                : 'bg-sky-500 hover:bg-sky-600 text-white'
+                                ? 'border-primary/40 text-primary'
+                                : 'btn-plum'
                             }`}
                             onClick={() => toggleChallenge(challenge.id)}
                           >
@@ -1317,7 +1321,7 @@ export default function CommunityModule() {
             <ScrollArea className="max-h-64 chandracycle-scroll">
               {commentsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               ) : commentsList.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-6">
@@ -1328,7 +1332,7 @@ export default function CommunityModule() {
                   {commentsList.map(c => (
                     <div key={c.id} className="group flex items-start gap-2.5">
                       <Avatar className="h-7 w-7 shrink-0">
-                        <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-[10px] font-semibold">
+                        <AvatarFallback className="bg-blush text-primary text-[10px] font-semibold">
                           {c.author.split('_')[0][0]}{c.author.split('_')[1]?.[0] || ''}
                         </AvatarFallback>
                       </Avatar>
@@ -1365,7 +1369,7 @@ export default function CommunityModule() {
               />
               <Button
                 size="icon"
-                className="bg-sky-500 hover:bg-sky-600 text-white shrink-0 h-10 w-10"
+                className="btn-plum shrink-0 rounded-full h-11 w-11 min-w-11"
                 onClick={handleAddComment}
                 disabled={!newComment.trim() || commentPosting}
               >
@@ -1399,7 +1403,7 @@ export default function CommunityModule() {
                 <button
                   key={reason}
                   onClick={() => setReportReason(reason)}
-                  className={`w-full text-left text-xs rounded-lg border px-3 py-2.5 transition-colors ${
+                  className={`w-full text-left text-xs rounded-lg border px-3 py-2.5 min-h-11 flex items-center transition-colors ${
                     reportReason === reason
                       ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/30 text-foreground font-medium'
                       : 'border-border hover:bg-accent text-muted-foreground'

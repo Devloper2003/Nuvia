@@ -14,12 +14,10 @@ import {
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import {
   Brain,
   Droplets,
-  Zap,
   Moon,
   Flame,
   TrendingUp,
@@ -232,9 +230,12 @@ function EmptyState({
       <p className="text-sm font-medium text-foreground">{title}</p>
       <p className="text-xs text-muted-foreground mt-1 max-w-xs">{description}</p>
       {ctaLabel && onCta && (
-        <Button size="sm" className="mt-4" onClick={onCta}>
+        <button
+          className="btn-plum mt-4 inline-flex items-center justify-center gap-2 rounded-full px-6 min-h-11 font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+          onClick={onCta}
+        >
           {ctaLabel}
-        </Button>
+        </button>
       )}
     </div>
   )
@@ -349,48 +350,45 @@ export default function HormoneModule() {
     >
       {/* Section 1: Phase Banner */}
       <motion.div variants={itemVariants}>
-        <div
-          className="relative overflow-hidden rounded-2xl p-6 md:p-8"
-          style={{ background: `linear-gradient(135deg, ${gradient.from}, ${gradient.to})` }}
-        >
-          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/5" />
-          <div className="absolute -right-4 bottom-0 h-24 w-24 rounded-full bg-white/5" />
-          <div className="absolute left-1/2 -bottom-6 h-32 w-32 rounded-full bg-white/5" />
+        <div className="card-plum relative p-6 sm:p-8">
+          <div aria-hidden className="lotus-watermark absolute inset-0" />
+          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-plum-soft/40" />
+          <div className="absolute -right-4 bottom-0 h-24 w-24 rounded-full bg-gold-soft/20" />
+          <div className="absolute left-1/2 -bottom-6 h-32 w-32 rounded-full bg-plum-soft/30" />
 
           <div className="relative z-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Flower2 className="h-5 w-5 text-white/80" />
-                  <Badge variant="secondary" className="bg-white/20 text-white border-0 backdrop-blur-sm text-xs">
+              <div className="space-y-2 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Flower2 className="h-5 w-5 text-gold shrink-0" />
+                  <span className="chip-soft px-2.5 py-1 text-xs font-medium text-plum">
                     {cycleDay ? `Cycle Day ${cycleDay} of ${cycleLength}` : 'No cycle logged yet'}
-                  </Badge>
+                  </span>
                 </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white">
+                <h2 className="gold-shine font-serif text-2xl sm:text-3xl font-bold tracking-tight">
                   {phaseInfo ? phaseInfo.title : 'Welcome to Hormone Intelligence'}
                 </h2>
-                <p className="text-white/80 text-sm md:text-base max-w-xl">
+                <p className="text-sm md:text-base max-w-xl opacity-90">
                   {phaseInfo
                     ? phaseInfo.description
                     : 'Log your period in the Cycle Tracker to see your current hormone phase, predictions, and personalized insights.'}
                 </p>
+                <span className="gold-divider text-[10px]" aria-hidden="true"><span>✦</span></span>
               </div>
               <div className="flex flex-col items-start md:items-end gap-2">
                 {phaseInfo && (
                   <div className="text-right max-w-xs">
-                    <p className="text-white/90 text-xs leading-relaxed">{phaseInfo.details}</p>
+                    <p className="text-xs leading-relaxed opacity-90">{phaseInfo.details}</p>
                   </div>
                 )}
                 {!latestStart && (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="bg-white text-purple-700 hover:bg-white/90"
+                  <button
+                    className="btn-plum inline-flex items-center gap-1.5 rounded-full px-6 min-h-11 font-semibold text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                     onClick={() => setActiveModule('period')}
                   >
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus className="h-4 w-4" />
                     Log your period
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
@@ -400,14 +398,14 @@ export default function HormoneModule() {
 
       {/* Section 2: Hormone Trend Charts — educational typical curve */}
       <motion.div variants={itemVariants}>
-        <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg overflow-hidden">
+        <Card className="overflow-hidden">
           <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <TrendingUp className="h-5 w-5 text-purple-500" />
-                Typical Hormone Pattern — {cycleLength}-Day Cycle
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="flex items-center gap-2 text-lg min-w-0">
+                <TrendingUp className="h-5 w-5 text-primary shrink-0" />
+                <span className="min-w-0">Typical Hormone Pattern — {cycleLength}-Day Cycle</span>
               </CardTitle>
-              <Badge variant="secondary" className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 text-xs">
+              <Badge className="text-xs shrink-0">
                 Educational
               </Badge>
             </div>
@@ -465,11 +463,11 @@ export default function HormoneModule() {
               </ResponsiveContainer>
             </div>
 
-            <div className="flex items-center justify-center gap-4 md:gap-8 mt-3 flex-wrap">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mt-3 flex-wrap">
               {['Menstrual', 'Follicular', 'Ovulation', 'Luteal'].map((phase) => (
-                <div key={phase} className="flex items-center gap-1.5">
+                <div key={phase} className="chip-soft flex items-center gap-1.5 px-2.5 py-1">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: phaseGradients[phase].accent }} />
-                  <span className="text-xs text-muted-foreground">{phase}</span>
+                  <span className="text-xs text-foreground">{phase}</span>
                 </div>
               ))}
             </div>
@@ -482,10 +480,10 @@ export default function HormoneModule() {
 
       {/* Section 3: AI Predictions — empty state until user logs data */}
       <motion.div variants={itemVariants}>
-        <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Sparkles className="h-5 w-5 text-purple-500" />
+            <CardTitle className="flex items-center gap-2 text-lg min-w-0">
+              <Sparkles className="h-5 w-5 text-gold shrink-0" />
               AI Predictions — Next 7 Days
             </CardTitle>
           </CardHeader>
@@ -503,37 +501,37 @@ export default function HormoneModule() {
 
       {/* Section 4: Phase-Based Insights (educational content) */}
       <motion.div variants={itemVariants}>
-        <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+        <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Leaf className="h-5 w-5 text-emerald-500" />
-              Phase-Based Insights {currentPhase ? `— ${currentPhase} Phase` : ''}
+            <CardTitle className="flex items-center gap-2 text-lg min-w-0">
+              <Leaf className="h-5 w-5 text-primary shrink-0" />
+              <span className="min-w-0 truncate">Phase-Based Insights {currentPhase ? `— ${currentPhase} Phase` : ''}</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
               {phaseInsights.map((insight, index) => (
                 <AccordionItem key={insight.id} value={insight.id} className="border-border/50">
-                  <AccordionTrigger className="hover:no-underline py-3">
-                    <div className="flex items-center gap-3">
+                  <AccordionTrigger className="hover:no-underline py-3 min-h-11">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="h-8 w-8 rounded-lg flex items-center justify-center"
+                        className="h-10 w-10 rounded-full shrink-0 flex items-center justify-center"
                         style={{
                           background: `linear-gradient(135deg, ${gradient.from}20, ${gradient.to}20)`,
                         }}
                       >
                         <insight.icon className="h-4 w-4" style={{ color: gradient.accent }} />
                       </div>
-                      <span className="text-sm font-medium text-foreground">{insight.title}</span>
+                      <span className="text-sm font-medium text-foreground min-w-0">{insight.title}</span>
                       {index === 0 && (
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300 text-[10px] px-1.5">
+                        <span className="chip-soft px-2 py-0.5 text-[11px] font-semibold text-primary shrink-0">
                           Key
-                        </Badge>
+                        </span>
                       )}
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="pl-11 pr-2">
+                    <div className="pl-13 pr-2">
                       <p className="text-sm text-muted-foreground leading-relaxed">{insight.content}</p>
                     </div>
                   </AccordionContent>
@@ -593,10 +591,10 @@ function HormoneLog({ userId }: { userId: string | undefined }) {
 
   return (
     <motion.div variants={itemVariants}>
-      <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+      <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Activity className="h-5 w-5 text-purple-500" />
+          <CardTitle className="flex items-center gap-2 text-lg min-w-0">
+            <Activity className="h-5 w-5 text-primary shrink-0" />
             Hormone Symptom Log
           </CardTitle>
           <p className="text-xs text-muted-foreground">Track symptoms that correlate with your hormonal changes</p>
@@ -612,10 +610,10 @@ function HormoneLog({ userId }: { userId: string | undefined }) {
                     key={symptom.id}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => toggleSymptom(symptom.id)}
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 border ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 border min-h-11 ${
                       isSelected
-                        ? 'bg-purple-100 border-purple-300 text-purple-700 dark:bg-purple-900/40 dark:border-purple-700 dark:text-purple-300 shadow-sm'
-                        : 'bg-background border-border/50 text-muted-foreground hover:border-purple-300 hover:text-purple-600 dark:hover:border-purple-700 dark:hover:text-purple-400'
+                        ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                        : 'chip-soft text-muted-foreground hover:text-primary'
                     }`}
                   >
                     <symptom.icon className="h-3 w-3" />
@@ -630,7 +628,7 @@ function HormoneLog({ userId }: { userId: string | undefined }) {
           <div className="space-y-1.5">
             <span className="text-xs font-medium text-muted-foreground">Additional notes</span>
             <textarea
-              className="w-full rounded-xl border border-border/50 bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 resize-none transition-all"
+              className="w-full rounded-xl border border-border/50 bg-background px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-ring/40 focus:border-ring resize-none transition-all"
               rows={3}
               placeholder="Describe how you're feeling, any patterns you notice..."
               value={notes}
@@ -642,23 +640,23 @@ function HormoneLog({ userId }: { userId: string | undefined }) {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
+            <button
               onClick={handleSave}
               disabled={saving || !userId || (selectedSymptoms.length === 0 && !notes)}
-              className="bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-700 hover:to-rose-700 text-white shadow-lg shadow-purple-500/20 transition-all duration-200"
+              className="btn-plum inline-flex items-center justify-center gap-1.5 rounded-full px-6 min-h-11 font-semibold text-sm transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             >
               {saved ? (
                 <>
-                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                  <CheckCircle2 className="h-4 w-4" />
                   Saved!
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4 mr-1.5" />
+                  <Sparkles className="h-4 w-4" />
                   Log Symptoms
                 </>
               )}
-            </Button>
+            </button>
             {saved && (
               <motion.p
                 initial={{ opacity: 0, x: -10 }}

@@ -1262,3 +1262,317 @@ Stage Summary:
   2. Mobile bottom-nav: consider center "AI Coach" floating button styling per REF-B (partially there).
   3. i18n depth (tracker/coach interiors), analytics audit table, timezone quiet hours (carried from Task 12).
   4. Knwon ops: OOM reaping — use NODE_OPTIONS cap on every restart; agent-browser eats RAM too, close extra tabs between rounds.
+
+---
+Task ID: 15-a (coordinator, in progress)
+Agent: Z.ai Code (main)
+Task: "Nuvia Plum & Gold" theme evolution + 100% cross-device friendliness (Android & iOS), per user's NUVIA brand-kit reference image. Sweep ALL remaining modules onto the design system.
+
+Work Log:
+- globals.css: --primary shifted hot-pink → deep plum-rose oklch(0.47 0.135 352) light / oklch(0.76 0.14 352) dark; ring/sidebar/chart-1 synced; chart-2 → gold hue.
+- NEW tokens: --plum (#4B1D3F family), --plum-soft (#6E366F family), --gold (#D4AF37 family), --gold-soft — mapped in @theme inline → bg-plum, text-gold, bg-gold-soft, bg-plum-soft, text-plum etc. (light + dark variants).
+- NEW signature utilities: .btn-plum (plum gradient pill CTA), .gold-divider (gilded hairline ornament w/ center span), .gold-shine (gilded shimmer text), .arch-frame (splash arch), .card-plum (dark plum showcase card w/ gilded border), .lotus-watermark (SVG lotus pattern, aria-hidden usage), .tap-target (44px/48px touch targets).
+- Device-friendliness layer: -webkit-tap-highlight-color transparent, text-size-adjust 100%, overscroll-behavior-y contain, momentum scrolling on scroll containers, 16px inputs on pointer:coarse (iOS Safari anti-zoom), .tap-target helper.
+- layout.tsx: themeColor now split light "#fff7f9" / dark "#221722" (matches topbar both modes).
+- Module sweep delegated to subagents: 15-b hormone+symptoms, 15-c pcos+menopause, 15-d coach+insights, 15-e diet+skin, 15-f community+marketplace, 15-g reports+premium+settings, 15-h fitness+mental. Dashboard/tracker/doctor/auth already done (Task 14) — coordinator adds gold ornaments only.
+
+DESIGN SYSTEM SPEC (all sweep agents MUST follow — "Nuvia Plum & Gold"):
+1. Page title: `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + ornament `<span className="gold-divider text-[10px]"><span>✦</span></span>` under/beside it.
+2. Primary CTA: `btn-plum rounded-full px-6 min-h-11 font-semibold` (class handles gradient/text/shadow).
+3. Hero/summary panels: `.card-blush` (rose) / `.card-peach` (warm) / `.card-medical` (clinical) / `.card-plum` (dark showcase; pair headings with `.gold-shine`).
+4. Chips/legends/stat pills: `.chip-soft`. NEVER combine raw oklch tint + opacity-* (headless hue-flip bug).
+5. Accent tokens (instead of raw tailwind colors): text-primary/bg-primary (plum), text-gold, bg-gold-soft, bg-plum-soft/text-plum, bg-blush, bg-lilac, bg-peach-soft, bg-medical-soft; rose/amber/fuchsia accents allowed; NO blue/indigo/slate/cyan; NO bg-white or hardcoded light hexes (use bg-card / utilities so dark mode adapts).
+6. Icon medallions: `h-11 w-11 rounded-full bg-{accent}-soft` + icon `text-{accent}` (use token *-soft backgrounds).
+7. Responsive (MANDATORY): grids `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3(+)` gap-4/6; long text rows get min-w-0 + truncate; chip rows flex-wrap; wide tables → wrap in `overflow-x-auto`; interactive rows min-h-11 (44px); label text ≥ text-[11px]; paddings p-4 sm:p-6.
+8. Do NOT change logic, handlers, state, data fetching, i18n keys, or copy. className-level + purely presentational (aria-hidden) wrappers only.
+9. Self-check before finishing: `rg -n "bg-white|slate-|indigo-|blue-|cyan-" <your files>` → fix hits (exceptions: none expected); balanced JSX; no unused imports left from removed classes.
+
+Stage Summary:
+- In progress: token + utility layer shipped; sweep agents running; coordinator to verify (lint + agent-browser light/dark multi-viewport) after waves complete.
+---
+Task ID: 15-e
+Agent: UI-sweep agent (diet+skin)
+Task: Sweep Diet Advisor + Skin & Beauty modules onto the "Nuvia Plum & Gold" design system (className-only, zero logic changes).
+
+Work Log:
+- diet-advisor.tsx:
+  - Header: title → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` (emerald gradient-clip removed) + gilded `<span aria-hidden class="gold-divider text-[10px]"><span>✦</span></span>` ornament; "AI-Powered" badge → chip-soft text-primary w/ gold Sparkle.
+  - Hero: plan-header Card → `.card-peach` (warm nutrition) with `font-serif` plan title, condition-gradient medallion now rounded-full, and the page's single `lotus-watermark` (aria-hidden, inside relative CardContent).
+  - Accents de-blued: hormone condition `to-cyan-500` → `to-teal-500`; Fat macro gradient idem; wellness condition sky→fuchsia family (text/bg/border/ring/gradient `from-fuchsia-400 to-purple-500`); water tracker sky→medical/teal (icon text-medical, glasses fill `from-medical to-teal-300`, hover border teal).
+  - Emerald reduced to semantic "foods to eat" only (medallion, row hover, meal bullets); all other emerald medallions/badges retokened: calorie card → bg-gold-soft + text-gold + amber number; meal-plan & logged-meal & tips medallions → bg-peach-soft text-amber-600; tips header → bg-lilac text-primary; tracker header → bg-gold-soft text-gold; chat coach medallion → bg-plum-soft with gold Apple; chat avatars/empty-state/typing → bg-blush text-primary; typing dots → bg-gold.
+  - CTAs: chat Send + meal "Add" → `btn-plum rounded-full` (min 40–44px, conflicting bg-/text- removed); quick-prompt chips → chip-soft text-primary h-9; inputs/select focus rings emerald → primary; water ±1/Reset buttons h-7 → h-9 (touch).
+  - Chips/stat pills (foods count, kcal totals, meal kcal, date, water count, logged count) → chip-soft with text-foreground.
+  - Responsive: macros grid `grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4`; meal form inputs/select h-10; icon medallions standardized to rounded-full h-11/h-9/h-7 token-soft backgrounds. Grids elsewhere already compliant (1/sm:2/lg:3-4, flex-wrap chip rows, min-w-0+truncate rows).
+- skin-beauty.tsx:
+  - Header: title → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` (rose-fuchsia gradient-clip removed) + gold-divider ✦ ornament; medallion → h-11 rounded-full bg-blush + text-primary; "Cycle-Synced" badge → chip-soft text-primary.
+  - Heroes: Skin Health Score card → `.card-blush` + single aria-hidden lotus-watermark (header/content made relative); "Today's Skin Log" card → `.card-blush`.
+  - Accents de-indigo/blued: beauty article "Double Cleansing" `from-sky-400 to-blue-500` → `from-teal-400 to-teal-600`; "Stress & Skin" `from-indigo-400 to-purple-500` → `from-fuchsia-400 to-purple-500`; Sleep slider icon/badge indigo → text-plum + bg-lilac; PM-steps stat indigo → bg-lilac text-plum; cleanser category sky → teal-500; water slider sky → text-medical; chart hydration hex #0284c7 → #0d9488; breakdown bar idx-0 sky → teal; Recharts tooltip hardcoded oklch(1 0 0)/border → var(--card)/var(--border) for dark mode.
+  - CTAs: "Save Log" + "Add Product" → `btn-plum rounded-full px-6 min-h-11 font-semibold` (gradient classes removed); log Reset → rounded-full min-h-11; AI-insight badges + slider value pills + article category tags + db count → chip-soft (text-primary/text-foreground).
+  - Medallions: empty-state medallions (score/breakdown/chart/timeline/insights) bg-muted → rounded-full bg-blush text-primary; AI-insights brain → bg-plum-soft; Beauty-tips book → bg-blush; cycle banner medallion → rounded-full; face-map chips px-3 py-1.5 (touch).
+  - Responsive: grids already 1/sm:2/lg:3-4; header row min-w-0 guards; kept semantic rose severity system (condition meta, phases, stress, consistency) — allowed palette.
+- Self-check `rg "bg-white|slate-|indigo-|blue-|cyan-"` on both files: only 2 false-positive matches ("tran**slate**-x-1" substrings in skin-beauty.tsx lines 1205/1333) — zero real hits. No bg-white anywhere. `bunx eslint` on both files: clean. `bunx tsc --noEmit`: no errors in these two files (pre-existing errors elsewhere untouched).
+
+Stage Summary:
+- Diet Advisor now leads with a card-peach hero + gold/gilded accents, plum CTA pills, medical-teal water tracking; Skin & Beauty leads with card-blush surfaces + blush/plum medallions and plum CTAs. Emerald kept only where semantically "green = go/food/clear". Dark mode fully token-driven (no forced light colors; chart tooltip fixed). Logic, handlers, i18n copy, data arrays (beyond decorative class strings/hex), and chat streaming untouched.
+
+---
+Task ID: 15-d
+Agent: UI-sweep agent (coach+insights)
+Task: Bring ai-coach.tsx + ai-insights.tsx fully onto the "Nuvia Plum & Gold" design system (className-only sweep, logic byte-preserved).
+
+Work Log:
+- ai-coach.tsx:
+  - Header: h2 → `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + `gold-divider ✦` ornament; header flex got gap-3/min-w-0; Reset button min-h-11 shrink-0.
+  - Safety banner: amber-50/amber-200 raw tints → `bg-gold-soft border-gold/40` token panel (amber text kept — allowed accent).
+  - Chat card: `border-0 glass` → `border-border bg-card shadow-lg`.
+  - Bubbles: user → `bg-primary text-primary-foreground rounded-3xl rounded-br-lg`; assistant + typing → `bg-blush border-border rounded-3xl rounded-bl-lg`; bubbles get `min-w-0 max-w-[75%]` + `break-words` (360px overflow-safe); avatars → assistant `bg-plum-soft`/Bot `text-gold`, user `bg-blush`/User `text-primary`; typing dots emerald → bg-primary; empty-state medallion → `rounded-full bg-plum-soft` + `text-gold`.
+  - Quick prompts: horizontal scroll row → `flex flex-wrap gap-2`; pills → `chip-soft rounded-full min-h-11 px-4` (44px tap).
+  - Input row: input `min-h-11` (iOS anti-zoom layer covers 16px); send button → `btn-plum rounded-full h-11 w-11` (removed bg-emerald-600/text-white); "Find a Doctor" CTA → `btn-plum rounded-full px-6 min-h-11 font-semibold` (removed teal classes).
+  - Category tiles: grid → `grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4`; cards glass → `border-border bg-card hover:border-primary/30`; emoji wrapped in `h-11 w-11 rounded-full bg-blush` medallion (aria-hidden); desc text bumped to text-[11px].
+  - Doctor CTA panel: teal/cyan gradient → `.card-medical` + `lotus-watermark` (aria-hidden); medallion → `h-11 w-11 rounded-full bg-medical-soft` + `text-medical`; heading font-serif; text column min-w-0.
+- ai-insights.tsx:
+  - Hero: violet/purple/indigo gradient → `.card-plum` showcase; h1 → `font-serif` + `.gold-shine` span + `gold-divider ✦` ornament; one blob violet → bg-gold/20; added `lotus-watermark` (aria-hidden); AI-Engine badge bg-white/15 → bg-plum-soft/50; 3 stat tiles bg-white/10 → bg-plum-soft/40 border-white/15; tile labels text-[10px] → text-[11px].
+  - Accent cleanup: dataSources "Sleep entries" indigo → `bg-lilac text-plum` ("Cycle logs" → `bg-blush text-plum`); PatternCard colorMap values indigo→violet/purple, cyan→fuchsia/rose (keys untouched); correlationColor + matrix legend slate → muted-foreground/25; impactColors "low" slate → bg-muted/text-muted-foreground; ChartTooltip bg-white/95 → bg-popover/95 text-popover-foreground; AI-Model + Matrix medallions indigo → plum-soft/violet & violet/fuchsia; sleep chart indigo icon/stroke/gridline → violet (#8b5cf6 / rgba(139,92,246,.1)).
+  - Surfaces: Health-Score card → `.card-blush`; footer quote panel → `.card-blush p-4 sm:p-6`; all `glass border-violet-*` cards → `border-border`; ForecastCard from-white gradient → `from-card to-blush/40 border-border`; violet-50 tinted boxes (summary/rec/key-findings) → `bg-blush/40 border-border`; dashed empty cards → `border-primary/30`; 8 empty-state medallions → `rounded-full bg-plum-soft` + `text-gold`.
+  - CTAs/tap targets: Add-to-Plan → `btn-plum rounded-full min-h-11 font-semibold` (kept emerald "added" state); Re-train/Discuss/PDF/Excel outline buttons min-h-11; impact badge shrink-0.
+  - Responsive: forecast/pattern/rec grids → `grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6`; risk grid → sm:grid-cols-2; how-it-works → `sm:grid-cols-2 xl:grid-cols-5`; score grid gap-8→gap-6; matrix legend flex-wrap + text-[11px]; section labels text-[10px]→text-[11px]; tab h2s → `font-serif text-xl sm:text-2xl`; PatternCard title row min-w-0.
+- Self-check: `rg -n "bg-white|slate-|indigo-|blue-|cyan-"` on both files → 0 matches. `bun run lint` → clean (no errors project-wide). No imports, handlers, state, hooks, fetch/streaming, i18n keys or copy changed — className + aria-hidden decorative wrappers only.
+
+Stage Summary:
+- ✅ Both AI modules now on Nuvia Plum & Gold: card-plum hero w/ gold-shine + ornament + lotus watermark, card-blush score/quote panels, card-medical doctor CTA, chip-soft suggestion pills, btn-plum CTAs, plum-soft/gold medallions, blush chat bubbles; zero banned accents (blue/indigo/slate/cyan/bg-white), dark mode via tokens only, 360px overflow-safe (min-w-0/break-words/flex-wrap/min-h-11).
+- Intentionally kept: amber/emerald/teal/violet/fuchsia accents (allowed by spec), PREMIUM badge amber gradient (fixed dark text keeps contrast on gold in both modes), REC_CATEGORIES/category gradients (config data), recharts hex stops in allowed palette, chart tick fontSize (recharts props, not UI labels).
+
+---
+Task ID: 15-c
+Agent: UI-sweep agent (pcos+menopause)
+Task: Sweep pcos-management.tsx + menopause-assistant.tsx onto the "Nuvia Plum & Gold" design system (className-only; zero logic/copy changes).
+
+Work Log:
+- pcos-management.tsx:
+  - Header: title now `font-serif text-2xl sm:text-3xl font-bold tracking-tight` with gold→primary gradient text; gilded ornament `<span className="gold-divider text-[10px]"><span>✦</span></span>` added under the subtitle (aria-hidden wrapper).
+  - Tabs: TabsList normalized to `bg-muted/60 border border-border`; all 7 triggers unified to `data-[state=active]:bg-primary data-[state=active]:text-primary-foreground` + `min-h-11` (removed the amber/pink/emerald/violet/rose/sky rainbow + sky blue).
+  - Hero/summary panels: PCOS Risk Score card → `card-blush` (+ the page's single `lotus-watermark` aria-hidden layer); symptom Summary card → `card-blush`; AI Recommendations panel → `card-peach`; Research intro panel → `card-blush`; "What is PCOS?" → `card-blush`.
+  - Regular cards normalized to token `border-border` (removed raw amber/emerald/pink/rose/indigo/violet/orange border pairs).
+  - CTAs → `btn-plum rounded-full px-6 min-h-11 font-semibold`: "Consult a Specialist" (dropped bg-teal-600), tracking "+15 min" (dropped bg-emerald-500; −15 kept outline, gained min-h-11 rounded-full).
+  - Chips/icons: stat + causes + symptoms-to-watch + risks medallions → `h-11 w-11 rounded-full` with bg-gold-soft/bg-blush/bg-lilac/bg-peach-soft; pcosCauses config bg/border → token softs; empty rating stars → text-muted-foreground/30; Switch checked → bg-primary; severity rec icon indigo→violet.
+  - Accent cleanup: `from-sky-400 to-blue-400` resource banner → `from-fuchsia-400 to-pink-400`; all `bg-white/*` overlays → `bg-card/80` or `bg-background/20–25`; gray star tones tokenized.
+  - Responsive: overview grid → `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6` (weight mini `col-span-1 sm:col-span-2`); tracking grid gap-4 sm:gap-6; symptom rows flex-wrap + min-w-0 + truncate; reading-card titles truncate; grids already wrap on mobile.
+- menopause-assistant.tsx:
+  - Header: serif title + gold-divider ornament; medallion → `h-11 w-11 rounded-full bg-peach-soft` with text-primary icon.
+  - Panels: Stage Selector → `card-blush` (+ the page's single `lotus-watermark`); Daily Symptom Tracker → `card-blush`; AI Insights → `card-peach` with `h-14 w-14 rounded-full bg-gold-soft` + text-gold Sparkles; Symptom Trends / Management Tips / HRT Tracker → `bg-card/90 backdrop-blur-xl` token glass (all six `bg-white/80 dark:bg-gray-900/80` cards eliminated).
+  - Chips: stage symptom badges → `chip-soft text-foreground`; Stage tiles/tip rows/toggle tiles → bg-muted/50 with hover:border-border.
+  - CTAs → `btn-plum rounded-full px-6 min-h-11 font-semibold`: "Save Today's Log" (emerald "Saved!" feedback state preserved), HRT "Add Medication" toggle, HRT "Add Medication" submit.
+  - Accent cleanup: postmenopause gradient indigo→fuchsia; whole night-sweats cluster indigo→violet (buttons/number/bars/icons); sleep tip indigo→ bg-lilac + text-primary; MANAGEMENT_TIPS medallions → token softs (blush/peach-soft/gold-soft/lilac/medical-soft, doctor icon text-medical); ChartTooltip → bg-card/border-border/text-foreground; switches checked → bg-menopause token; HRT medallion → bg-blush + text-primary; HRT summary → bg-blush/60 + text-primary figures; destructive hover on remove button; gray → bg-muted everywhere (meters, effectiveness buttons, toggle group).
+  - Responsive: stage grid → 1/sm:2/lg:3; symptom-toggle grid → 1/sm:2/lg:4 with min-h-11 rows + truncate labels; tracker grid gap-4 sm:gap-6; Weekly/Monthly toggle min-h-11; trend tabs min-h-11.
+- Self-check `rg "bg-white|slate-|indigo-|blue-|cyan-"` on both files → 0 hits. `tsc --noEmit` → no errors in these files. `bun run lint` → only pre-existing errors in symptoms-tracker.tsx (Task 15-b's file, untouched here).
+
+Stage Summary:
+- Both modules now fully on Nuvia Plum & Gold: plum CTA pills, blush/peach hero panels, gold ornaments, chip-soft pills, token medallions, dark-mode-safe (no hardcoded light surfaces left).
+- Intentionally kept: semantic risk colors (green/amber/orange/red severity + gauge zones), chart hex strokes/fills (data-viz props, not classes — logic untouched), red accents for hot-flash semantics, hot-flash counter number color.
+- No logic, handlers, hooks, i18n keys, copy, or API calls were modified; only classNames + 1 aria-hidden watermark + 1 aria-hidden ornament per file.
+
+---
+Task ID: 15-b
+Agent: UI-sweep agent (hormone+symptoms)
+Task: Bring hormone-intelligence.tsx + symptoms-tracker.tsx fully onto the "Nuvia Plum & Gold" design system (spec from 15-a), responsive + dark-mode safe, zero logic changes.
+
+Work Log:
+- hormone-intelligence.tsx:
+  - Phase banner rebuilt as `.card-plum` dark showcase panel: `gold-shine font-serif text-2xl sm:text-3xl font-bold tracking-tight` heading, `.gold-divider text-[10px]` ✦ ornament, `chip-soft text-plum` cycle-day pill, `text-gold` lotus icon, `lotus-watermark` (aria-hidden, 1/page), plum-soft/gold-soft decorative circles; description inherits card-plum's light ink (opacity-90) instead of theme-adaptive primary-foreground (would go dark-on-dark in dark mode).
+  - Phase-gradient hero background (inline style from phaseGradients) replaced by brand panel; phase color still expressed via legend dots + insight medallions (gradient.from/to/accent still referenced).
+  - All 4 content Cards: `bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg` glass removed → default token Card (bg-card, token border, system radius); chart card keeps overflow-hidden.
+  - Legend rows → `chip-soft` pills (dot color stays data-driven inline style); "Educational" → default plum Badge; "Key" chip → `chip-soft text-primary text-[11px]`; insight medallions h-8→h-10 rounded-full; accordion triggers min-h-11 with min-w-0/truncate on long titles.
+  - Primary CTAs → spec `.btn-plum rounded-full px-6 min-h-11 font-semibold` as plain <button> (hero "Log your period", EmptyState CTA, "Log Symptoms"); shadcn Button default-variant hover:bg-primary/90 would flip to light plum over the gradient in dark mode, so Button component dropped for CTAs (same handlers/labels); disabled:opacity-50 kept.
+  - Symptom chips: selected `bg-primary border-primary text-primary-foreground shadow-sm`, unselected `chip-soft text-muted-foreground hover:text-primary`, min-h-11; textarea focus ring purple→ring-ring/border-ring.
+  - Accents: text-purple-500→text-primary (TrendingUp/Leaf/Activity), Sparkles→text-gold; removed Button import (last use swapped), removed pre-existing unused Zap import.
+- symptoms-tracker.tsx:
+  - Header: `h-11 w-11 rounded-full bg-blush` medallion + HeartPulse text-primary; title `font-serif text-2xl sm:text-3xl font-bold tracking-tight`; gold-divider ✦ ornament under subtitle (aria-hidden).
+  - TabsList bg-pink-50→bg-secondary (wins over component bg-muted alphabetically, token-adapting); all 4 TabsTrigger active states → `data-[state=active]:bg-primary data-[state=active]:text-primary-foreground` + explicit dark: twins (component's dark:bg-input/30 / dark:text-foreground would otherwise win in dark mode).
+  - Mood selector → `card-blush` lead panel; mood tiles bg-gray-50→bg-card/70, selected border-primary bg-primary/10, min-h-11, labels text-[10px]→text-[11px]; "feeling…" text-pink-600→text-primary.
+  - All remaining Cards → default token Card (glass removed); Symptoms/Notes panels sm:col-span-2 (grid lg:grid-cols-2→sm:grid-cols-2 gap-4 sm:gap-6).
+  - Checkbox pink overrides removed (default primary plum); severity pills green/red→teal-600/amber-500/rose-500, unselected bg-muted, text-[11px]; symptom tiles pink→border-primary/50 bg-primary/5 / bg-muted/40; count badge → plain variant="secondary".
+  - Sleep: Moon indigo→text-plum, hours number→text-primary, Progress indigo overrides removed (default plum), ± steppers → plain 44px (h-11 w-11) rounded-full token buttons (old h-8/rounded-full silently lost to size-9).
+  - Water: sky→medical teal family (icon text-medical, tiles bg-medical-soft border-medical), goal badge emerald/sky→teal-600/teal-500, labels text-[9px]→text-[11px], tiles min-h-11.
+  - Save CTA → conditional `btn-plum` / saved `bg-teal-600 text-white hover:bg-teal-700`, rounded-full px-6 min-h-11 font-semibold (plain <button>, same onClick/disabled); row flex-wrap.
+  - Mood history: ChartTooltip `bg-white dark:bg-gray-800 gray borders/text` → token `bg-background/95 border-border/50 text-foreground` (matches hormone tooltip); stat pills → bg-blush text-primary / bg-gold-soft text-plum / bg-medical-soft teal / bg-lilac text-plum (all adapt in dark).
+  - Patterns: callout bg-pink-50/border-pink-200→bg-blush border-primary/20, Sparkles→text-gold, top-3 badges→bg-primary text-primary-foreground; header icons rose kept (allowed), TrendingUp→text-primary.
+  - Removed Button import (last usages swapped) and pre-existing unused Input import; MOOD_OPTIONS sad bg-blue→violet (data string, was rg-flagged).
+- Verified empirically (compiled Tailwind v4 CSS from this project): same-property utilities resolve alphabetically and arbitrary values sort BEFORE static (so rounded-[1.5rem]/h-11 overrides would silently LOSE to component classes) — hence use of unlayered custom classes (card-*, chip-soft, btn-plum) or plain elements instead of fighting shadcn variant classes.
+- Self-check: `rg "bg-white|slate-|indigo-|blue-|cyan-"` → 0 hits in both files; `bun run lint` → no findings for either file; `tsc --noEmit` → only the 5 pre-existing framer-motion Variants typing errors in hormone-intelligence (verified pre-existing via git stash).
+
+Stage Summary:
+- Both modules now render entirely on Nuvia tokens: card-plum hero w/ gold-shine + lotus watermark (hormone), card-blush lead panel (symptoms), chip-soft chips/legends/pills, btn-plum 44px pill CTAs, token icon medallions, serif page titles with gilded ✦ ornaments.
+- Responsive: 1-col→sm:2-col grids with gap-4 sm:gap-6, wrapping chip/tab rows, min-w-0+truncate on long titles, 44px interactive rows/pills/steppers, no horizontal overflow at 360px (fixed 4-col emoji/water tiles are 4×~78px, fits).
+- Intentionally kept: chart series hex strokes/fills + recharts tick fills (data-viz props — logic untouched), MOOD_OPTIONS/STRESS_COLORS data strings (green/amber/orange/red/yellow/gray — semantic + not banned; unused `bg:` fields in phaseGradients purple/violet are dead data), stress badge solids with text-white, amber AI disclaimer panel, saved-state feedback recolored emerald→teal-600.
+- No logic, handlers, state, hooks, data fetching, i18n keys, copy, or API calls modified — className swaps + plain-element swaps (Button→button with identical props) + 1 aria-hidden watermark + 1 aria-hidden ornament per file.
+
+---
+Task ID: 15-f
+Agent: UI-sweep agent (community+marketplace)
+Task: Sweep community.tsx + marketplace.tsx onto the "Nuvia Plum & Gold" design system (className-only, zero logic changes).
+
+Work Log:
+- community.tsx:
+  - Header: h1 → `font-serif text-2xl sm:text-3xl font-bold tracking-tight`; Users icon → `h-11 w-11 rounded-full bg-blush text-primary` medallion; gilded `<span aria-hidden className="gold-divider text-[10px]"><span>✦</span></span>` added under the subtitle.
+  - Hero/summary panel: Gamification Bar → `.card-blush` (relative + overflow-hidden) with the page's single aria-hidden `lotus-watermark`; level medallion sky/blue gradient → `bg-plum-soft text-gold`; earned-badge circles bg-white/sky-border → `bg-card border-gold/40`.
+  - CTAs → `btn-plum rounded-full px-6 min-h-11 font-semibold`: header Create Post, dialog Post, feed empty-state CTA, group/challenge Join (joined state → outline `border-primary/40 text-primary`); comment send icon → `btn-plum rounded-full h-11 w-11 min-w-11`.
+  - Tab nav + category filter chips: sky active pills → default plum Button (active count pill `bg-white/25 text-white` → `bg-primary-foreground/20`); inactive chips → `chip-soft text-muted-foreground hover:text-primary`; rows → flex-wrap gap-2 (no more horizontal scroll), all chips/tabs min-h-11.
+  - Empty states (feed/groups/challenges): dashed sky borders → `border-primary/30`; medallions rounded-2xl sky-50 → `rounded-full bg-blush` + text-primary; outline CTAs → `rounded-full min-h-11 border-primary/40 text-primary hover:bg-blush/60 dark:hover:bg-primary/10`.
+  - Accent cleanup: avatars (feed + comments) sky → `bg-blush text-primary`; like/comment buttons sky → text-primary + fill-primary, h-9 → min-h-11 (like/comment/report/delete rows); Load-more border/text sky → primary/blush + min-h-11; spinners text-sky → text-primary; TrendingUp → text-primary; Award (badges) → text-gold; earned badge tile sky tint → `border-gold/40 bg-gold-soft/50`; General category color sky → fuchsia; userBadges "First Post" sky → text-primary; badge labels text-[9px] → text-[11px]; report-reason rows + min-h-11 flex.
+  - Post rows already flex-wrap/min-w-0; feed grid gap-6 → `gap-4 sm:gap-6`; tab container → flex-wrap + max-w-full (360px safe).
+- marketplace.tsx:
+  - Hero → `.card-plum` showcase (task-mandated dark promo panel): white/rose gradient panel, bg-white/10 blobs → bg-plum-soft/50, amber blob → bg-gold/20; pill `bg-white/15` → `chip-soft text-plum` + gold ShoppingBag; h1 → `font-serif text-2xl sm:text-3xl` with `.gold-shine` "Wellness Market" + gold-divider ✦ ornament; page's single aria-hidden `lotus-watermark`; search icon text-rose-300 → text-gold; input bg-white/95/rose inks → `bg-card/95 text-foreground` + `ring-gold/60`; cart icon button (variant ghost to avoid variant color clash) → `rounded-full bg-gold-soft text-plum hover:bg-gold` h-11 w-11 min-w-11; count badge → `bg-gold text-plum border-gold-soft`.
+  - Trust strip: medallions rounded-xl rose-50 → `h-11 w-11 rounded-full bg-blush` + kept rose/pink/fuchsia/amber icon accents (allowed); card borders rose → token.
+  - Category pills (sticky bar): active rose→pink gradient → `bg-primary text-primary-foreground shadow-primary/20`; inactive → `chip-soft text-muted-foreground hover:text-primary`; bar border rose → border-border; all pills min-h-11.
+  - Product section: Package → text-primary; h2 → `font-serif text-xl sm:text-2xl`; count badge → `chip-soft text-plum`; Clear-search ghost → text-primary hover:bg-blush/60 min-h-11; empty state → border-primary/30 + rounded-full bg-blush medallion + token Reset button; product grid → `grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6`.
+  - ProductCard/FeaturedCard/RecommendationRow (incl. future-backend dead-code paths): card borders/shadows rose → border-border + shadow-primary/10; ProductImage blobs bg-white/20 → bg-blush/40; wishlist button → `h-11 w-11 min-w-11 rounded-full bg-card/90`; category tag bg-white/90 → `bg-card/90 text-primary dark:text-gold`; brand eyebrows rose-500 → text-primary; prices rose → `text-amber-600 dark:text-gold`; Add-to-Cart → `btn-plum rounded-full min-h-11` (added state emerald → teal-600 text-white, 15-b precedent); Best-Seller badge amber-500/white → `bg-gold text-plum` (contrast + brand); AI badge & row-item borders tokenized; row Add buttons h-7 → h-9 rounded-full token borders.
+  - Footer promo (upsell) → `.card-plum`: gold-shine serif heading, gold Gift icon, Upgrade Now → `bg-gold-soft text-plum hover:bg-gold` rounded-full min-h-11 (ghost variant to dodge default-variant bg-primary clash).
+  - Cart sheet: all rose borders/tints → border-border / bg-blush/60; cart icon + item-count → primary; empty medallion gradient → `bg-blush` + text-primary; Continue Shopping (empty) → btn-plum; free-shipping strip → bg-blush/60, meter bg-primary/15 + bg-primary fill, "Add ₹X more" → text-primary (unlocked emerald kept as success); item rows bg-background → bg-card/60; delete btn → rounded-full h-11 w-11 hover:text-destructive; qty steppers h-9 → h-11 w-11 text-primary hover:bg-blush/60; totals/prices → amber-600 dark:text-gold; Checkout → `btn-plum rounded-full px-6 min-h-11`; Continue Shopping → rounded-full min-h-11 token outline; Clear cart min-h-11; Separator rose override removed.
+- Verification: `rg "bg-white|slate-|indigo-|blue-|cyan-|sky-"` on both files → only the known `-tran**slate**-y-1/2` false positive (marketplace.tsx:558); zero real hits, no bg-white. `bun run lint` → clean project-wide. `bunx tsc --noEmit` → 3 errors in community.tsx (setSupportGroups/setChallenges unused-setter dead code + CommentItem isOwn union) confirmed PRE-EXISTING in git HEAD — untouched per zero-logic-change rule.
+
+Stage Summary:
+- ✅ Community + Marketplace fully on Nuvia Plum & Gold: card-blush gamification hero (community) and card-plum promo hero + card-plum Premium upsell (marketplace) with gold-shine serif headings, ✦ ornaments and one lotus watermark each; btn-plum 44px pill CTAs everywhere (post/checkout/add-to-cart/join), chip-soft filter/category/AI pills with plum selected states, blush/plum-soft/gold token medallions & avatar fallbacks, amber/gold price accents (amber-600 in light, text-gold in dark for contrast).
+- Responsive: wrapping chip/tab rows (no horizontal chip scroll in community), 1→sm:2→xl:4 product grid, min-h-11 on all interactive rows/pills/steppers/cart rows, min-w-0 + truncate/line-clamp retained, p-4 sm:p-6 paddings — 360px overflow-safe.
+- Dark mode: token-driven only (no bg-white/bg-black surfaces left; overlays use bg-card/90, bg-primary-foreground/20, text-white/90 only on always-dark card-plum ink).
+- Intentionally kept: category identity colors (amber/orange/purple/red/teal/fuchsia category map), semantic report/moderation orange + destructive red, on-image Best-Seller→gold/AI-Recommended rose-fuchsia/discount rose-600 solid badges, emerald "unlocked free shipping" success, Stars fill-amber-400, wishlist rose heart, userBadges emerald/pink/amber/purple/orange data colors, PRODUCTS/FEATURED/AI_GROUP empty arrays and their swept-but-unreachable card components (RecommendationRow/FeaturedCard) untouched logic-wise.
+- No handlers, state, hooks, data fetching, cart logic, i18n keys, copy or API calls modified — className swaps + 2 aria-hidden decorative wrappers per file (1 ornament + 1 watermark) + 1 aria-hidden icon-medallion span.
+
+---
+Task ID: 15-g
+Agent: UI-sweep agent (reports+premium+settings)
+Task: Sweep report-center.tsx + premium.tsx + settings.tsx onto the "Nuvia Plum & Gold" design system (className-only; zero logic/copy changes).
+
+Work Log:
+- report-center.tsx (was fully teal):
+  - Header: serif title `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + `gold-divider ✦` ornament; medallion → h-11 rounded-full bg-plum-soft + text-primary; page's single `lotus-watermark` (aria-hidden) in the header bar (children made relative); canvas `from-teal-50/50 to-white` → `from-blush/50 to-background` + border-border.
+  - Period Tabs: TabsList → `bg-muted/60 border-border flex-wrap h-auto py-1`; all 4 triggers → primary active twins (light+dark) + min-h-11 (component h-9/43px trap avoided).
+  - ScoreCards: medallion p-2 rounded-lg → h-11 w-11 rounded-full, colors teal-500/rose-400/amber-400/emerald-500 → medical-soft/blush/gold-soft/lilac, icon text-white → text-primary; Progress → bg-muted [&>div]:bg-primary; cards → border-border.
+  - Charts: all `border-teal-*` → border-border; PolarGrid #e5e7eb → var(--border); radar ticks given var(--muted-foreground) fill (dark-mode); teal/amber chart hexes kept (data-viz, allowed).
+  - Sleep/Water tiles: indigo/sky medallions → rounded-full bg-lilac text-plum / bg-medical-soft text-medical; grid → grid-cols-1 sm:grid-cols-2.
+  - Trend comparison: tracks → bg-muted, fills → bg-primary/35 + bg-primary; label w-36 → w-24 sm:w-36 (360px-safe); legend rows → chip-soft pills.
+  - AI Insights panel → `.card-blush` (Sparkles → text-gold, rows bg-white/80 → bg-card/80 border-border, dot → bg-primary); Cycle Summary day circles → bg-blush text-primary, phase badge → chip-soft; empty state → dashed border-primary/30 + rounded-full bg-blush medallion + chip-soft hint badges.
+  - Export panel → `.card-peach` p-4 sm:p-6; CSV/PDF/Excel outline Buttons → plain <button> `btn-plum rounded-full px-5 min-h-11 font-semibold` (same onClick/disabled — cascade-layer analysis: unlayered .btn-plum beats shadcn variant classes, but plain buttons are bulletproof); removed now-unused Button + Separator imports.
+- premium.tsx (paywall → most luxurious):
+  - Hero: amber/orange gradient + purple overlay → `.card-plum`; h1 → `gold-shine font-serif` + `gold-divider ✦` motion ornament; Crown pill → bg-plum-soft/50 border-gold/40 text-gold; blurs → bg-gold/20 + bg-fuchsia-500/20; single aria-hidden `lotus-watermark`; hero stat icons → text-gold.
+  - Final CTA: purple/fuchsia/pink gradient → `.card-plum` + gold-shine serif h2 + text-gold Crown; "Get Premium Now" bg-white/text-purple-700 → gold gradient pill with text-plum (dark text on gold per 15-d contrast note) rounded-full px-6 min-h-11; refund note → text-gold/90.
+  - Plan cards: popular ring/border amber → gold tokens (border-gold/60 ring-gold/40 shadow-gold/20); "Most Popular" + PAYPAL SANDBOX gold-gradient badges text-white → text-plum; plan/feature medallions rounded-xl → rounded-full h-11; plan names font-serif; savings badge + "Save 30
+---
+Task ID: 15-g
+Agent: UI-sweep agent (reports+premium+settings)
+Task: Sweep report-center.tsx + premium.tsx + settings.tsx onto the "Nuvia Plum & Gold" design system (className-only; zero logic/copy changes).
+
+Work Log:
+- report-center.tsx (was fully teal):
+  - Header: serif title `font-serif text-2xl sm:text-3xl font-bold tracking-tight` + `gold-divider ✦` ornament; medallion → h-11 rounded-full bg-plum-soft + text-primary; page's single `lotus-watermark` (aria-hidden) in the header bar (children made relative); canvas `from-teal-50/50 to-white` → `from-blush/50 to-background` + border-border.
+  - Period Tabs: TabsList → `bg-muted/60 border-border flex-wrap h-auto py-1`; all 4 triggers → primary active twins (light+dark) + min-h-11 (component h-9/h-[calc(100%-1px)] trap avoided).
+  - ScoreCards: medallion p-2 rounded-lg → h-11 w-11 rounded-full; colors teal-500/rose-400/amber-400/emerald-500 → medical-soft/blush/gold-soft/lilac; icon text-white → text-primary; Progress → bg-muted [&>div]:bg-primary; cards → border-border.
+  - Charts: all `border-teal-*` → border-border; PolarGrid #e5e7eb → var(--border); radar ticks given var(--muted-foreground) fill (dark-mode); teal/amber chart hexes kept (data-viz, allowed).
+  - Sleep/Water tiles: indigo/sky medallions → rounded-full bg-lilac text-plum / bg-medical-soft text-medical; grid → grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4.
+  - Trend comparison: tracks → bg-muted, fills → bg-primary/35 + bg-primary; label w-36 → w-24 sm:w-36 (360px-safe); legend rows → chip-soft pills.
+  - AI Insights panel → `.card-blush` (Sparkles → text-gold, rows bg-white/80 → bg-card/80 border-border, dot → bg-primary); Cycle Summary day circles → bg-blush text-primary, phase badge → chip-soft; empty state → dashed border-primary/30 + rounded-full bg-blush medallion + chip-soft hint badges.
+  - Export panel → `.card-peach` p-4 sm:p-6; CSV/PDF/Excel outline Buttons → plain <button> `btn-plum rounded-full px-5 min-h-11 font-semibold` (identical onClick/disabled); removed now-unused Button + Separator imports.
+- premium.tsx (paywall → most luxurious):
+  - Hero: amber/orange gradient + purple overlay → `.card-plum`; h1 → `gold-shine font-serif` + `gold-divider ✦` motion ornament; Crown pill → bg-plum-soft/50 border-gold/40 text-gold; blurs → bg-gold/20 + bg-fuchsia-500/20; single aria-hidden `lotus-watermark`; hero stat icons → text-gold.
+  - Final CTA: purple/fuchsia/pink gradient → `.card-plum` + gold-shine serif h2 + text-gold Crown; "Get Premium Now" bg-white/text-purple-700 → gold gradient pill with text-plum (dark text on gold per 15-d contrast note) rounded-full px-6 min-h-11; refund note → text-gold/90.
+  - Plan cards: popular ring/border amber → gold tokens (border-gold/60 ring-gold/40 shadow-gold/20); "Most Popular" + PAYPAL SANDBOX gold-gradient badges text-white → text-plum; plan/feature medallions rounded-xl → rounded-full h-11; plan names font-serif; savings badge + "Save 30%" emerald → bg-gold-soft text-plum; feature checks: popular = gold-soft/amber, others = blush/primary; CTAs gain rounded-full min-h-11 font-semibold (per-plan amber/fuchsia gradients kept — allowed).
+  - Accent cleanup: Free plan slate gradient/border → from-rose-200 to-rose-300 + border-border; f5 indigo/blue → violet/purple; f7 teal/cyan → teal-400/600; f8 sky/blue → from-plum-soft to-plum; f9 slate/gray → rose-300/400; FAQ sky badge → bg-blush text-primary; trust panel amber-50/yellow-50 → bg-gold-soft/40 + border-gold/30 + gold-soft medallions; testimonial quote/border/plan-badge → gold tokens; removed pre-existing unused ChevronDown/Users/CreditCard imports.
+  - Section h2s → font-serif tracking-tight; billing toggle buttons min-h-11; grids gap-4 sm:gap-6 (plans 1→lg:3, features 1/sm:2/lg:3/xl:5).
+- settings.tsx:
+  - Header: slate gradient medallion → rounded-full bg-plum-soft text-gold; serif title + gold-divider ✦ ornament; min-w-0.
+  - Profile banner: rose/fuchsia/purple gradient → `from-plum via-plum-soft to-plum` with gold crescent/shimmer/dots (all bg-white/* overlays → bg-gold/*); avatar ring-fuchsia → ring-gold/60, fallback → from-plum-soft to-plum text-gold; Premium badge → bg-gold-soft text-plum; Save Changes → rounded-full min-h-11 (+btn-plum while editing).
+  - SettingsSection wrapper: medallion h-9 rounded-lg → h-10 rounded-full, CardTitle font-serif; all 11 iconColor strings re-tokened (sky/rose/fuchsia/amber/emerald/violet/purple/teal → lilac/blush/peach-soft/gold-soft/plum-soft/medical-soft pairings).
+  - Notification rows: 9 data color strings re-tokened (indigo/sky/purple/pink/rose gone), row medallions h-8 rounded-lg → h-10 rounded-full; cycle tip fuchsia panel → bg-blush/60 border-primary/20 text-plum.
+  - Privacy: Export row → border-primary/30 bg-blush/40 + plum-soft/gold medallion + gold JSON badge (download = standout plum action); demo/privacy/encryption/delete medallions → h-10 rounded-full token softs (rose kept for destructive); emerald kept only for encryption/connected semantics.
+  - Moderation console: violet cluster → primary/blush (info panel, signed-in badge, pulse bars/trend, bulk bars, checkboxes); comments bulk bar sky → primary/blush; all compact action buttons h-7 → h-9 (12×, touch).
+  - Appearance tiles: purple → primary active set (border-primary bg-primary/5, icon bg-primary text-primary-foreground, label/Active badge → text-primary/bg-blush).
+  - Devices: Garmin blue → text-plum/bg-lilac (Apple pink, Fitbit teal kept — allowed); medallions rounded-full.
+  - Subscription: active header amber-50/yellow-50 → bg-gold-soft/40 + rounded-full gold-gradient medallion text-plum; Active badge → gold-soft/plum; "Upgrade to Premium" → `btn-plum w-full rounded-full min-h-11 font-semibold` (same setActiveModule); free-plan medallion rounded-full.
+  - About: GDPR text-sky-600 → text-medical, E2E text-purple-600 → text-plum; Help panel amber → border-gold/40 bg-gold-soft/40 + plum-soft/gold Compass medallion + gold outline Replay button.
+- Self-check `rg -n "bg-white|slate-|indigo-|blue-|cyan-|sky-"` on all three files → only 5 `translate-` substring false positives (translate-x/-y/-full), zero real hits. `bunx tsc --noEmit` → no errors in the three files (only pre-existing errors in paypal-checkout-modal / paypal-smart-buttons, not this task's files). `bun run lint` → clean project-wide. Diff scan confirms every handler/state/fetch/disabled prop byte-identical; only className + aria-hidden decorative additions + Button→button swaps with identical props.
+
+Stage Summary:
+- ✅ Reports, Premium (paywall), Settings now fully on Nuvia Plum & Gold: serif titles + gilded ✦ ornaments, card-blush/card-peach report panels, card-plum hero + final CTA with gold-shine headings and lotus watermark (1/page), btn-plum 44px pill CTAs (CSV/PDF/Excel, Upgrade, Save), chip-soft pills/legends/badges, token medallions, gold accents on every premium moment.
+- Responsive: report grids gap-4 sm:gap-6, sleep/water stack <sm, comparison labels shrink + truncate, wrapping tabs/chips/buttons, min-h-11 interactive rows & h-9 compact admin buttons, pricing stacks on mobile, settings rows min-w-0 + truncate; no 360px overflow paths spotted.
+- Dark mode: all hardcoded light surfaces (bg-white/teal-50/sky-50/amber-50/violet-50/gray hex) replaced with tokens/var(); PolarGrid on var(--border); banner/hero fixed-plum surfaces are intentionally mode-invariant.
+- Intentionally kept: semantic emerald (connected/active/restore/positive trend), rose (destructive), amber/orange (reported/hidden status, gold-gradient buttons), teal chart hexes + moodDistribution colors (data-viz), per-plan gradient strips/buttons, PayPal banner emerald styling.
+
+---
+Task ID: 15-h
+Agent: UI-sweep agent (fitness+mental)
+Task: Sweep fitness.tsx (Move & Flow) + mental-wellness.tsx (Mind & Soul) onto the "Nuvia Plum & Gold" design system (className-only, zero logic changes).
+
+Work Log:
+- mental-wellness.tsx:
+  - Header hero (violet/purple/indigo gradient) rebuilt as `.card-plum` dark showcase: `gold-shine font-serif text-2xl sm:text-3xl font-bold tracking-tight` title, `gold-divider ✦` ornament, `lotus-watermark` (aria-hidden, page's only one), gold/fuchsia blur orbs, badge+pills → bg-plum-soft/40–50 with text-gold/border-gold, subtitle inherits card-plum light ink (opacity-90).
+  - MoodCheckIn → `card-blush` lead panel (border-0); card titles/badges violet → text-primary + border-primary/40; selected-mood check bubble bg-white → bg-primary + text-primary-foreground; Save Check-in → `btn-plum rounded-full px-6 min-h-11 font-semibold`; textarea ring violet → ring-ring.
+  - NowPlayingView: white overlays → gold/plum tokens (orbs bg-gold/15, badge bg-plum-soft/50 text-gold, icon ring bg-plum-soft/50, play button bg-white→bg-gold text-plum, progress track bg-plum-soft/60 + fill bg-gold, timer stroke white → var(--gold), completion pill bg-plum-soft/50, skip/close text-gold/90 hover:bg-gold/10).
+  - MeditationLibrary: default token card; category filters → h-9 rounded-full, selected bg-primary text-primary-foreground; card header tiles rounded-full bg-plum-soft/50, category badge bg-plum-soft/60 text-gold border-gold/30, play circle bg-white→bg-gold text-plum, orb bg-white/10→bg-gold/15.
+  - BreathingExercise: technique tiles active border-primary bg-blush (min-h-11); animation field violet-50 gradient → bg-blush/70 with bg-primary/20 + bg-gold/20 orbs; rings/dots/labels/counter violet → primary tokens; breathing circle → from-primary via-plum-soft to-fuchsia-400; Begin/Resume CTA → `btn-plum rounded-full h-14 px-8 font-semibold`.
+  - MoodJournal: token card; icon accents violet → text-primary; month nav h-7→h-9; today-ring violet→primary; journal box → bg-blush/40 border-primary/20; Save Entry → btn-plum rounded-full min-h-11; legend text-[10px]→text-[11px]; chart grid/ticks/tooltip/reference hardcoded oklch(1 0 0)/oklch light strokes → var(--border)/var(--muted-foreground)/var(--popover)+popover-foreground (dark-mode safe); empty medallions → rounded-full bg-plum-soft + text-gold; past-entry rows hover violet → hover:border-primary/40 hover:bg-blush/40 + min-h-11; dialog grid sm:grid-cols-2 gap-4 sm:gap-6.
+  - AffirmationsWall: "Today's Affirmation" gradient → `.card-plum` with gold badge/star/quote accents (Star fill-yellow-300 → fill-gold text-gold); 'Peace' categoryColor sky/cyan → from-teal-400 to-teal-600; wall tiles → plum-soft/gold badges + gold quote/star; filter chips → h-9 rounded-full bg-primary selected; grid gap-3→gap-4.
+  - TherapySupport: therapist CTA gradient → `.card-plum` + "Find a Therapist" → bg-gold text-plum rounded-full min-h-11; crisis grid → 1/sm:2/lg:3 gap-3 sm:gap-4; Emergency card violet → primary/blush tokens (medallion bg-primary, numbers text-primary); quiz tiles → border-primary/30 hover:bg-blush/40 with h-11 w-11 rounded-full medallions (PHQ bg-plum-soft + text-gold, GAD bg-blush + text-primary); QuizRunner violet accent branch → bg-primary/bg-blush/60/border-primary/40/text-primary (rose branch kept); quiz options min-h-11; result pill bg-white/20 → bg-background/25; disclaimer text-[11px].
+  - WellnessStats: token card; stat tiles keep allowed violet/fuchsia/amber/emerald gradients but orbs → bg-gold/20 + labels text-[11px]; chart tooltip/grid/ticks/cursor → var(); empty medallion → rounded-full bg-plum-soft text-gold; encouragement banner → bg-blush/60 border-primary/20 with bg-plum-soft medallion + text-gold sparkles.
+  - QuickMoodBanner: glass/violet border → border-border bg-card/80; emoji buttons h-10→h-11; message violet → text-primary.
+  - TabsList bg-violet-50 → bg-muted/60 border-border; all 6 triggers → data-[state=active]:bg-primary/text-primary-foreground + explicit dark twins + min-h-11 (per 15-b finding).
+  - Data retoken (decorative strings/hex only): MOODS low indigo/blue → fuchsia/violet (gradient+ring+hex); meditations med-4/5/7/8 indigo-sky-cyan-blue → fuchsia/teal/medical families; sleep cards med-9/10/11 indigo/slate night gradients → violet/purple/plum-family night gradients (white-text gradients, mode-invariant).
+- fitness.tsx:
+  - Page hero (orange/rose/purple gradient) → `.card-peach` warm-energy panel: `font-serif text-2xl sm:text-3xl font-bold tracking-tight text-primary` title, `gold-divider ✦` ornament, page's single aria-hidden `lotus-watermark`, chip-soft "Cycle-Synced Training" pill, gold/primary orbs; phase badge (config data) kept; meta text white → text-foreground tokens.
+  - Today's Workout: Start Workout CTA bg-white/text-gray-900 → `btn-plum rounded-full px-6 min-h-11 font-semibold`; inner white overlays → bg-plum-soft/30–60 + bg-gold/20–30 with text-gold badges; icon tile rounded-2xl→rounded-full; exercise preview rows min-w-0+truncate; alternative card → default token Card + outline rounded-full min-h-11; grid gap-4 sm:gap-6.
+  - Cycle-Synced Plan: cards bg-white/60 glass → bg-card with phase borderColor data (rose/pink/orange/purple allowed) active + border-border inactive; header badges bg-white/* → bg-plum-soft/50–60 text-gold border-gold/30; plan name truncate + min-w-0; Show/Hide routines min-h-11; grid sm:grid-cols-2 gap-4 sm:gap-6.
+  - Workout Library: TabsTrigger orange → data-[state=active]:bg-primary/text-primary-foreground + dark twins + min-h-11; cards → default token card, difficulty badge → plum-soft/gold, title truncate, Start → `btn-plum w-full rounded-full min-h-11 font-semibold`; grid gap-4 sm:gap-6.
+  - Activity Tracking: weekly calendar → token card, completed tiles → bg-blush/60 border-primary/30 with bg-primary circle, grid gap-2→gap-1.5 + p-2 sm:p-3 (360px-safe), day label text-[11px]+truncate; 4 stat cards raw gradient tints → token surfaces (bg-blush+text-primary, bg-lilac+text-plum, bg-peach-soft+text-amber-600, bg-gold-soft+border-gold/30+text-gold); bar chart grid/cursor/tooltip → var(--border)/var(--muted)/var(--popover)+popover-foreground, bar fills #fb923c→#d4af37 gold / var(--muted); monthly bars → from-primary to-fuchsia-500.
+  - Fitness Goals: token cards; goal medallions rounded-lg tints → rounded-full bg-blush/bg-lilac/bg-peach-soft with text-primary/text-plum/text-amber-600; Progress bars → primary/fuchsia, rose/fuchsia, amber/orange (kept); steppers h-7→h-9 rounded-full; achievements unlocked tile bg-white → bg-card border-primary/30, progress bar orange→primary, Trophy → text-gold, label text → text-[11px]; grid gap-4 sm:gap-6.
+  - Exercise Database: token card + rows (border-border bg-card), tip box orange → bg-gold-soft/60 border-gold/30 text-gold text-[11px], filter row min-w-0, clear buttons h-9, list grid sm:grid-cols-2.
+  - WorkoutPlayer: completion overlay → fixed brand night-plum gradient from-[#4B1D3F] via-[#3a1631] to-[#26101f] (mode-invariant, per 15-g fixed-plum precedent), modal bg-white/95 → bg-card/95 border-border, stat tiles → bg-blush/bg-lilac/bg-gold-soft with amber/plum/gold icons, Done → btn-plum rounded-full h-12; player screen slate/orange/rose-950 → same fixed night-plum gradient with gold ink (Now Playing, labels, close/skip buttons bg-gold/10 hovers), progress fill from-gold to-amber-400, play button → bg-gold text-plum medallion, timer ring gradient → #d4af37→#f5c96b, form-tip box → bg-gold/10 border-gold/30 text-gold.
+  - Toast: orange/rose gradient → bg-primary text-primary-foreground border-gold/30.
+  - Import cleanup: removed pre-existing unused CardFooter, DialogClose, Accordion quartet, ChevronRight, ArrowRight, TimerIcon, Droplet, Award.
+- Self-check `rg "bg-white|slate-|indigo-|blue-|cyan-|sky-"` on both files → 0 real hits (only 4 `translate-` substring false positives: MW 2119/2133, FIT 1380/2128). Balanced JSX (paren/brace check) + `bunx tsc --noEmit` → no new errors (only 5 pre-existing Meditation-icon union errors in mental-wellness, confirmed pre-existing via git stash). `bun run lint` → clean project-wide.
+
+Stage Summary:
+- ✅ Move & Flow now leads with a card-peach energy hero (serif title + ✦ ornament + lotus watermark), plum pill CTAs everywhere, gold/plum badges on gradient cards, token stat medallions, and a night-plum workout player with gold play controls. Mind & Soul leads with a card-plum hero (gold-shine + ornament + watermark), card-blush mood check-in, card-plum daily-affirmation + therapist panels, gold play/pause medallions, plum/teal/gold accent system with violet kept only as allowed accent.
+- Dark mode fully token-driven: recharts surfaces → var(--popover/--border/--muted-foreground), all bg-white/raw-light tints eliminated; fixed night-plum surfaces are intentionally mode-invariant (constant #4B1D3F family + white ink, matching kit).
+- Responsive: 1-col→sm:2/lg:3-4 grids with gap-4 sm:gap-6, min-w-0+truncate on long titles/rows, flex-wrap chip/button rows, min-h-11 on interactive rows/triggers/options/CTAs, 7-col week calendar tightened for 360px, text labels ≥ text-[11px]. No horizontal-overflow paths spotted.
+- Intentionally kept: PHASE_PLANS/ACHIEVEMENTS/CATEGORY_META/INTENSITY_COLORS/DIFFICULTY_COLORS config palettes (rose/pink/orange/amber/purple/violet/red/emerald — semantic phase/intensity/severity data, allowed accents), quiz severity gradients (clinical semantics), recharts series hexes (violet/gold data-viz), crisis-panel rose/amber (danger/warning semantics), emerald "recommended/unlocked" (semantic green).
+- No logic, handlers, state, hooks, timers, data fetching, i18n keys, copy, or API calls modified — className swaps + decorative aria-hidden wrappers only (1 watermark + 1 gold-divider per file).
+
+---
+Task ID: 15 (final)
+Agent: Z.ai Code (main)
+Task: "Nuvia Plum & Gold" theme evolution + 100% cross-device friendliness (user ref: NUVIA brand-kit image; "iss type ka ui do aur all device friendly android & ios")
+
+Work Log:
+- 15-a (coordinator) THEMEOLOGY:
+  - --primary hot-pink → deep plum-rose oklch(0.47 0.135 352) light / oklch(0.76 0.14 352) dark; ring/sidebar-primary/chart-1 synced; chart-2 → gold hue; focus ring plum+gold.
+  - NEW tokens --plum/--plum-soft/--gold/--gold-soft (light+dark) mapped in @theme inline.
+  - NEW utilities: .btn-plum, .gold-divider, .gold-shine, .arch-frame, .card-plum, .lotus-watermark (SVG lotus pattern), .tap-target.
+  - DEVICE LAYER: tap-highlight transparent, text-size-adjust 100%, overscroll-behavior-y contain, momentum scroll on scroll containers, 16px inputs @pointer:coarse (iOS anti-zoom). layout.tsx themeColor split light #fff7f9 / dark #221722.
+- 15-b hormone-intelligence + symptoms-tracker (agent): card-plum phase banner w/ gold-shine serif + gold-divider + lotus watermark; token Cards; btn-plum CTAs; chip-soft; severity teal/amber/rose; 0 accent hits; lint/tsc clean.
+- 15-c pcos-management + menopause-assistant (agent): serif+gold headers, card-blush/peach panels, unified plum tabs, btn-plum CTAs, indigo/sky/gray purged, responsive grids; 0 hits.
+- 15-d ai-coach + ai-insights (agent): chat bubbles plum/blush w/ 360px-safe min-w-0 + break-words; card-plum hero gold-shine; card-medical doctor CTA; gold-soft safety banner; empty medallions plum-soft/gold; 0 hits.
+- 15-e diet-advisor + skin-beauty (agent): card-peach plan header / card-blush score; sky/cyan/indigo→teal/fuchsia/plum; chart tooltip var(--card) dark fix; btn-plum CTAs; 0 real hits.
+- 15-f community + marketplace (agent): card-blush gamification bar; card-plum market hero w/ gold-shine + gold cart; category pills chip-soft; btn-plum post/join/checkout; sky purged; grid 1/sm:2/xl:4.
+- 15-g report-center + premium + settings (agent): premium = card-plum showcases + gold-shine serif + gold plan accents (dark-on-gold CTA); report tabs/medallions tokenized, btn-plum exports; settings profile banner plum+gold crescent, all section colors re-tokened; 5 false-positive translate hits only.
+- 15-h fitness + mental-wellness (agent): card-plum meditation hero, card-peach fitness hero; night-player fixed kit #4B1D3F family + gold timer; breathing circle primary; MOODS de-indigo; chart hexes gold; ~710 lines changed, 0 hits.
+- COORDINATOR finishing: mobile FAB gradient rose→plum (#6E366F→#8E4463→#C2497E) + plum glow/pulse; dashboard greeting serif + text-gold icon + gold-divider ✦ ornament; BUGFIX React duplicate-key (ALL_MODULES map used non-existent group.title → key undefined) → group.titleKey.
+
+VERIFIED (agent-browser, QA user aurora.qc15@nuvia.app created→seeded 2026-09-09→deleted; baseline 7 users restored):
+- Auth light 1440: plum showcase card, serif headings ✓
+- Dashboard light 1440 + dark 1440 + dark 390×844: serif greeting + gold ornament, card-blush hero w/ ring Day 10 Follicular, 4 tinted tiles, chip legends, quick actions, bottom-nav plum FAB ✓
+- More sheet dark mobile: 3-col tiles, premium locks ✓
+- Hormone IQ dark 390: card-plum hero gold-shine serif ✓; FIXED truncated "—28-" heading (flex-wrap + min-w-0)
+- AI Coach dark 390 ✓; Wellness Market light 390 (plum+gold hero) ✓; Premium light 390 (gold-shine showcase) ✓; Settings light 390 (plum banner gold accents) ✓; Mind & Soul light 360 ✓
+- PCOS desktop 1440 light ✓; Period Tracker tablet 820 w/ real Cycle record: ring segments + tinted calendar + segmented tabs ✓
+- Horizontal overflow: sw==cw at 360/390/820/1440 on all pages tested ✓
+- Console: fixed key warning; post-fix only HMR/info logs. dev.log clean. Lint: 0 errors 0 warnings (exit 0).
+- OPS: dev server OOM-killed mid-round → restarted setsid + NODE_OPTIONS=--max-old-space-size=1536 (HTTP 200). webDevReview cron re-created job 395623 (fixed_rate 900s, Asia/Calcutta, priority 5).
+
+Stage Summary:
+- ✅ Shipped: full "Nuvia Plum & Gold" theme across ALL 21 modules + shell + auth + onboarding (deep plum primary, antique-gold ornaments, serif display titles, lotus/arch brand pieces), plus Android/iOS device-friendliness layer (safe-areas already in place, now + anti-zoom inputs, tap-highlight, text-size-adjust, overscroll containment, 44/48px tap targets).
+- All data logic byte-preserved during sweep (agents verified diffs); QA user removed; 7-user baseline.
+- Remaining backlog / next-round ideas:
+  1. Onboarding date input (native date/segmented) couldn't be typed into via automation — verify manual entry works, or unify with DateInput component.
+  2. Tour overlay header still orange→pink→fuchsia gradient — could re-tint to plum→gold.
+  3. Auth "Sign in" CTA still rose gradient — optionally btn-plum.
+  4. i18n depth, analytics audit table, timezone quiet hours (carried).
+  5. Known ops: sandbox OOM reaping — always restart with NODE_OPTIONS cap.
+- FINAL OPS: dev server OOM-killed a second time post-cleanup → restarted again with cap (HTTP 200); stale QA browser session (deleted user's JWT) cleared via localStorage.clear() — auth screen restored for the user. App gracefully rendered empty states for the deleted-user session (good resilience signal).

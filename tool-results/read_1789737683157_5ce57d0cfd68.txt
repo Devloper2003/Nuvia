@@ -1,0 +1,562 @@
+  1193→          <div className="rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 p-4 text-left mb-3">
+  1194→            <p className="text-sm text-white/80">{currentExercise.description}</p>
+  1195→          </div>
+  1196→          <div className="rounded-2xl bg-orange-500/10 backdrop-blur-sm border border-orange-400/20 p-4 text-left">
+  1197→            <p className="text-xs uppercase tracking-wide text-orange-300 mb-1">Form Tip</p>
+  1198→            <p className="text-sm text-white/90">{currentExercise.tips}</p>
+  1199→          </div>
+  1200→        </motion.div>
+  1201→      </div>
+  1202→
+  1203→      {/* Controls */}
+  1204→      <div className="px-6 py-6 border-t border-white/10 bg-black/20 backdrop-blur-xl">
+  1205→        <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+  1206→          <Button
+  1207→            variant="ghost"
+  1208→            size="icon"
+  1209→            onClick={goPrev}
+  1210→            disabled={state.exerciseIndex === 0}
+  1211→            className="h-14 w-14 rounded-full text-white hover:bg-white/10 disabled:opacity-30"
+  1212→          >
+  1213→            <SkipBack className="h-6 w-6" />
+  1214→          </Button>
+  1215→          <Button
+  1216→            onClick={togglePlay}
+  1217→            className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-rose-500 hover:from-orange-500 hover:to-rose-600 text-white shadow-lg shadow-orange-500/30"
+  1218→          >
+  1219→            {state.isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
+  1220→          </Button>
+  1221→          <Button
+  1222→            variant="ghost"
+  1223→            size="icon"
+  1224→            onClick={goNext}
+  1225→            className="h-14 w-14 rounded-full text-white hover:bg-white/10"
+  1226→          >
+  1227→            <SkipForward className="h-6 w-6" />
+  1228→          </Button>
+  1229→        </div>
+  1230→      </div>
+  1231→    </div>
+  1232→  )
+  1233→}
+  1234→
+  1235→// ─── Main Component ───────────────────────────────────────────────────────────
+  1236→
+  1237→export default function FitnessModule() {
+  1238→  const [currentPhase, setCurrentPhase] = useState<PhaseId>('follicular')
+  1239→  const [activePlayer, setActivePlayer] = useState<Workout | null>(null)
+  1240→  const [expandedPhase, setExpandedPhase] = useState<PhaseId | null>('follicular')
+  1241→  const [libraryTab, setLibraryTab] = useState<WorkoutCategory>('strength')
+  1242→  const [search, setSearch] = useState('')
+  1243→  const [filterMuscle, setFilterMuscle] = useState<string>('all')
+  1244→  const [filterEquipment, setFilterEquipment] = useState<string>('all')
+  1245→  const [filterDifficulty, setFilterDifficulty] = useState<string>('all')
+  1246→  const [goals, setGoals] = useState(INITIAL_GOALS)
+  1247→  const [toast, setToast] = useState<string | null>(null)
+  1248→  const [completedToday, setCompletedToday] = useState(false)
+  1249→
+  1250→  const phasePlan = useMemo(() => PHASE_PLANS.find((p) => p.id === currentPhase)!, [currentPhase])
+  1251→
+  1252→  // Today's recommended workout: pick based on phase
+  1253→  const todaysWorkout = useMemo(() => {
+  1254→    const candidates = WORKOUT_LIBRARY.filter((w) => w.phases.includes(currentPhase))
+  1255→    if (candidates.length === 0) return WORKOUT_LIBRARY[0]
+  1256→    // Pick a different one for variety based on day of week
+  1257→    const dayIdx = new Date().getDay()
+  1258→    return candidates[dayIdx % candidates.length]
+  1259→  }, [currentPhase])
+  1260→
+  1261→  const alternativeWorkout = useMemo(() => {
+  1262→    const candidates = WORKOUT_LIBRARY.filter(
+  1263→      (w) => w.phases.includes(currentPhase) && w.id !== todaysWorkout.id
+  1264→    )
+  1265→    if (candidates.length === 0) return WORKOUT_LIBRARY[1] ?? WORKOUT_LIBRARY[0]
+  1266→    const dayIdx = new Date().getDay()
+  1267→    return candidates[(dayIdx + 1) % candidates.length]
+  1268→  }, [currentPhase, todaysWorkout])
+  1269→
+  1270→  // Filtered exercise DB
+  1271→  const filteredExercises = useMemo(() => {
+  1272→    return EXERCISE_DATABASE.filter((ex) => {
+  1273→      if (search && !ex.name.toLowerCase().includes(search.toLowerCase())) return false
+  1274→      if (filterMuscle !== 'all' && ex.muscleGroup !== filterMuscle) return false
+  1275→      if (filterEquipment !== 'all' && ex.equipment !== filterEquipment) return false
+  1276→      if (filterDifficulty !== 'all' && ex.difficulty !== filterDifficulty) return false
+  1277→      return true
+  1278→    })
+  1279→  }, [search, filterMuscle, filterEquipment, filterDifficulty])
+  1280→
+  1281→  const muscleGroups = useMemo(
+  1282→    () => Array.from(new Set(EXERCISE_DATABASE.map((e) => e.muscleGroup))).sort(),
+  1283→    []
+  1284→  )
+  1285→  const equipmentTypes = useMemo(
+  1286→    () => Array.from(new Set(EXERCISE_DATABASE.map((e) => e.equipment))).sort(),
+  1287→    []
+  1288→  )
+  1289→
+  1290→  const showToast = (msg: string) => {
+  1291→    setToast(msg)
+  1292→    setTimeout(() => setToast(null), 2800)
+  1293→  }
+  1294→
+  1295→  const handlePlayerClose = (completed: boolean, _durationSec: number, _calories: number) => {
+  1296→    setActivePlayer(null)
+  1297→    if (completed) {
+  1298→      setCompletedToday(true)
+  1299→      // Increment goals
+  1300→      setGoals((prev) => ({
+  1301→        weeklyWorkouts: { ...prev.weeklyWorkouts, current: prev.weeklyWorkouts.current + 1 },
+  1302→        weeklyMinutes: { ...prev.weeklyMinutes, current: prev.weeklyMinutes.current + Math.round(_durationSec / 60) },
+  1303→        weeklyCalories: { ...prev.weeklyCalories, current: prev.weeklyCalories.current + _calories },
+  1304→      }))
+  1305→      showToast('Workout complete! Goals updated.')
+  1306→    }
+  1307→  }
+  1308→
+  1309→  const weeklyMinutesTotal = ACTIVITY_DATA.reduce((sum, d) => sum + d.minutes, 0)
+  1310→  const workoutsThisWeek = ACTIVITY_DATA.filter((d) => d.completed).length
+  1311→  const caloriesThisWeek = ACTIVITY_DATA.filter((d) => d.completed).length * 240
+  1312→  // Streak is 0 for a brand-new user — no fake history.
+  1313→  const activeDaysStreak = 0
+  1314→
+  1315→  const containerVariants = {
+  1316→    hidden: { opacity: 0 },
+  1317→    visible: { opacity: 1, transition: { staggerChildren: 0.06 } },
+  1318→  }
+  1319→  const itemVariants = {
+  1320→    hidden: { opacity: 0, y: 20 },
+  1321→    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
+  1322→  }
+  1323→
+  1324→  const goalPct = (cur: number, tgt: number) => Math.min(100, Math.round((cur / tgt) * 100))
+  1325→
+  1326→  return (
+  1327→    <div className="space-y-6">
+  1328→      {/* ─── 1. Header ─── */}
+  1329→      <motion.div
+  1330→        initial={{ opacity: 0, y: -10 }}
+  1331→        animate={{ opacity: 1, y: 0 }}
+  1332→        transition={{ duration: 0.5 }}
+  1333→        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-rose-500 to-purple-600 p-6 md:p-8 text-white shadow-xl"
+  1334→      >
+  1335→        <div className="absolute inset-0 opacity-20">
+  1336→          <div className="absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white blur-3xl" />
+  1337→          <div className="absolute -bottom-10 -left-10 h-48 w-48 rounded-full bg-yellow-300 blur-3xl" />
+  1338→        </div>
+  1339→        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  1340→          <div className="space-y-2">
+  1341→            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur px-3 py-1 text-xs font-medium">
+  1342→              <Sparkles className="h-3.5 w-3.5" />
+  1343→              Cycle-Synced Training
+  1344→            </div>
+  1345→            <h1 className="text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-white to-orange-100 bg-clip-text text-transparent">
+  1346→              Move &amp; Flow
+  1347→            </h1>
+  1348→            <p className="text-white/90 max-w-xl">
+  1349→              Cycle-synced workouts for your body&apos;s natural rhythm. Train smarter by aligning
+  1350→              your movement with your hormones.
+  1351→            </p>
+  1352→          </div>
+  1353→          <div className="flex flex-col gap-2 md:items-end">
+  1354→            <Badge className={cn('text-sm px-4 py-2 border-0', phasePlan.badgeColor)}>
+  1355→              <phasePlan.icon className="h-4 w-4 mr-1.5" />
+  1356→              {phasePlan.name} · {phasePlan.days}
+  1357→            </Badge>
+  1358→            <div className="text-sm text-white/80">
+  1359→              Recommended intensity:{' '}
+  1360→              <span className="font-semibold text-white">{phasePlan.intensity}</span>
+  1361→            </div>
+  1362→            <div className="text-sm text-white/80">
+  1363→              Target duration: <span className="font-semibold text-white">{phasePlan.duration}</span>
+  1364→            </div>
+  1365→          </div>
+  1366→        </div>
+  1367→      </motion.div>
+  1368→
+  1369→      {/* ─── 2. Today's Workout ─── */}
+  1370→      <motion.section variants={containerVariants} initial="hidden" animate="visible">
+  1371→        <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
+  1372→          <h2 className="text-xl font-semibold flex items-center gap-2">
+  1373→            <Flame className="h-5 w-5 text-orange-500" />
+  1374→            Today&apos;s Workout
+  1375→          </h2>
+  1376→          <span className="text-xs text-muted-foreground">
+  1377→            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+  1378→          </span>
+  1379→        </motion.div>
+  1380→
+  1381→        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  1382→          {/* Main workout card */}
+  1383→          <motion.div variants={itemVariants} className="lg:col-span-2">
+  1384→            <Card className={cn(
+  1385→              'relative overflow-hidden border-0 bg-gradient-to-br text-white shadow-lg',
+  1386→              todaysWorkout.gradient
+  1387→            )}>
+  1388→              <div className="absolute inset-0 bg-black/10" />
+  1389→              <div className="absolute top-0 right-0 h-40 w-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+  1390→              <CardContent className="relative p-6 md:p-8">
+  1391→                <div className="flex items-start justify-between mb-4">
+  1392→                  <div>
+  1393→                    <Badge className="bg-white/20 text-white border-0 backdrop-blur mb-2">
+  1394→                      <phasePlan.icon className="h-3 w-3 mr-1" />
+  1395→                      {phasePlan.name} Phase
+  1396→                    </Badge>
+  1397→                    <h3 className="text-2xl md:text-3xl font-bold">{todaysWorkout.name}</h3>
+  1398→                    <p className="text-white/80 text-sm mt-1 max-w-md">{todaysWorkout.description}</p>
+  1399→                  </div>
+  1400→                  <div className="hidden sm:flex h-16 w-16 items-center justify-center rounded-2xl bg-white/20 backdrop-blur shrink-0">
+  1401→                    <todaysWorkout.icon className="h-8 w-8" />
+  1402→                  </div>
+  1403→                </div>
+  1404→
+  1405→                <div className="grid grid-cols-3 gap-3 mb-5">
+  1406→                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+  1407→                    <Clock className="h-4 w-4 mb-1 opacity-80" />
+  1408→                    <div className="text-xl font-bold">{todaysWorkout.duration}</div>
+  1409→                    <div className="text-xs opacity-80">minutes</div>
+  1410→                  </div>
+  1411→                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+  1412→                    <Flame className="h-4 w-4 mb-1 opacity-80" />
+  1413→                    <div className="text-xl font-bold">{todaysWorkout.calories}</div>
+  1414→                    <div className="text-xs opacity-80">calories</div>
+  1415→                  </div>
+  1416→                  <div className="rounded-2xl bg-white/15 backdrop-blur p-3">
+  1417→                    <Zap className="h-4 w-4 mb-1 opacity-80" />
+  1418→                    <div className="text-xl font-bold">{todaysWorkout.intensity}</div>
+  1419→                    <div className="text-xs opacity-80">intensity</div>
+  1420→                  </div>
+  1421→                </div>
+  1422→
+  1423→                <div className="rounded-2xl bg-white/10 backdrop-blur p-4 mb-5">
+  1424→                  <p className="text-xs uppercase tracking-wider opacity-70 mb-2">Exercise Preview</p>
+  1425→                  <div className="space-y-1.5">
+  1426→                    {todaysWorkout.exercises.slice(0, 4).map((ex, i) => (
+  1427→                      <div key={i} className="flex items-center gap-2 text-sm">
+  1428→                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-xs font-semibold">
+  1429→                          {i + 1}
+  1430→                        </span>
+  1431→                        <span className="flex-1">{ex.name}</span>
+  1432→                        <span className="opacity-70 text-xs">{ex.reps ?? `${ex.duration}s`}</span>
+  1433→                      </div>
+  1434→                    ))}
+  1435→                    {todaysWorkout.exercises.length > 4 && (
+  1436→                      <p className="text-xs opacity-70 pl-7">
+  1437→                        + {todaysWorkout.exercises.length - 4} more exercises
+  1438→                      </p>
+  1439→                    )}
+  1440→                  </div>
+  1441→                </div>
+  1442→
+  1443→                <div className="flex flex-wrap items-center gap-2">
+  1444→                  <Button
+  1445→                    onClick={() => setActivePlayer(todaysWorkout)}
+  1446→                    disabled={completedToday}
+  1447→                    className="bg-white text-gray-900 hover:bg-white/90 font-semibold"
+  1448→                  >
+  1449→                    {completedToday ? (
+  1450→                      <>
+  1451→                        <CheckCircle2 className="h-4 w-4 mr-2" /> Completed Today
+  1452→                      </>
+  1453→                    ) : (
+  1454→                      <>
+  1455→                        <Play className="h-4 w-4 mr-2" /> Start Workout
+  1456→                      </>
+  1457→                    )}
+  1458→                  </Button>
+  1459→                  <div className="flex flex-wrap gap-1.5">
+  1460→                    {todaysWorkout.muscleGroups.map((m) => (
+  1461→                      <Badge key={m} className="bg-white/15 text-white border-0 text-xs backdrop-blur">
+  1462→                        {m}
+  1463→                      </Badge>
+  1464→                    ))}
+  1465→                  </div>
+  1466→                </div>
+  1467→              </CardContent>
+  1468→            </Card>
+  1469→          </motion.div>
+  1470→
+  1471→          {/* Alternative workout card */}
+  1472→          <motion.div variants={itemVariants}>
+  1473→            <Card className="h-full border-orange-200/50 dark:border-orange-900/30 bg-white/60 dark:bg-card/60 backdrop-blur-sm">
+  1474→              <CardHeader className="pb-3">
+  1475→                <div className="flex items-center justify-between">
+  1476→                  <CardTitle className="text-base text-muted-foreground">Alternative Option</CardTitle>
+  1477→                  <Badge variant="outline" className="text-xs">Swap</Badge>
+  1478→                </div>
+  1479→              </CardHeader>
+  1480→              <CardContent className="space-y-3">
+  1481→                <div className={cn('rounded-2xl bg-gradient-to-br p-4 text-white', alternativeWorkout.gradient)}>
+  1482→                  <alternativeWorkout.icon className="h-7 w-7 mb-2" />
+  1483→                  <h4 className="font-semibold text-lg leading-tight">{alternativeWorkout.name}</h4>
+  1484→                  <p className="text-sm text-white/80 mt-1 line-clamp-2">{alternativeWorkout.description}</p>
+  1485→                </div>
+  1486→                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+  1487→                  <div className="rounded-lg bg-muted/50 p-2">
+  1488→                    <div className="font-bold text-sm">{alternativeWorkout.duration}</div>
+  1489→                    <div className="text-muted-foreground">min</div>
+  1490→                  </div>
+  1491→                  <div className="rounded-lg bg-muted/50 p-2">
+  1492→                    <div className="font-bold text-sm">{alternativeWorkout.calories}</div>
+  1493→                    <div className="text-muted-foreground">kcal</div>
+  1494→                  </div>
+  1495→                  <div className="rounded-lg bg-muted/50 p-2">
+  1496→                    <div className="font-bold text-sm">{alternativeWorkout.intensity.split('-')[0]}</div>
+  1497→                    <div className="text-muted-foreground">level</div>
+  1498→                  </div>
+  1499→                </div>
+  1500→                <Button
+  1501→                  variant="outline"
+  1502→                  className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 dark:border-orange-900/50 dark:text-orange-400 dark:hover:bg-orange-950/30"
+  1503→                  onClick={() => setActivePlayer(alternativeWorkout)}
+  1504→                >
+  1505→                  Start Alternative
+  1506→                </Button>
+  1507→              </CardContent>
+  1508→            </Card>
+  1509→          </motion.div>
+  1510→        </div>
+  1511→      </motion.section>
+  1512→
+  1513→      {/* ─── 3. Cycle-Synced Workout Plan ─── */}
+  1514→      <motion.section variants={containerVariants} initial="hidden" animate="visible">
+  1515→        <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
+  1516→          <h2 className="text-xl font-semibold flex items-center gap-2">
+  1517→            <Calendar className="h-5 w-5 text-orange-500" />
+  1518→            Cycle-Synced Workout Plan
+  1519→          </h2>
+  1520→          <span className="text-xs text-muted-foreground">Tap a phase to expand routines</span>
+  1521→        </motion.div>
+  1522→
+  1523→        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  1524→          {PHASE_PLANS.map((plan) => {
+  1525→            const isActive = currentPhase === plan.id
+  1526→            const isExpanded = expandedPhase === plan.id
+  1527→            const Icon = plan.icon
+  1528→            return (
+  1529→              <motion.div key={plan.id} variants={itemVariants}>
+  1530→                <Card
+  1531→                  className={cn(
+  1532→                    'overflow-hidden border-2 transition-all cursor-pointer backdrop-blur-sm bg-white/60 dark:bg-card/60',
+  1533→                    isActive ? plan.borderColor : 'border-transparent',
+  1534→                    isExpanded && 'ring-2 ring-offset-2 ring-offset-background'
+  1535→                  )}
+  1536→                  onClick={() => {
+  1537→                    setExpandedPhase(isExpanded ? null : plan.id)
+  1538→                    setCurrentPhase(plan.id)
+  1539→                  }}
+  1540→                >
+  1541→                  <div className={cn('bg-gradient-to-r p-5 text-white', plan.gradient)}>
+  1542→                    <div className="flex items-start justify-between">
+  1543→                      <div>
+  1544→                        <div className="flex items-center gap-2 mb-1">
+  1545→                          <Icon className="h-5 w-5" />
+  1546→                          <h3 className="font-semibold text-lg">{plan.name}</h3>
+  1547→                        </div>
+  1548→                        <p className="text-white/90 text-sm">{plan.subtitle} · {plan.days}</p>
+  1549→                      </div>
+  1550→                      {isActive && (
+  1551→                        <Badge className="bg-white/25 text-white border-0 backdrop-blur">Current</Badge>
+  1552→                      )}
+  1553→                    </div>
+  1554→                    <div className="flex flex-wrap gap-2 mt-3">
+  1555→                      <Badge className="bg-white/20 text-white border-0 backdrop-blur text-xs">
+  1556→                        <Clock className="h-3 w-3 mr-1" /> {plan.duration}
+  1557→                      </Badge>
+  1558→                      <Badge className="bg-white/20 text-white border-0 backdrop-blur text-xs">
+  1559→                        <Zap className="h-3 w-3 mr-1" /> {plan.intensity}
+  1560→                      </Badge>
+  1561→                    </div>
+  1562→                  </div>
+  1563→
+  1564→                  <CardContent className="p-5 space-y-3">
+  1565→                    <p className="text-sm text-muted-foreground">{plan.hormoneContext}</p>
+  1566→
+  1567→                    <div className="grid grid-cols-2 gap-3 text-sm">
+  1568→                      <div>
+  1569→                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1">
+  1570→                          <CheckCircle2 className="h-3 w-3" /> Recommended
+  1571→                        </p>
+  1572→                        <ul className="space-y-1">
+  1573→                          {plan.recommended.map((r) => (
+  1574→                            <li key={r} className="text-muted-foreground text-xs flex items-start gap-1">
+  1575→                              <span className="text-emerald-500 mt-0.5">•</span> {r}
+  1576→                            </li>
+  1577→                          ))}
+  1578→                        </ul>
+  1579→                      </div>
+  1580→                      <div>
+  1581→                        <p className="text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 mb-1.5 flex items-center gap-1">
+  1582→                          <X className="h-3 w-3" /> Avoid
+  1583→                        </p>
+  1584→                        <ul className="space-y-1">
+  1585→                          {plan.avoid.map((a) => (
+  1586→                            <li key={a} className="text-muted-foreground text-xs flex items-start gap-1">
+  1587→                              <span className="text-red-500 mt-0.5">•</span> {a}
+  1588→                            </li>
+  1589→                          ))}
+  1590→                        </ul>
+  1591→                      </div>
+  1592→                    </div>
+  1593→
+  1594→                    <AnimatePresence>
+  1595→                      {isExpanded && (
+  1596→                        <motion.div
+  1597→                          initial={{ height: 0, opacity: 0 }}
+  1598→                          animate={{ height: 'auto', opacity: 1 }}
+  1599→                          exit={{ height: 0, opacity: 0 }}
+  1600→                          transition={{ duration: 0.3 }}
+  1601→                          className="overflow-hidden"
+  1602→                        >
+  1603→                          <Separator className="my-2" />
+  1604→                          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+  1605→                            Sample Routines
+  1606→                          </p>
+  1607→                          <div className="space-y-2">
+  1608→                            {plan.routines.map((r, i) => (
+  1609→                              <div
+  1610→                                key={i}
+  1611→                                className={cn(
+  1612→                                  'rounded-xl p-3 border bg-gradient-to-br',
+  1613→                                  plan.bgGradient,
+  1614→                                  plan.borderColor
+  1615→                                )}
+  1616→                              >
+  1617→                                <div className="flex items-center justify-between">
+  1618→                                  <p className="font-medium text-sm">{r.name}</p>
+  1619→                                  <Badge variant="outline" className="text-xs">{r.duration}</Badge>
+  1620→                                </div>
+  1621→                                <p className="text-xs text-muted-foreground mt-0.5">{r.focus}</p>
+  1622→                                <div className="flex flex-wrap gap-1 mt-2">
+  1623→                                  {r.exercises.map((e) => (
+  1624→                                    <span
+  1625→                                      key={e}
+  1626→                                      className={cn(
+  1627→                                        'text-[10px] px-1.5 py-0.5 rounded-md',
+  1628→                                        plan.badgeColor
+  1629→                                      )}
+  1630→                                    >
+  1631→                                      {e}
+  1632→                                    </span>
+  1633→                                  ))}
+  1634→                                </div>
+  1635→                              </div>
+  1636→                            ))}
+  1637→                          </div>
+  1638→                        </motion.div>
+  1639→                      )}
+  1640→                    </AnimatePresence>
+  1641→
+  1642→                    <Button
+  1643→                      variant="ghost"
+  1644→                      size="sm"
+  1645→                      className="w-full text-xs"
+  1646→                      onClick={(e) => {
+  1647→                        e.stopPropagation()
+  1648→                        setExpandedPhase(isExpanded ? null : plan.id)
+  1649→                      }}
+  1650→                    >
+  1651→                      {isExpanded ? 'Hide routines' : 'Show routines'}
+  1652→                      <ChevronDown className={cn('h-3 w-3 ml-1 transition-transform', isExpanded && 'rotate-180')} />
+  1653→                    </Button>
+  1654→                  </CardContent>
+  1655→                </Card>
+  1656→              </motion.div>
+  1657→            )
+  1658→          })}
+  1659→        </div>
+  1660→      </motion.section>
+  1661→
+  1662→      {/* ─── 4. Workout Library ─── */}
+  1663→      <motion.section variants={containerVariants} initial="hidden" animate="visible">
+  1664→        <motion.div variants={itemVariants} className="flex items-center justify-between mb-3">
+  1665→          <h2 className="text-xl font-semibold flex items-center gap-2">
+  1666→            <Dumbbell className="h-5 w-5 text-orange-500" />
+  1667→            Workout Library
+  1668→          </h2>
+  1669→          <span className="text-xs text-muted-foreground">{WORKOUT_LIBRARY.length} workouts available</span>
+  1670→        </motion.div>
+  1671→
+  1672→        <motion.div variants={itemVariants}>
+  1673→          <Tabs value={libraryTab} onValueChange={(v) => setLibraryTab(v as WorkoutCategory)}>
+  1674→            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto">
+  1675→              {(Object.keys(CATEGORY_META) as WorkoutCategory[]).map((cat) => {
+  1676→                const meta = CATEGORY_META[cat]
+  1677→                const Icon = meta.icon
+  1678→                const count = WORKOUT_LIBRARY.filter((w) => w.category === cat).length
+  1679→                return (
+  1680→                  <TabsTrigger
+  1681→                    key={cat}
+  1682→                    value={cat}
+  1683→                    className="flex flex-col items-center gap-1 py-2 data-[state=active]:bg-orange-500/10 data-[state=active]:text-orange-600 dark:data-[state=active]:text-orange-400"
+  1684→                  >
+  1685→                    <Icon className="h-4 w-4" />
+  1686→                    <span className="text-xs">{meta.label}</span>
+  1687→                    <span className="text-[10px] text-muted-foreground">{count}</span>
+  1688→                  </TabsTrigger>
+  1689→                )
+  1690→              })}
+  1691→            </TabsList>
+  1692→
+  1693→            {(Object.keys(CATEGORY_META) as WorkoutCategory[]).map((cat) => {
+  1694→              const workouts = WORKOUT_LIBRARY.filter((w) => w.category === cat)
+  1695→              return (
+  1696→                <TabsContent key={cat} value={cat} className="mt-4">
+  1697→                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  1698→                    {workouts.map((w, i) => {
+  1699→                      const Icon = w.icon
+  1700→                      return (
+  1701→                        <motion.div
+  1702→                          key={w.id}
+  1703→                          initial={{ opacity: 0, y: 15 }}
+  1704→                          animate={{ opacity: 1, y: 0 }}
+  1705→                          transition={{ delay: i * 0.05 }}
+  1706→                          whileHover={{ y: -3 }}
+  1707→                        >
+  1708→                          <Card className="overflow-hidden border-orange-200/40 dark:border-orange-900/30 bg-white/60 dark:bg-card/60 backdrop-blur-sm hover:shadow-lg transition-shadow">
+  1709→                            <div className={cn('h-28 bg-gradient-to-br p-4 text-white relative', w.gradient)}>
+  1710→                              <div className="absolute top-2 right-2">
+  1711→                                <Badge className="bg-white/25 text-white border-0 backdrop-blur text-xs">
+  1712→                                  {w.difficulty}
+  1713→                                </Badge>
+  1714→                              </div>
+  1715→                              <Icon className="h-10 w-10 mb-1" />
+  1716→                              <p className="text-xs opacity-80 uppercase tracking-wider">
+  1717→                                {CATEGORY_META[cat].label}
+  1718→                              </p>
+  1719→                            </div>
+  1720→                            <CardContent className="p-4">
+  1721→                              <h3 className="font-semibold text-base leading-tight">{w.name}</h3>
+  1722→                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{w.description}</p>
+  1723→                              <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+  1724→                                <span className="flex items-center gap-1">
+  1725→                                  <Clock className="h-3 w-3" /> {w.duration} min
+  1726→                                </span>
+  1727→                                <span className="flex items-center gap-1">
+  1728→                                  <Flame className="h-3 w-3" /> {w.calories} kcal
+  1729→                                </span>
+  1730→                                <Badge className={cn('text-[10px] border-0 px-1.5 py-0', INTENSITY_COLORS[w.intensity])}>
+  1731→                                  {w.intensity}
+  1732→                                </Badge>
+  1733→                              </div>
+  1734→                              <div className="flex flex-wrap gap-1 mt-2">
+  1735→                                {w.muscleGroups.slice(0, 3).map((m) => (
+  1736→                                  <span key={m} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground">
+  1737→                                    {m}
+  1738→                                  </span>
+  1739→                                ))}
+  1740→                              </div>
+  1741→                              <Button
+  1742→                                size="sm"
+  1743→                                className="w-full mt-3 bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white border-0"
+  1744→                                onClick={() => setActivePlayer(w)}
+  1745→                              >
+  1746→                                <Play className="h-3 w-3 mr-1" /> Start
+  1747→                              </Button>
+  1748→                            </CardContent>
+  1749→                          </Card>
+  1750→                        </motion.div>
+  1751→                      )
+  1752→                    })}
+
+[showing lines 1193-1752 of 2309; use offset=1753 with limit to continue reading]

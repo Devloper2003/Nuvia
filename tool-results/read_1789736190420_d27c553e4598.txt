@@ -1,0 +1,562 @@
+     1→   646→          </div>
+     2→   647→
+     3→   648→          {/* Confidence bar */}
+     4→   649→          <div className="flex items-center gap-2">
+     5→   650→            <span className="text-[10px] text-muted-foreground shrink-0">Confidence</span>
+     6→   651→            <div className="flex-1 h-1.5 bg-muted/60 rounded-full overflow-hidden">
+     7→   652→              <motion.div
+     8→   653→                initial={{ width: 0 }}
+     9→   654→                animate={{ width: `${pattern.confidence}%` }}
+    10→   655→                transition={{ duration: 1, delay: 0.3 + index * 0.07 }}
+    11→   656→                className={`h-full bg-gradient-to-r ${colorMap[pattern.color]}`}
+    12→   657→              />
+    13→   658→            </div>
+    14→   659→            <span className="text-[10px] font-semibold">{pattern.confidence}%</span>
+    15→   660→          </div>
+    16→   661→
+    17→   662→          {/* Recommendation */}
+    18→   663→          <div className="flex items-start gap-1.5 rounded-md bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2">
+    19→   664→            <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+    20→   665→            <p className="text-[11px] text-foreground/80 leading-snug">{pattern.recommendation}</p>
+    21→   666→          </div>
+    22→   667→        </CardContent>
+    23→   668→      </Card>
+    24→   669→    </motion.div>
+    25→   670→  )
+    26→   671→}
+    27→   672→
+    28→   673→function RecommendationCard({ rec, onAdd, added }: { rec: Recommendation; onAdd: (id: string) => void; added: boolean }) {
+    29→   674→  const Icon = rec.icon
+    30→   675→  const impact = impactColors[rec.impact]
+    31→   676→  return (
+    32→   677→    <motion.div
+    33→   678→      initial={{ opacity: 0, scale: 0.97 }}
+    34→   679→      animate={{ opacity: 1, scale: 1 }}
+    35→   680→      transition={{ duration: 0.3 }}
+    36→   681→      whileHover={{ y: -2 }}
+    37→   682→      className="h-full"
+    38→   683→    >
+    39→   684→      <Card className="h-full glass border-violet-200/40 dark:border-violet-800/30 flex flex-col">
+    40→   685→        <CardHeader className="pb-2">
+    41→   686→          <div className="flex items-start justify-between gap-2">
+    42→   687→            <div className="flex items-center gap-2.5">
+    43→   688→              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300">
+    44→   689→                <Icon className="h-4 w-4" />
+    45→   690→              </div>
+    46→   691→              <CardTitle className="text-sm leading-tight">{rec.title}</CardTitle>
+    47→   692→            </div>
+    48→   693→            <Badge className={cn('text-[9px] border-0', impact.bg, impact.text)}>{impact.label}</Badge>
+    49→   694→          </div>
+    50→   695→        </CardHeader>
+    51→   696→        <CardContent className="flex flex-col flex-1 gap-2.5">
+    52→   697→          <p className="text-[11px] text-muted-foreground leading-relaxed flex-1">{rec.description}</p>
+    53→   698→          {rec.cyclePhase && (
+    54→   699→            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+    55→   700→              <Calendar className="h-3 w-3" />
+    56→   701→              <span>{rec.cyclePhase}</span>
+    57→   702→            </div>
+    58→   703→          )}
+    59→   704→          <div className="flex items-start gap-1.5 rounded-md bg-amber-50/50 dark:bg-amber-950/15 p-1.5">
+    60→   705→            <Database className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+    61→   706→            <p className="text-[10px] text-muted-foreground leading-snug">{rec.evidence}</p>
+    62→   707→          </div>
+    63→   708→          <Button
+    64→   709→            size="sm"
+    65→   710→            variant={added ? 'secondary' : 'default'}
+    66→   711→            className={cn(
+    67→   712→              'w-full h-8 text-[11px] gap-1.5',
+    68→   713→              !added && 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700',
+    69→   714→              added && 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+    70→   715→            )}
+    71→   716→            onClick={() => onAdd(rec.id)}
+    72→   717→            disabled={added}
+    73→   718→          >
+    74→   719→            {added ? (
+    75→   720→              <>
+    76→   721→                <Check className="h-3.5 w-3.5" /> Added to Plan
+    77→   722→              </>
+    78→   723→            ) : (
+    79→   724→              <>
+    80→   725→                <Plus className="h-3.5 w-3.5" /> Add to Plan
+    81→   726→              </>
+    82→   727→            )}
+    83→   728→          </Button>
+    84→   729→        </CardContent>
+    85→   730→      </Card>
+    86→   731→    </motion.div>
+    87→   732→  )
+    88→   733→}
+    89→   734→
+    90→   735→function RiskCard({ risk, index }: { risk: RiskAssessment; index: number }) {
+    91→   736→  const Icon = risk.icon
+    92→   737→  const colors = riskColors[risk.riskLevel]
+    93→   738→  return (
+    94→   739→    <motion.div
+    95→   740→      initial={{ opacity: 0, y: 20 }}
+    96→   741→      animate={{ opacity: 1, y: 0 }}
+    97→   742→      transition={{ duration: 0.4, delay: index * 0.08 }}
+    98→   743→      whileHover={{ y: -3 }}
+    99→   744→    >
+   100→   745→      <Card className={cn('h-full ring-1', colors.bg, colors.ring)}>
+   101→   746→        <CardHeader className="pb-3">
+   102→   747→          <div className="flex items-start justify-between gap-2">
+   103→   748→            <div className="flex items-center gap-3">
+   104→   749→              <div className={`p-2.5 rounded-xl bg-gradient-to-br ${colors.gradient} text-white shadow-lg`}>
+   105→   750→                <Icon className="h-5 w-5" />
+   106→   751→              </div>
+   107→   752→              <div>
+   108→   753→                <CardTitle className="text-base">{risk.condition}</CardTitle>
+   109→   754→                <div className="flex items-center gap-1.5 mt-0.5">
+   110→   755→                  <span className={cn('text-[10px] font-semibold uppercase tracking-wide', colors.text)}>
+   111→   756→                    {risk.riskLevel} risk
+   112→   757→                  </span>
+   113→   758→                  {risk.trend === 'improving' && (
+   114→   759→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-emerald-300 text-emerald-600">
+   115→   760→                      <TrendingDown className="h-2.5 w-2.5" /> Improving
+   116→   761→                    </Badge>
+   117→   762→                  )}
+   118→   763→                  {risk.trend === 'worsening' && (
+   119→   764→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5 border-rose-300 text-rose-600">
+   120→   765→                      <TrendingUp className="h-2.5 w-2.5" /> Worsening
+   121→   766→                    </Badge>
+   122→   767→                  )}
+   123→   768→                  {risk.trend === 'stable' && (
+   124→   769→                    <Badge variant="outline" className="text-[9px] h-4 px-1 gap-0.5">
+   125→   770→                      <Activity className="h-2.5 w-2.5" /> Stable
+   126→   771→                    </Badge>
+   127→   772→                  )}
+   128→   773→                </div>
+   129→   774→              </div>
+   130→   775→            </div>
+   131→   776→            <div className="relative w-14 h-14 shrink-0">
+   132→   777→              <svg width="56" height="56" className="-rotate-90">
+   133→   778→                <circle cx="28" cy="28" r="22" fill="none" stroke="currentColor" strokeWidth="5" className="text-muted/30" />
+   134→   779→                <motion.circle
+   135→   780→                  cx="28"
+   136→   781→                  cy="28"
+   137→   782→                  r="22"
+   138→   783→                  fill="none"
+   139→   784→                  stroke={risk.riskLevel === 'low' ? '#10b981' : risk.riskLevel === 'medium' ? '#f59e0b' : '#ef4444'}
+   140→   785→                  strokeWidth="5"
+   141→   786→                  strokeLinecap="round"
+   142→   787→                  strokeDasharray={2 * Math.PI * 22}
+   143→   788→                  initial={{ strokeDashoffset: 2 * Math.PI * 22 }}
+   144→   789→                  animate={{ strokeDashoffset: 2 * Math.PI * 22 * (1 - risk.riskScore / 100) }}
+   145→   790→                  transition={{ duration: 1.5, delay: index * 0.08, ease: 'easeOut' }}
+   146→   791→                />
+   147→   792→              </svg>
+   148→   793→              <div className="absolute inset-0 flex items-center justify-center text-sm font-bold">{risk.riskScore}</div>
+   149→   794→            </div>
+   150→   795→          </div>
+   151→   796→        </CardHeader>
+   152→   797→        <CardContent className="space-y-3">
+   153→   798→          {/* Contributing factors */}
+   154→   799→          <div>
+   155→   800→            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+   156→   801→              <AlertTriangle className="h-3 w-3" /> Contributing Factors
+   157→   802→            </p>
+   158→   803→            <ul className="space-y-1">
+   159→   804→              {risk.contributingFactors.map((f, i) => (
+   160→   805→                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+   161→   806→                  <span className="h-1 w-1 rounded-full bg-muted-foreground/60 mt-1.5 shrink-0" />
+   162→   807→                  <span>{f}</span>
+   163→   808→                </li>
+   164→   809→              ))}
+   165→   810→            </ul>
+   166→   811→          </div>
+   167→   812→
+   168→   813→          <Separator />
+   169→   814→
+   170→   815→          {/* Prevention tips */}
+   171→   816→          <div>
+   172→   817→            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+   173→   818→              <ShieldAlert className="h-3 w-3" /> Prevention Tips
+   174→   819→            </p>
+   175→   820→            <ul className="space-y-1">
+   176→   821→              {risk.preventionTips.map((t, i) => (
+   177→   822→                <li key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/80">
+   178→   823→                  <CheckCircle2 className="h-3 w-3 mt-0.5 text-emerald-500 shrink-0" />
+   179→   824→                  <span>{t}</span>
+   180→   825→                </li>
+   181→   826→              ))}
+   182→   827→            </ul>
+   183→   828→          </div>
+   184→   829→        </CardContent>
+   185→   830→      </Card>
+   186→   831→    </motion.div>
+   187→   832→  )
+   188→   833→}
+   189→   834→
+   190→   835→// Custom tooltip for recharts
+   191→   836→function ChartTooltip({ active, payload, label }: any) {
+   192→   837→  if (!active || !payload || payload.length === 0) return null
+   193→   838→  return (
+   194→   839→    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-white/95 dark:bg-card/95 backdrop-blur-sm px-3 py-2 shadow-lg text-xs">
+   195→   840→      <p className="font-semibold mb-1">{label}</p>
+   196→   841→      {payload.map((p: any, i: number) => (
+   197→   842→        <p key={i} className="text-muted-foreground flex items-center gap-1.5">
+   198→   843→          <span className="h-2 w-2 rounded-sm" style={{ background: p.color || p.stroke || p.fill }} />
+   199→   844→          <span>{p.name}:</span>
+   200→   845→          <span className="font-semibold text-foreground">{p.value}</span>
+   201→   846→        </p>
+   202→   847→      ))}
+   203→   848→    </div>
+   204→   849→  )
+   205→   850→}
+   206→   851→
+   207→   852→// ─── Main Module ─────────────────────────────────────────────────────────────
+   208→   853→
+   209→   854→export default function AIInsightsModule() {
+   210→   855→  const [activeTab, setActiveTab] = useState('overview')
+   211→   856→  const [addedRecs, setAddedRecs] = useState<Set<string>>(new Set())
+   212→   857→
+   213→   858→  const handleAddRec = (id: string) => {
+   214→   859→    setAddedRecs((prev) => new Set(prev).add(id))
+   215→   860→    toast.success('Added to your plan', {
+   216→   861→      description: 'You can review and customize it in your dashboard.',
+   217→   862→    })
+   218→   863→  }
+   219→   864→
+   220→   865→  const recsByCategory = useMemo(() => {
+   221→   866→    const map: Record<string, Recommendation[]> = {}
+   222→   867→    for (const cat of REC_CATEGORIES) {
+   223→   868→      map[cat.id] = RECOMMENDATIONS.filter((r) => r.category === cat.id)
+   224→   869→    }
+   225→   870→    return map
+   226→   871→  }, [])
+   227→   872→
+   228→   873→  return (
+   229→   874→    <div className="space-y-6">
+   230→   875→      {/* ═══ 1. HEADER ═══ */}
+   231→   876→      <motion.div
+   232→   877→        initial={{ opacity: 0, y: -10 }}
+   233→   878→        animate={{ opacity: 1, y: 0 }}
+   234→   879→        transition={{ duration: 0.5 }}
+   235→   880→        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 p-6 md:p-8 text-white shadow-2xl"
+   236→   881→      >
+   237→   882→        {/* Decorative blobs */}
+   238→   883→        <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" />
+   239→   884→        <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" />
+   240→   885→        <div className="absolute top-1/2 right-1/3 h-32 w-32 rounded-full bg-violet-400/20 blur-2xl" />
+   241→   886→
+   242→   887→        {/* Grid pattern */}
+   243→   888→        <div
+   244→   889→          className="absolute inset-0 opacity-[0.07]"
+   245→   890→          style={{
+   246→   891→            backgroundImage:
+   247→   892→              'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+   248→   893→            backgroundSize: '32px 32px',
+   249→   894→          }}
+   250→   895→        />
+   251→   896→
+   252→   897→        <div className="relative z-10">
+   253→   898→          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+   254→   899→            <div className="space-y-3 max-w-2xl">
+   255→   900→              <div className="flex flex-wrap items-center gap-2">
+   256→   901→                <Badge className="bg-white/15 text-white border-white/20 backdrop-blur-sm gap-1.5">
+   257→   902→                  <BrainCircuit className="h-3.5 w-3.5" /> AI Engine Active
+   258→   903→                  <span className="relative flex h-2 w-2 ml-1">
+   259→   904→                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+   260→   905→                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+   261→   906→                  </span>
+   262→   907→                </Badge>
+   263→   908→                <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 gap-1 font-semibold">
+   264→   909→                  <Crown className="h-3.5 w-3.5" /> PREMIUM
+   265→   910→                </Badge>
+   266→   911→                <Badge variant="outline" className="border-white/30 text-white gap-1">
+   267→   912→                  <Cpu className="h-3 w-3" /> v3.2.1
+   268→   913→                </Badge>
+   269→   914→              </div>
+   270→   915→              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+   271→   916→                <span className="bg-gradient-to-r from-white via-violet-100 to-amber-200 bg-clip-text text-transparent">
+   272→   917→                  AI Health Intelligence
+   273→   918→                </span>
+   274→   919→              </h1>
+   275→   920→              <p className="text-violet-100/90 text-sm md:text-base">
+   276→   921→                Predictive insights powered by your data — patterns, forecasts, and personalized recommendations.
+   277→   922→              </p>
+   278→   923→              <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-violet-100/80 pt-1">
+   279→   924→                <span className="flex items-center gap-1">
+   280→   925→                  <Database className="h-3 w-3" /> {AI_MODEL_INFO.dataPoints.toLocaleString()} data points
+   281→   926→                </span>
+   282→   927→                <span className="flex items-center gap-1">
+   283→   928→                  <CheckCircle2 className="h-3 w-3" /> {AI_MODEL_INFO.accuracy}% accuracy
+   284→   929→                </span>
+   285→   930→                <span className="flex items-center gap-1">
+   286→   931→                  <Clock className="h-3 w-3" /> Updated {AI_MODEL_INFO.lastUpdated}
+   287→   932→                </span>
+   288→   933→              </div>
+   289→   934→            </div>
+   290→   935→
+   291→   936→            {/* Right-side stat tiles */}
+   292→   937→            <div className="grid grid-cols-2 gap-3 shrink-0">
+   293→   938→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
+   294→   939→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   295→   940→                  <Sparkles className="h-3 w-3" /> Predictions
+   296→   941→                </div>
+   297→   942→                <div className="text-2xl font-bold mt-0.5">{PREDICTIONS.length}</div>
+   298→   943→                <div className="text-[10px] text-violet-100/70">7-day forecasts</div>
+   299→   944→              </div>
+   300→   945→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
+   301→   946→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   302→   947→                  <Network className="h-3 w-3" /> Patterns
+   303→   948→                </div>
+   304→   949→                <div className="text-2xl font-bold mt-0.5">{PATTERNS.length}</div>
+   305→   950→                <div className="text-[10px] text-violet-100/70">AI-discovered</div>
+   306→   951→              </div>
+   307→   952→              <div className="rounded-xl bg-gradient-to-br from-amber-400/30 to-yellow-500/30 backdrop-blur-md border border-amber-300/30 p-3">
+   308→   953→                <div className="flex items-center gap-1.5 text-amber-100/90 text-[10px] uppercase tracking-wide">
+   309→   954→                  <Gauge className="h-3 w-3" /> Predictability
+   310→   955→                </div>
+   311→   956→                <div className="text-2xl font-bold mt-0.5 text-white">{PREDICTABILITY_SCORE}%</div>
+   312→   957→                <div className="text-[10px] text-amber-100/70">Highly predictable</div>
+   313→   958→              </div>
+   314→   959→              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3">
+   315→   960→                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+   316→   961→                  <ShieldAlert className="h-3 w-3" /> Risk checks
+   317→   962→                </div>
+   318→   963→                <div className="text-2xl font-bold mt-0.5">{RISK_ASSESSMENTS.length}</div>
+   319→   964→                <div className="text-[10px] text-violet-100/70">Conditions tracked</div>
+   320→   965→              </div>
+   321→   966→            </div>
+   322→   967→          </div>
+   323→   968→        </div>
+   324→   969→      </motion.div>
+   325→   970→
+   326→   971→      {/* ═══ Tabbed Content ═══ */}
+   327→   972→      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+   328→   973→        <div className="sticky top-[57px] z-30 -mx-4 px-4 py-2 bg-background/80 backdrop-blur-md border-b border-border/60">
+   329→   974→          <TabsList className="bg-muted/60 h-auto p-1 gap-0.5 flex flex-wrap">
+   330→   975→            <TabsTrigger value="overview" className="gap-1.5 text-xs">
+   331→   976→              <Gauge className="h-3.5 w-3.5" /> Overview
+   332→   977→            </TabsTrigger>
+   333→   978→            <TabsTrigger value="predictions" className="gap-1.5 text-xs">
+   334→   979→              <Sparkles className="h-3.5 w-3.5" /> Predictions
+   335→   980→            </TabsTrigger>
+   336→   981→            <TabsTrigger value="patterns" className="gap-1.5 text-xs">
+   337→   982→              <Network className="h-3.5 w-3.5" /> Patterns
+   338→   983→            </TabsTrigger>
+   339→   984→            <TabsTrigger value="trends" className="gap-1.5 text-xs">
+   340→   985→              <TrendingUp className="h-3.5 w-3.5" /> Trends
+   341→   986→            </TabsTrigger>
+   342→   987→            <TabsTrigger value="recommendations" className="gap-1.5 text-xs">
+   343→   988→              <Lightbulb className="h-3.5 w-3.5" /> Recommendations
+   344→   989→            </TabsTrigger>
+   345→   990→            <TabsTrigger value="risk" className="gap-1.5 text-xs">
+   346→   991→              <ShieldAlert className="h-3.5 w-3.5" /> Risk
+   347→   992→            </TabsTrigger>
+   348→   993→          </TabsList>
+   349→   994→        </div>
+   350→   995→
+   351→   996→        {/* ═══ OVERVIEW TAB: Sections 2, 9, 10 ═══ */}
+   352→   997→        <TabsContent value="overview" className="space-y-6 mt-4">
+   353→   998→          {/* Section 2: Health Predictability Score */}
+   354→   999→          <motion.div
+   355→  1000→            initial={{ opacity: 0, y: 15 }}
+   356→  1001→            animate={{ opacity: 1, y: 0 }}
+   357→  1002→            transition={{ duration: 0.4 }}
+   358→  1003→          >
+   359→  1004→            <Card className="glass border-violet-200/40 dark:border-violet-800/30 overflow-hidden">
+   360→  1005→              <CardHeader>
+   361→  1006→                <div className="flex items-center justify-between gap-3 flex-wrap">
+   362→  1007→                  <div>
+   363→  1008→                    <CardTitle className="flex items-center gap-2">
+   364→  1009→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-amber-500 text-white">
+   365→  1010→                        <Gauge className="h-4 w-4" />
+   366→  1011→                      </div>
+   367→  1012→                      Health Predictability Score
+   368→  1013→                    </CardTitle>
+   369→  1014→                    <CardDescription className="mt-1">
+   370→  1015→                      How reliably your health patterns can be forecast from your data
+   371→  1016→                    </CardDescription>
+   372→  1017→                  </div>
+   373→  1018→                  {PREDICTABILITY_SCORE > 0 && (
+   374→  1019→                    <Badge className="bg-gradient-to-r from-violet-500 to-amber-500 text-white border-0 gap-1">
+   375→  1020→                      <Star className="h-3 w-3 fill-white" /> Top 12% of users
+   376→  1021→                    </Badge>
+   377→  1022→                  )}
+   378→  1023→                </div>
+   379→  1024→              </CardHeader>
+   380→  1025→              <CardContent>
+   381→  1026→                {PREDICTABILITY_SCORE === 0 || SCORE_BREAKDOWN.length === 0 ? (
+   382→  1027→                  // ── Empty state: not enough data yet to compute a score ──
+   383→  1028→                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+   384→  1029→                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+   385→  1030→                      <Gauge className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+   386→  1031→                    </div>
+   387→  1032→                    <p className="text-sm font-medium text-foreground">No predictability score yet</p>
+   388→  1033→                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+   389→  1034→                      Insights appear after you log some data. Track your cycle, mood, sleep,
+   390→  1035→                      and symptoms for ~30 days and Nuvia will compute your health
+   391→  1036→                      predictability score, score breakdown, and personalized AI insights here.
+   392→  1037→                    </p>
+   393→  1038→                  </div>
+   394→  1039→                ) : (
+   395→  1040→                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+   396→  1041→                  {/* Left: Gauge */}
+   397→  1042→                  <div className="flex flex-col items-center">
+   398→  1043→                    <HealthScoreGauge score={PREDICTABILITY_SCORE} />
+   399→  1044→                    <motion.p
+   400→  1045→                      initial={{ opacity: 0 }}
+   401→  1046→                      animate={{ opacity: 1 }}
+   402→  1047→                      transition={{ delay: 1.5 }}
+   403→  1048→                      className="text-center text-sm text-muted-foreground mt-3 max-w-xs"
+   404→  1049→                    >
+   405→  1050→                      Your health patterns are{' '}
+   406→  1051→                      <span className="font-semibold bg-gradient-to-r from-violet-600 to-amber-500 bg-clip-text text-transparent">
+   407→  1052→                        {PREDICTABILITY_SCORE}% predictable
+   408→  1053→                      </span>{' '}
+   409→  1054→                      — AI can reliably forecast your week ahead.
+   410→  1055→                    </motion.p>
+   411→  1056→                  </div>
+   412→  1057→
+   413→  1058→                  {/* Right: Breakdown */}
+   414→  1059→                  <div className="space-y-4">
+   415→  1060→                    <div>
+   416→  1061→                      <h4 className="text-sm font-semibold mb-1">Score Breakdown</h4>
+   417→  1062→                      <p className="text-[11px] text-muted-foreground">
+   418→  1063→                        Based on 90 days of cycle, mood, sleep, and symptom data.
+   419→  1064→                      </p>
+   420→  1065→                    </div>
+   421→  1066→                    <div className="space-y-3">
+   422→  1067→                      {SCORE_BREAKDOWN.map((item, i) => {
+   423→  1068→                        const Icon = item.icon
+   424→  1069→                        return (
+   425→  1070→                          <motion.div
+   426→  1071→                            key={item.label}
+   427→  1072→                            initial={{ opacity: 0, x: 10 }}
+   428→  1073→                            animate={{ opacity: 1, x: 0 }}
+   429→  1074→                            transition={{ delay: 0.5 + i * 0.1 }}
+   430→  1075→                            className="space-y-1.5"
+   431→  1076→                          >
+   432→  1077→                            <div className="flex items-center justify-between">
+   433→  1078→                              <span className="flex items-center gap-2 text-sm">
+   434→  1079→                                <Icon className="h-4 w-4 text-violet-500" />
+   435→  1080→                                {item.label}
+   436→  1081→                              </span>
+   437→  1082→                              <span className="text-sm font-semibold">{item.value}%</span>
+   438→  1083→                            </div>
+   439→  1084→                            <div className="h-2 bg-muted/60 rounded-full overflow-hidden">
+   440→  1085→                              <motion.div
+   441→  1086→                                initial={{ width: 0 }}
+   442→  1087→                                animate={{ width: `${item.value}%` }}
+   443→  1088→                                transition={{ duration: 1, delay: 0.7 + i * 0.1, ease: 'easeOut' }}
+   444→  1089→                                className={`h-full bg-gradient-to-r ${item.color} rounded-full`}
+   445→  1090→                              />
+   446→  1091→                            </div>
+   447→  1092→                          </motion.div>
+   448→  1093→                        )
+   449→  1094→                      })}
+   450→  1095→                    </div>
+   451→  1096→                    <Separator />
+   452→  1097→                    <div className="grid grid-cols-3 gap-3 text-center">
+   453→  1098→                      <div>
+   454→  1099→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">{AI_MODEL_INFO.dataPoints.toLocaleString()}</div>
+   455→  1100→                        <div className="text-[10px] text-muted-foreground">Data points</div>
+   456→  1101→                      </div>
+   457→  1102→                      <div>
+   458→  1103→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">28d</div>
+   459→  1104→                        <div className="text-[10px] text-muted-foreground">Rolling window</div>
+   460→  1105→                      </div>
+   461→  1106→                      <div>
+   462→  1107→                        <div className="text-lg font-bold text-violet-600 dark:text-violet-400">6</div>
+   463→  1108→                        <div className="text-[10px] text-muted-foreground">Data sources</div>
+   464→  1109→                      </div>
+   465→  1110→                    </div>
+   466→  1111→                  </div>
+   467→  1112→                </div>
+   468→  1113→                )}
+   469→  1114→              </CardContent>
+   470→  1115→            </Card>
+   471→  1116→          </motion.div>
+   472→  1117→
+   473→  1118→          {/* Section 9: Monthly AI Report Summary */}
+   474→  1119→          <motion.div
+   475→  1120→            initial={{ opacity: 0, y: 15 }}
+   476→  1121→            animate={{ opacity: 1, y: 0 }}
+   477→  1122→            transition={{ duration: 0.4, delay: 0.1 }}
+   478→  1123→          >
+   479→  1124→            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+   480→  1125→              <CardHeader>
+   481→  1126→                <div className="flex items-center justify-between gap-3 flex-wrap">
+   482→  1127→                  <div>
+   483→  1128→                    <CardTitle className="flex items-center gap-2">
+   484→  1129→                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
+   485→  1130→                        <FileText className="h-4 w-4" />
+   486→  1131→                      </div>
+   487→  1132→                      Monthly AI Report Summary
+   488→  1133→                    </CardTitle>
+   489→  1134→                    <CardDescription className="mt-1">
+   490→  1135→                      {MONTHLY_REPORT ? MONTHLY_REPORT.month : 'No monthly report yet'}
+   491→  1136→                    </CardDescription>
+   492→  1137→                  </div>
+   493→  1138→                  {MONTHLY_REPORT && (
+   494→  1139→                    <div className="flex gap-2">
+   495→  1140→                      <Button
+   496→  1141→                        size="sm"
+   497→  1142→                        variant="outline"
+   498→  1143→                        className="gap-1.5"
+   499→  1144→                        onClick={() => toast.success('PDF export started', { description: 'Your report will be ready in a moment.' })}
+   500→  1145→                      >
+   501→  1146→                        <Download className="h-3.5 w-3.5" /> PDF
+   502→  1147→                      </Button>
+   503→  1148→                      <Button
+   504→  1149→                        size="sm"
+   505→  1150→                        variant="outline"
+   506→  1151→                        className="gap-1.5"
+   507→  1152→                        onClick={() => toast.success('Excel export started', { description: 'Your data will download shortly.' })}
+   508→  1153→                      >
+   509→  1154→                        <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
+   510→  1155→                      </Button>
+   511→  1156→                    </div>
+   512→  1157→                  )}
+   513→  1158→                </div>
+   514→  1159→              </CardHeader>
+   515→  1160→              <CardContent className="space-y-5">
+   516→  1161→                {MONTHLY_REPORT === null ? (
+   517→  1162→                  // ── Empty state: not enough data for a monthly report ──
+   518→  1163→                  <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+   519→  1164→                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
+   520→  1165→                      <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+   521→  1166→                    </div>
+   522→  1167→                    <p className="text-sm font-medium text-foreground">No monthly report yet</p>
+   523→  1168→                    <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+   524→  1169→                      Your first monthly AI report will generate automatically once you have
+   525→  1170→                      at least one full month of cycle, mood, sleep, and symptom logs. Start
+   526→  1171→                      tracking across Nuvia to unlock key findings, improvements, and
+   527→  1172→                      personalized goals here.
+   528→  1173→                    </p>
+   529→  1174→                  </div>
+   530→  1175→                ) : (
+   531→  1176→                  <>
+   532→  1177→                {/* Key findings */}
+   533→  1178→                <div>
+   534→  1179→                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+   535→  1180→                    <Sparkles className="h-4 w-4 text-violet-500" /> Key Findings This Month
+   536→  1181→                  </h4>
+   537→  1182→                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+   538→  1183→                    {MONTHLY_REPORT.keyFindings.map((f, i) => (
+   539→  1184→                      <motion.div
+   540→  1185→                        key={i}
+   541→  1186→                        initial={{ opacity: 0, x: -10 }}
+   542→  1187→                        animate={{ opacity: 1, x: 0 }}
+   543→  1188→                        transition={{ delay: 0.1 + i * 0.05 }}
+   544→  1189→                        className="flex items-start gap-2 rounded-lg bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2.5"
+   545→  1190→                      >
+   546→  1191→                        <div className="h-5 w-5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+   547→  1192→                          {i + 1}
+   548→  1193→                        </div>
+   549→  1194→                        <p className="text-[11px] text-foreground/80 leading-snug">{f}</p>
+   550→  1195→                      </motion.div>
+   551→  1196→                    ))}
+   552→  1197→                  </div>
+   553→  1198→                </div>
+   554→  1199→
+   555→  1200→                {/* Improvements from last month */}
+   556→  1201→                <div>
+   557→  1202→                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+   558→  1203→                    <TrendingUp className="h-4 w-4 text-emerald-500" /> Improvements from Last Month
+   559→  1204→                  </h4>
+   560→  1205→                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+   561→
+   562→[showing lines 646-1205 of 2094; use offset=1206 with limit to continue reading]

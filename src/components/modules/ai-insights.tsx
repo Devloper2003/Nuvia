@@ -222,9 +222,9 @@ const AI_MODEL_INFO = {
   lastUpdated: '—',
   nextUpdate: '—',
   dataSources: [
-    { label: 'Cycle logs', count: 0, icon: Calendar, classes: 'bg-rose-100 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400' },
+    { label: 'Cycle logs', count: 0, icon: Calendar, classes: 'bg-blush text-plum' },
     { label: 'Mood entries', count: 0, icon: Smile, classes: 'bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400' },
-    { label: 'Sleep entries', count: 0, icon: Moon, classes: 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400' },
+    { label: 'Sleep entries', count: 0, icon: Moon, classes: 'bg-lilac text-plum' },
     { label: 'Symptom logs', count: 0, icon: Activity, classes: 'bg-violet-100 dark:bg-violet-950/30 text-violet-600 dark:text-violet-400' },
     { label: 'Nutrition logs', count: 0, icon: Salad, classes: 'bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' },
     { label: 'Exercise logs', count: 0, icon: Dumbbell, classes: 'bg-orange-100 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400' },
@@ -264,7 +264,7 @@ function correlationColor(value: number): string {
   if (value >= 0.7) return 'bg-emerald-500'
   if (value >= 0.4) return 'bg-emerald-400/70'
   if (value >= 0.2) return 'bg-yellow-400/60'
-  if (value > -0.2) return 'bg-slate-300/50'
+  if (value > -0.2) return 'bg-muted-foreground/25'
   if (value > -0.4) return 'bg-orange-400/60'
   if (value > -0.7) return 'bg-rose-400/70'
   return 'bg-rose-500'
@@ -283,7 +283,7 @@ function correlationText(value: number): string {
 const impactColors: Record<ImpactLevel, { bg: string; text: string; label: string }> = {
   high: { bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-300', label: 'High Impact' },
   medium: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300', label: 'Medium Impact' },
-  low: { bg: 'bg-slate-100 dark:bg-slate-800/50', text: 'text-slate-600 dark:text-slate-300', label: 'Low Impact' },
+  low: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Low Impact' },
 }
 
 const riskColors: Record<RiskLevel, { bg: string; text: string; ring: string; gradient: string }> = {
@@ -429,7 +429,7 @@ function ForecastCard({ prediction, index }: { prediction: Prediction; index: nu
       whileHover={{ y: -4 }}
       className="h-full"
     >
-      <Card className="overflow-hidden h-full border-violet-200/40 dark:border-violet-800/30 bg-gradient-to-br from-white to-violet-50/30 dark:from-card dark:to-violet-950/10 backdrop-blur-sm">
+      <Card className="overflow-hidden h-full border-border bg-gradient-to-br from-card to-blush/40">
         <div className={`h-1.5 bg-gradient-to-r ${prediction.gradient}`} />
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
@@ -450,7 +450,7 @@ function ForecastCard({ prediction, index }: { prediction: Prediction; index: nu
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Summary */}
-          <div className="rounded-lg bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2.5">
+          <div className="rounded-lg bg-blush/40 border border-border p-2.5">
             <p className="text-xs text-foreground/80 leading-relaxed">{prediction.summary}</p>
           </div>
 
@@ -566,7 +566,7 @@ function ForecastCard({ prediction, index }: { prediction: Prediction; index: nu
 
           {/* Recommendations */}
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
               AI Recommendations
             </p>
             <ul className="space-y-1">
@@ -588,10 +588,10 @@ function PatternCard({ pattern, index }: { pattern: PatternInsight; index: numbe
   const Icon = pattern.icon
   const colorMap: Record<string, string> = {
     rose: 'from-rose-500 to-pink-500',
-    indigo: 'from-indigo-500 to-blue-500',
+    indigo: 'from-violet-500 to-purple-500',
     amber: 'from-amber-500 to-orange-500',
     orange: 'from-orange-500 to-rose-500',
-    cyan: 'from-cyan-500 to-blue-500',
+    cyan: 'from-fuchsia-500 to-rose-500',
     emerald: 'from-emerald-500 to-teal-500',
   }
   return (
@@ -601,10 +601,10 @@ function PatternCard({ pattern, index }: { pattern: PatternInsight; index: numbe
       transition={{ duration: 0.4, delay: index * 0.07 }}
       whileHover={{ y: -3 }}
     >
-      <Card className="h-full glass border-violet-200/40 dark:border-violet-800/30 overflow-hidden">
+      <Card className="h-full border-border overflow-hidden">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <div className={`p-2 rounded-lg bg-gradient-to-br ${colorMap[pattern.color]} text-white shadow`}>
                 <Icon className="h-4 w-4" />
               </div>
@@ -630,10 +630,10 @@ function PatternCard({ pattern, index }: { pattern: PatternInsight; index: numbe
           {/* Mini chart */}
           <div className="rounded-lg bg-muted/40 dark:bg-muted/20 p-2.5">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wide">
+              <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
                 Supporting data
               </span>
-              <div className="flex items-center gap-2 text-[9px]">
+              <div className="flex items-center gap-2 text-[11px]">
                 <span className="flex items-center gap-0.5">
                   <span className="h-1.5 w-1.5 rounded-sm bg-violet-500" /> You
                 </span>
@@ -660,7 +660,7 @@ function PatternCard({ pattern, index }: { pattern: PatternInsight; index: numbe
           </div>
 
           {/* Recommendation */}
-          <div className="flex items-start gap-1.5 rounded-md bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2">
+          <div className="flex items-start gap-1.5 rounded-md bg-blush/40 border border-border p-2">
             <Lightbulb className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-foreground/80 leading-snug">{pattern.recommendation}</p>
           </div>
@@ -681,16 +681,16 @@ function RecommendationCard({ rec, onAdd, added }: { rec: Recommendation; onAdd:
       whileHover={{ y: -2 }}
       className="h-full"
     >
-      <Card className="h-full glass border-violet-200/40 dark:border-violet-800/30 flex flex-col">
+      <Card className="h-full border-border flex flex-col">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300">
+              <div className="p-2 rounded-lg bg-lilac text-plum">
                 <Icon className="h-4 w-4" />
               </div>
               <CardTitle className="text-sm leading-tight">{rec.title}</CardTitle>
             </div>
-            <Badge className={cn('text-[9px] border-0', impact.bg, impact.text)}>{impact.label}</Badge>
+            <Badge className={cn('text-[9px] border-0 shrink-0', impact.bg, impact.text)}>{impact.label}</Badge>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 gap-2.5">
@@ -709,8 +709,8 @@ function RecommendationCard({ rec, onAdd, added }: { rec: Recommendation; onAdd:
             size="sm"
             variant={added ? 'secondary' : 'default'}
             className={cn(
-              'w-full h-8 text-[11px] gap-1.5',
-              !added && 'bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700',
+              'w-full min-h-11 rounded-full text-xs gap-1.5 font-semibold',
+              !added && 'btn-plum',
               added && 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
             )}
             onClick={() => onAdd(rec.id)}
@@ -797,7 +797,7 @@ function RiskCard({ risk, index }: { risk: RiskAssessment; index: number }) {
         <CardContent className="space-y-3">
           {/* Contributing factors */}
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
               <AlertTriangle className="h-3 w-3" /> Contributing Factors
             </p>
             <ul className="space-y-1">
@@ -814,7 +814,7 @@ function RiskCard({ risk, index }: { risk: RiskAssessment; index: number }) {
 
           {/* Prevention tips */}
           <div>
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1">
               <ShieldAlert className="h-3 w-3" /> Prevention Tips
             </p>
             <ul className="space-y-1">
@@ -836,7 +836,7 @@ function RiskCard({ risk, index }: { risk: RiskAssessment; index: number }) {
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload || payload.length === 0) return null
   return (
-    <div className="rounded-lg border border-violet-200 dark:border-violet-800 bg-white/95 dark:bg-card/95 backdrop-blur-sm px-3 py-2 shadow-lg text-xs">
+    <div className="rounded-lg border border-border bg-popover/95 text-popover-foreground backdrop-blur-sm px-3 py-2 shadow-lg text-xs">
       <p className="font-semibold mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} className="text-muted-foreground flex items-center gap-1.5">
@@ -877,12 +877,12 @@ export default function AIInsightsModule() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-700 via-purple-700 to-indigo-800 p-6 md:p-8 text-white shadow-2xl"
+        className="card-plum relative overflow-hidden p-6 md:p-8 text-white shadow-2xl"
       >
         {/* Decorative blobs */}
         <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-fuchsia-500/30 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-400/20 blur-3xl" />
-        <div className="absolute top-1/2 right-1/3 h-32 w-32 rounded-full bg-violet-400/20 blur-2xl" />
+        <div className="absolute top-1/2 right-1/3 h-32 w-32 rounded-full bg-gold/20 blur-2xl" />
 
         {/* Grid pattern */}
         <div
@@ -894,11 +894,14 @@ export default function AIInsightsModule() {
           }}
         />
 
+        {/* Lotus watermark */}
+        <div aria-hidden className="lotus-watermark absolute inset-0" />
+
         <div className="relative z-10">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="space-y-3 max-w-2xl">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge className="bg-white/15 text-white border-white/20 backdrop-blur-sm gap-1.5">
+                <Badge className="bg-plum-soft/50 text-white border-white/20 backdrop-blur-sm gap-1.5">
                   <BrainCircuit className="h-3.5 w-3.5" /> AI Engine Active
                   <span className="relative flex h-2 w-2 ml-1">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -912,11 +915,10 @@ export default function AIInsightsModule() {
                   <Cpu className="h-3 w-3" /> v3.2.1
                 </Badge>
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
-                <span className="bg-gradient-to-r from-white via-violet-100 to-amber-200 bg-clip-text text-transparent">
-                  AI Health Intelligence
-                </span>
+              <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
+                <span className="gold-shine">AI Health Intelligence</span>
               </h1>
+              <span className="gold-divider text-[10px]" aria-hidden><span>✦</span></span>
               <p className="text-violet-100/90 text-sm md:text-base">
                 Predictive insights powered by your data — patterns, forecasts, and personalized recommendations.
               </p>
@@ -935,29 +937,29 @@ export default function AIInsightsModule() {
 
             {/* Right-side stat tiles */}
             <div className="grid grid-cols-2 gap-3 shrink-0">
-              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
-                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+              <div className="rounded-xl bg-plum-soft/40 backdrop-blur-md border border-white/15 p-3 min-w-[120px]">
+                <div className="flex items-center gap-1.5 text-violet-100/80 text-[11px] uppercase tracking-wide">
                   <Sparkles className="h-3 w-3" /> Predictions
                 </div>
                 <div className="text-2xl font-bold mt-0.5">{PREDICTIONS.length}</div>
                 <div className="text-[10px] text-violet-100/70">7-day forecasts</div>
               </div>
-              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3 min-w-[120px]">
-                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+              <div className="rounded-xl bg-plum-soft/40 backdrop-blur-md border border-white/15 p-3 min-w-[120px]">
+                <div className="flex items-center gap-1.5 text-violet-100/80 text-[11px] uppercase tracking-wide">
                   <Network className="h-3 w-3" /> Patterns
                 </div>
                 <div className="text-2xl font-bold mt-0.5">{PATTERNS.length}</div>
                 <div className="text-[10px] text-violet-100/70">AI-discovered</div>
               </div>
               <div className="rounded-xl bg-gradient-to-br from-amber-400/30 to-yellow-500/30 backdrop-blur-md border border-amber-300/30 p-3">
-                <div className="flex items-center gap-1.5 text-amber-100/90 text-[10px] uppercase tracking-wide">
+                <div className="flex items-center gap-1.5 text-amber-100/90 text-[11px] uppercase tracking-wide">
                   <Gauge className="h-3 w-3" /> Predictability
                 </div>
                 <div className="text-2xl font-bold mt-0.5 text-white">{PREDICTABILITY_SCORE}%</div>
                 <div className="text-[10px] text-amber-100/70">Highly predictable</div>
               </div>
-              <div className="rounded-xl bg-white/10 backdrop-blur-md border border-white/20 p-3">
-                <div className="flex items-center gap-1.5 text-violet-100/80 text-[10px] uppercase tracking-wide">
+              <div className="rounded-xl bg-plum-soft/40 backdrop-blur-md border border-white/15 p-3">
+                <div className="flex items-center gap-1.5 text-violet-100/80 text-[11px] uppercase tracking-wide">
                   <ShieldAlert className="h-3 w-3" /> Risk checks
                 </div>
                 <div className="text-2xl font-bold mt-0.5">{RISK_ASSESSMENTS.length}</div>
@@ -1001,7 +1003,7 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30 overflow-hidden">
+            <Card className="card-blush overflow-hidden">
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
@@ -1026,8 +1028,8 @@ export default function AIInsightsModule() {
                 {PREDICTABILITY_SCORE === 0 || SCORE_BREAKDOWN.length === 0 ? (
                   // ── Empty state: not enough data yet to compute a score ──
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                      <Gauge className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                      <Gauge className="h-6 w-6 text-gold" />
                     </div>
                     <p className="text-sm font-medium text-foreground">No predictability score yet</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1037,7 +1039,7 @@ export default function AIInsightsModule() {
                     </p>
                   </div>
                 ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
                   {/* Left: Gauge */}
                   <div className="flex flex-col items-center">
                     <HealthScoreGauge score={PREDICTABILITY_SCORE} />
@@ -1121,7 +1123,7 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
@@ -1140,7 +1142,7 @@ export default function AIInsightsModule() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="gap-1.5"
+                        className="gap-1.5 min-h-11"
                         onClick={() => toast.success('PDF export started', { description: 'Your report will be ready in a moment.' })}
                       >
                         <Download className="h-3.5 w-3.5" /> PDF
@@ -1148,7 +1150,7 @@ export default function AIInsightsModule() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="gap-1.5"
+                        className="gap-1.5 min-h-11"
                         onClick={() => toast.success('Excel export started', { description: 'Your data will download shortly.' })}
                       >
                         <FileSpreadsheet className="h-3.5 w-3.5" /> Excel
@@ -1161,8 +1163,8 @@ export default function AIInsightsModule() {
                 {MONTHLY_REPORT === null ? (
                   // ── Empty state: not enough data for a monthly report ──
                   <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                      <FileText className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                      <FileText className="h-6 w-6 text-gold" />
                     </div>
                     <p className="text-sm font-medium text-foreground">No monthly report yet</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1186,7 +1188,7 @@ export default function AIInsightsModule() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.1 + i * 0.05 }}
-                        className="flex items-start gap-2 rounded-lg bg-violet-50/60 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/30 p-2.5"
+                        className="flex items-start gap-2 rounded-lg bg-blush/40 border border-border p-2.5"
                       >
                         <div className="h-5 w-5 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">
                           {i + 1}
@@ -1202,7 +1204,7 @@ export default function AIInsightsModule() {
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
                     <TrendingUp className="h-4 w-4 text-emerald-500" /> Improvements from Last Month
                   </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
                     {MONTHLY_REPORT.improvements.map((imp, i) => (
                       <motion.div
                         key={imp.metric}
@@ -1225,7 +1227,7 @@ export default function AIInsightsModule() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* Areas of concern */}
                   <div>
                     <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
@@ -1268,12 +1270,12 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-plum-soft to-violet-500 text-white">
                         <CircuitBoard className="h-4 w-4" />
                       </div>
                       AI Model Confidence & Transparency
@@ -1282,7 +1284,7 @@ export default function AIInsightsModule() {
                       How Nuvia&apos;s AI works — and why you can trust its insights
                     </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" className="gap-1.5">
+                  <Button variant="outline" size="sm" className="gap-1.5 min-h-11">
                     <RefreshCw className="h-3.5 w-3.5" /> Re-train model
                   </Button>
                 </div>
@@ -1345,7 +1347,7 @@ export default function AIInsightsModule() {
                   <h4 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
                     <Info className="h-4 w-4 text-violet-500" /> How Nuvia&apos;s AI Works
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
                     {AI_MODEL_INFO.howItWorks.map((step, i) => (
                       <motion.div
                         key={step.step}
@@ -1385,7 +1387,7 @@ export default function AIInsightsModule() {
             className="flex items-center justify-between gap-3 flex-wrap"
           >
             <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2">
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold flex items-center gap-2">
                 <Sparkles className="h-5 w-5 text-violet-500" /> AI Predictions Dashboard
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -1400,10 +1402,10 @@ export default function AIInsightsModule() {
           </motion.div>
 
           {PREDICTIONS.length === 0 ? (
-            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                  <Sparkles className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                  <Sparkles className="h-6 w-6 text-gold" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No predictions yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1414,7 +1416,7 @@ export default function AIInsightsModule() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {PREDICTIONS.map((p, i) => (
                 <ForecastCard key={p.id} prediction={p} index={i} />
               ))}
@@ -1432,7 +1434,7 @@ export default function AIInsightsModule() {
               className="flex items-center justify-between gap-3 flex-wrap mb-4"
             >
               <div>
-                <h2 className="text-xl font-semibold flex items-center gap-2">
+                <h2 className="font-serif text-xl sm:text-2xl font-semibold flex items-center gap-2">
                   <Network className="h-5 w-5 text-violet-500" /> Pattern Detection Engine
                 </h2>
                 <p className="text-sm text-muted-foreground mt-0.5">
@@ -1444,13 +1446,13 @@ export default function AIInsightsModule() {
               </Badge>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
               {PATTERNS.length === 0 ? (
                 <div className="col-span-full">
-                  <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+                  <Card className="border-dashed border-primary/30">
                     <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                        <Network className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                        <Network className="h-6 w-6 text-gold" />
                       </div>
                       <p className="text-sm font-medium text-foreground">No patterns detected yet</p>
                       <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1476,12 +1478,12 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <div className="flex items-center justify-between gap-3 flex-wrap">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-500 text-white">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
                         <Grid3x3 className="h-4 w-4" />
                       </div>
                       Correlation Matrix
@@ -1490,12 +1492,12 @@ export default function AIInsightsModule() {
                       How your health metrics influence each other (-1.0 to +1.0)
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2 text-[10px]">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px]">
                     <span className="flex items-center gap-1">
                       <span className="h-3 w-3 rounded bg-rose-500" /> Strong negative
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="h-3 w-3 rounded bg-slate-300/50" /> Neutral
+                      <span className="h-3 w-3 rounded bg-muted-foreground/25" /> Neutral
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="h-3 w-3 rounded bg-emerald-500" /> Strong positive
@@ -1596,10 +1598,10 @@ export default function AIInsightsModule() {
             </Card>
           </motion.div>
           ) : (
-            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                  <Grid3x3 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                  <Grid3x3 className="h-6 w-6 text-gold" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No correlation matrix yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1618,7 +1620,7 @@ export default function AIInsightsModule() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h2 className="text-xl font-semibold flex items-center gap-2">
+            <h2 className="font-serif text-xl sm:text-2xl font-semibold flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-violet-500" /> Health Trends Analytics
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -1628,10 +1630,10 @@ export default function AIInsightsModule() {
 
           {MOOD_TREND_90.length === 0 && SYMPTOM_TREND_90.length === 0 && SLEEP_TREND_90.length === 0 && CYCLE_REGULARITY_12.length === 0 && SLEEP_MOOD_SCATTER.length === 0 ? (
             // ── Empty state: not enough history for trend charts ──
-            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                  <TrendingUp className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                  <TrendingUp className="h-6 w-6 text-gold" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No trends yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1651,7 +1653,7 @@ export default function AIInsightsModule() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
             >
-              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+              <Card className="border-border h-full">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1694,7 +1696,7 @@ export default function AIInsightsModule() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.05 }}
             >
-              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+              <Card className="border-border h-full">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1731,11 +1733,11 @@ export default function AIInsightsModule() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1 }}
             >
-              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+              <Card className="border-border h-full">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <Moon className="h-4 w-4 text-indigo-500" /> 90-Day Sleep Quality
+                      <Moon className="h-4 w-4 text-violet-400" /> 90-Day Sleep Quality
                     </CardTitle>
                     <Badge variant="outline" className="text-[10px] gap-0.5 text-emerald-600 border-emerald-300">
                       <ArrowUpRight className="h-3 w-3" /> +5% vs prior
@@ -1747,12 +1749,12 @@ export default function AIInsightsModule() {
                   <div className="h-56">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={SLEEP_TREND_90} margin={{ top: 5, right: 8, bottom: 0, left: -22 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(99,102,241,0.1)" vertical={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(139,92,246,0.1)" vertical={false} />
                         <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} tickCount={6} />
                         <YAxis domain={[0, 100]} tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
                         <Tooltip content={<ChartTooltip />} />
                         <ReferenceLine y={80} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1} />
-                        <Line type="monotone" dataKey="value" name="Sleep" stroke="#6366f1" strokeWidth={2} dot={false} />
+                        <Line type="monotone" dataKey="value" name="Sleep" stroke="#8b5cf6" strokeWidth={2} dot={false} />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -1768,7 +1770,7 @@ export default function AIInsightsModule() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.15 }}
             >
-              <Card className="glass border-violet-200/40 dark:border-violet-800/30 h-full">
+              <Card className="border-border h-full">
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -1814,7 +1816,7 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1874,7 +1876,7 @@ export default function AIInsightsModule() {
             className="flex items-center justify-between gap-3 flex-wrap"
           >
             <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2">
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold flex items-center gap-2">
                 <Lightbulb className="h-5 w-5 text-violet-500" /> AI Recommendations Engine
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -1892,10 +1894,10 @@ export default function AIInsightsModule() {
           </motion.div>
 
           {RECOMMENDATIONS.length === 0 ? (
-            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                  <Lightbulb className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                  <Lightbulb className="h-6 w-6 text-gold" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No recommendations yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1927,7 +1929,7 @@ export default function AIInsightsModule() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
                     {recs.map((rec) => (
                       <RecommendationCard
                         key={rec.id}
@@ -1951,14 +1953,14 @@ export default function AIInsightsModule() {
             className="flex items-center justify-between gap-3 flex-wrap"
           >
             <div>
-              <h2 className="text-xl font-semibold flex items-center gap-2">
+              <h2 className="font-serif text-xl sm:text-2xl font-semibold flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-violet-500" /> Risk Assessment
               </h2>
               <p className="text-sm text-muted-foreground mt-0.5">
                 AI-calculated risk scores for common women&apos;s health conditions.
               </p>
             </div>
-            <Button variant="outline" size="sm" className="gap-1.5">
+            <Button variant="outline" size="sm" className="gap-1.5 min-h-11">
               <Stethoscope className="h-3.5 w-3.5" /> Discuss with doctor
             </Button>
           </motion.div>
@@ -1983,10 +1985,10 @@ export default function AIInsightsModule() {
 
           {/* Risk cards */}
           {RISK_ASSESSMENTS.length === 0 ? (
-            <Card className="border-dashed border-violet-200 dark:border-violet-900/50">
+            <Card className="border-dashed border-primary/30">
               <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 dark:bg-violet-950/40 mb-3">
-                  <ShieldAlert className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-plum-soft mb-3">
+                  <ShieldAlert className="h-6 w-6 text-gold" />
                 </div>
                 <p className="text-sm font-medium text-foreground">No risk assessments yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1999,7 +2001,7 @@ export default function AIInsightsModule() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {RISK_ASSESSMENTS.map((r, i) => (
                 <RiskCard key={r.id} risk={r} index={i} />
               ))}
@@ -2013,7 +2015,7 @@ export default function AIInsightsModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="glass border-violet-200/40 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
@@ -2069,7 +2071,7 @@ export default function AIInsightsModule() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="rounded-xl border border-violet-200/40 dark:border-violet-800/30 bg-gradient-to-br from-violet-50/40 to-fuchsia-50/20 dark:from-violet-950/15 dark:to-fuchsia-950/10 p-4"
+        className="card-blush p-4 sm:p-6"
       >
         <div className="flex items-start gap-3">
           <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow">

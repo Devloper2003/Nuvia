@@ -143,7 +143,7 @@ const resourceLibrary = [
     description: 'Understanding ovulation, conception challenges, and treatment options.',
     category: 'Fertility',
     readTime: '15 min',
-    color: 'from-sky-400 to-blue-400',
+    color: 'from-fuchsia-400 to-pink-400',
   },
   {
     title: 'When to See a Doctor',
@@ -160,29 +160,29 @@ const pcosCauses = [
   {
     title: 'Insulin Resistance',
     icon: <Droplet className="h-5 w-5 text-amber-500" />,
-    bg: 'bg-amber-50 dark:bg-amber-950/20',
-    border: 'border-amber-200/60 dark:border-amber-800/30',
+    bg: 'bg-gold-soft',
+    border: 'border-border',
     desc: 'Up to 70% of women with PCOS have insulin resistance. Cells respond poorly to insulin, so the pancreas produces more — which in turn stimulates the ovaries to make extra androgens.',
   },
   {
     title: 'Hormonal Imbalance (High Androgens)',
     icon: <Dna className="h-5 w-5 text-pink-500" />,
-    bg: 'bg-pink-50 dark:bg-pink-950/20',
-    border: 'border-pink-200/60 dark:border-pink-800/30',
+    bg: 'bg-blush',
+    border: 'border-border',
     desc: 'Elevated testosterone and other male hormones disrupt ovulation and drive symptoms like acne, excess facial/body hair, and thinning scalp hair. LH-to-FSH ratio is often skewed (≥2:1).',
   },
   {
     title: 'Genetics & Family History',
     icon: <Dna className="h-5 w-5 text-rose-500" />,
-    bg: 'bg-rose-50 dark:bg-rose-950/20',
-    border: 'border-rose-200/60 dark:border-rose-800/30',
+    bg: 'bg-lilac',
+    border: 'border-border',
     desc: 'PCOS runs in families. Having a mother or sister with PCOS significantly raises your risk. Multiple genes are believed to be involved, interacting with environmental factors.',
   },
   {
     title: 'Low-Grade Inflammation',
     icon: <Flame className="h-5 w-5 text-orange-500" />,
-    bg: 'bg-orange-50 dark:bg-orange-950/20',
-    border: 'border-orange-200/60 dark:border-orange-800/30',
+    bg: 'bg-peach-soft',
+    border: 'border-border',
     desc: 'Women with PCOS often have chronic low-grade inflammation. This stimulates polycystic ovaries to produce androgens, fueling a self-reinforcing cycle of hormonal imbalance.',
   },
 ]
@@ -731,7 +731,7 @@ export default function PCOSModule() {
     if (checkedIds.includes('mood-changes') || checkedIds.includes('sleep-issues') || checkedIds.includes('fatigue')) {
       recs.push({
         category: 'Lifestyle Changes',
-        icon: <Moon className="h-4 w-4 text-indigo-500" />,
+        icon: <Moon className="h-4 w-4 text-violet-500" />,
         items: [
           'Prioritize 7-9 hours of quality sleep each night',
           'Practice stress management: meditation, deep breathing, journaling',
@@ -801,42 +801,45 @@ export default function PCOSModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
       >
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-          <span className="bg-gradient-to-r from-amber-500 to-pink-500 bg-clip-text text-transparent">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight">
+          <span className="bg-gradient-to-r from-gold to-primary bg-clip-text text-transparent">
             PCOS Management
           </span>
         </h1>
         <p className="text-muted-foreground mt-1">Track symptoms, get insights, and manage your PCOS journey</p>
+        <div className="mt-2" aria-hidden="true">
+          <span className="gold-divider text-[10px]"><span>✦</span></span>
+        </div>
       </motion.div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="flex-wrap h-auto gap-1 bg-amber-50/50 dark:bg-amber-950/20 p-1">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white text-amber-700 dark:text-amber-300">
+        <TabsList className="flex-wrap h-auto gap-1 bg-muted/60 border border-border p-1">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <Flower2 className="h-3.5 w-3.5 mr-1.5" /> Overview
           </TabsTrigger>
-          <TabsTrigger value="symptoms" className="data-[state=active]:bg-pink-500 data-[state=active]:text-white text-pink-700 dark:text-pink-300">
+          <TabsTrigger value="symptoms" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <Activity className="h-3.5 w-3.5 mr-1.5" /> Symptoms
           </TabsTrigger>
-          <TabsTrigger value="tracking" className="data-[state=active]:bg-amber-500 data-[state=active]:text-white text-amber-700 dark:text-amber-300">
+          <TabsTrigger value="tracking" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <TrendingUp className="h-3.5 w-3.5 mr-1.5" /> Tracking
           </TabsTrigger>
-          <TabsTrigger value="recommendations" className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white text-emerald-700 dark:text-emerald-300">
+          <TabsTrigger value="recommendations" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <Sparkles className="h-3.5 w-3.5 mr-1.5" /> AI Tips
           </TabsTrigger>
-          <TabsTrigger value="report" className="data-[state=active]:bg-violet-500 data-[state=active]:text-white text-violet-700 dark:text-violet-300">
+          <TabsTrigger value="report" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <FileBarChart className="h-3.5 w-3.5 mr-1.5" /> Report
           </TabsTrigger>
-          <TabsTrigger value="research" className="data-[state=active]:bg-rose-500 data-[state=active]:text-white text-rose-700 dark:text-rose-300">
+          <TabsTrigger value="research" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <Microscope className="h-3.5 w-3.5 mr-1.5" /> Research
           </TabsTrigger>
-          <TabsTrigger value="resources" className="data-[state=active]:bg-sky-500 data-[state=active]:text-white text-sky-700 dark:text-sky-300">
+          <TabsTrigger value="resources" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-muted-foreground min-h-11">
             <BookOpen className="h-3.5 w-3.5 mr-1.5" /> Resources
           </TabsTrigger>
         </TabsList>
 
         {/* ─── Overview ──────────────────────────────────────────────── */}
         <TabsContent value="overview" className="mt-4 space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Risk Score */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -844,7 +847,8 @@ export default function PCOSModule() {
               transition={{ delay: 0.1, type: 'spring' }}
               className="lg:col-span-1"
             >
-              <Card className="border-amber-200/50 dark:border-amber-800/30 h-full">
+              <Card className="card-blush relative overflow-hidden border-0 h-full">
+                <div aria-hidden="true" className="lotus-watermark absolute inset-0" />
                 <CardHeader className="text-center">
                   <CardTitle className="flex items-center justify-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-amber-500" /> PCOS Risk Score
@@ -859,7 +863,7 @@ export default function PCOSModule() {
                   {riskScore >= 50 && (
                     <Button
                       size="sm"
-                      className="mt-3 bg-teal-600 hover:bg-teal-700 text-white text-xs"
+                      className="mt-3 btn-plum rounded-full px-6 min-h-11 font-semibold"
                       onClick={() => useAppStore.getState().setActiveModule('doctors')}
                     >
                       <Stethoscope className="h-3.5 w-3.5 mr-1.5" /> Consult a Specialist
@@ -874,10 +878,10 @@ export default function PCOSModule() {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="lg:col-span-2 grid grid-cols-2 gap-4"
+              className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"
             >
               {/* Weight Trend Mini */}
-              <Card className="border-amber-200/50 dark:border-amber-800/30 col-span-2">
+              <Card className="border-border col-span-1 sm:col-span-2">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingDown className="h-4 w-4 text-amber-500" /> Weight Trend
@@ -915,7 +919,7 @@ export default function PCOSModule() {
               </Card>
 
               {/* Exercise Progress */}
-              <Card className="border-emerald-200/50 dark:border-emerald-800/30">
+              <Card className="border-border">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
                   <ProgressRing value={exerciseMinutes} max={150} color="#10b981" />
                   <span className="text-xs font-medium text-muted-foreground">Exercise this week</span>
@@ -927,7 +931,7 @@ export default function PCOSModule() {
               </Card>
 
               {/* Diet Quality */}
-              <Card className="border-amber-200/50 dark:border-amber-800/30">
+              <Card className="border-border">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center gap-2">
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((star) => (
@@ -942,7 +946,7 @@ export default function PCOSModule() {
                           className={`h-6 w-6 transition-colors ${
                             star <= dietScore
                               ? 'text-amber-400 fill-amber-400'
-                              : 'text-gray-200 dark:text-gray-700'
+                              : 'text-muted-foreground/30'
                           }`}
                         />
                       </motion.button>
@@ -963,7 +967,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="border-pink-200/50 dark:border-pink-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-pink-500" /> Symptom Checklist
@@ -986,14 +990,14 @@ export default function PCOSModule() {
                           : 'border-border hover:border-pink-200'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 min-w-0">
                           <Switch
                             checked={symptom.checked}
                             onCheckedChange={() => toggleSymptom(symptom.id)}
-                            className="data-[state=checked]:bg-pink-500"
+                            className="data-[state=checked]:bg-primary"
                           />
-                          <span className={`font-medium text-sm ${symptom.checked ? 'text-pink-700 dark:text-pink-300' : ''}`}>
+                          <span className={`font-medium text-sm truncate ${symptom.checked ? 'text-pink-700 dark:text-pink-300' : ''}`}>
                             {symptom.label}
                           </span>
                         </div>
@@ -1039,7 +1043,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-r from-amber-50/50 to-pink-50/50 dark:from-amber-950/10 dark:to-pink-950/10">
+            <Card className="card-blush border-0">
               <CardContent className="p-5">
                 <div className="flex items-center gap-3">
                   <AlertTriangle className={`h-5 w-5 ${
@@ -1071,14 +1075,14 @@ export default function PCOSModule() {
 
         {/* ─── Tracking Dashboard ────────────────────────────────────── */}
         <TabsContent value="tracking" className="mt-4 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Weight Trend */}
             <motion.div
               initial={{ opacity: 0, x: -15 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="border-amber-200/50 dark:border-amber-800/30">
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <TrendingDown className="h-4 w-4 text-amber-500" /> Weight Trend
@@ -1127,7 +1131,7 @@ export default function PCOSModule() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
             >
-              <Card className="border-emerald-200/50 dark:border-emerald-800/30">
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Dumbbell className="h-4 w-4 text-emerald-500" /> Exercise This Week
@@ -1148,14 +1152,14 @@ export default function PCOSModule() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="flex-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                        className="flex-1 min-h-11 rounded-full text-emerald-600 border-emerald-200 hover:bg-emerald-50"
                         onClick={() => setExerciseMinutes(Math.max(0, exerciseMinutes - 15))}
                       >
                         −15 min
                       </Button>
                       <Button
                         size="sm"
-                        className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                        className="btn-plum flex-1 rounded-full px-6 min-h-11 font-semibold"
                         onClick={() => setExerciseMinutes(Math.min(300, exerciseMinutes + 15))}
                       >
                         +15 min
@@ -1172,7 +1176,7 @@ export default function PCOSModule() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="border-amber-200/50 dark:border-amber-800/30">
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
                     <Apple className="h-4 w-4 text-amber-500" /> Diet Quality Score
@@ -1194,7 +1198,7 @@ export default function PCOSModule() {
                             className={`h-10 w-10 transition-all duration-200 ${
                               star <= dietScore
                                 ? 'text-amber-400 fill-amber-400 drop-shadow-sm'
-                                : 'text-gray-200 dark:text-gray-700'
+                                : 'text-muted-foreground/30'
                             }`}
                           />
                         </motion.button>
@@ -1227,10 +1231,10 @@ export default function PCOSModule() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <Card className="border-indigo-200/50 dark:border-indigo-800/30">
+              <Card className="border-border">
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Moon className="h-4 w-4 text-indigo-500" /> Sleep Quality Trend
+                    <Moon className="h-4 w-4 text-violet-500" /> Sleep Quality Trend
                   </CardTitle>
                   <CardDescription>Monthly average (1-5 scale)</CardDescription>
                 </CardHeader>
@@ -1278,7 +1282,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="border-emerald-200/50 dark:border-emerald-800/30 bg-gradient-to-br from-emerald-50/30 to-amber-50/30 dark:from-emerald-950/10 dark:to-amber-950/10">
+            <Card className="card-peach border-0">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-emerald-500" /> AI Recommendations
@@ -1294,7 +1298,7 @@ export default function PCOSModule() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.15 }}
-                    className="rounded-xl bg-white/70 dark:bg-card/50 border border-emerald-100 dark:border-emerald-900/30 overflow-hidden"
+                    className="rounded-xl bg-card/80 border border-border overflow-hidden"
                   >
                     <div className="flex items-center justify-between p-4 pb-3">
                       <div className="flex items-center gap-2.5">
@@ -1334,7 +1338,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="border-violet-200/50 dark:border-violet-800/30">
+            <Card className="border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileBarChart className="h-5 w-5 text-violet-500" /> Monthly Report Card
@@ -1432,10 +1436,10 @@ export default function PCOSModule() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="rounded-2xl bg-gradient-to-r from-rose-50 via-amber-50 to-pink-50 dark:from-rose-950/20 dark:via-amber-950/20 dark:to-pink-950/20 border border-rose-200/40 dark:border-rose-800/30 p-5 flex items-start gap-4"
+            className="card-blush p-5 flex items-start gap-4"
           >
-            <div className="rounded-xl bg-white/70 dark:bg-card/60 p-2.5 shadow-sm shrink-0">
-              <Microscope className="h-6 w-6 text-rose-500" />
+            <div className="h-11 w-11 rounded-full bg-card/80 flex items-center justify-center shadow-sm shrink-0">
+              <Microscope className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h3 className="font-semibold text-base flex items-center gap-2">
@@ -1454,7 +1458,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Card className="border-rose-200/50 dark:border-rose-800/30 bg-gradient-to-br from-amber-50/40 to-pink-50/40 dark:from-amber-950/10 dark:to-pink-950/10 backdrop-blur-sm">
+            <Card className="card-blush border-0 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Microscope className="h-5 w-5 text-rose-500" /> What is PCOS?
@@ -1544,7 +1548,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <Card className="border-amber-200/50 dark:border-amber-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Dna className="h-5 w-5 text-amber-500" /> Causes &amp; Risk Factors
@@ -1566,7 +1570,7 @@ export default function PCOSModule() {
                       className={`rounded-xl border p-4 ${cause.border} ${cause.bg} transition-shadow hover:shadow-md`}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="rounded-lg bg-white/70 dark:bg-card/60 p-2 shadow-sm">
+                        <div className="h-11 w-11 rounded-full bg-card/80 flex items-center justify-center shadow-sm shrink-0">
                           {cause.icon}
                         </div>
                         <h4 className="font-semibold text-sm">{cause.title}</h4>
@@ -1585,7 +1589,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.15 }}
           >
-            <Card className="border-pink-200/50 dark:border-pink-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Activity className="h-5 w-5 text-pink-500" /> Symptoms to Watch
@@ -1607,7 +1611,7 @@ export default function PCOSModule() {
                       className="rounded-xl border border-border bg-card/60 dark:bg-card/40 backdrop-blur-sm p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center justify-between mb-2.5">
-                        <div className="rounded-lg bg-pink-50 dark:bg-pink-950/30 p-2">
+                        <div className="h-11 w-11 rounded-full bg-blush flex items-center justify-center shrink-0">
                           {symptom.icon}
                         </div>
                         <Badge variant="secondary" className={`text-[9px] px-2 py-0.5 ${symptom.severityColor}`}>
@@ -1629,7 +1633,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <Card className="border-amber-200/50 dark:border-amber-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Layers className="h-5 w-5 text-amber-500" /> PCOS Types
@@ -1653,10 +1657,10 @@ export default function PCOSModule() {
                       className="rounded-xl overflow-hidden border border-border bg-card/60 dark:bg-card/40 backdrop-blur-sm hover:shadow-lg transition-shadow"
                     >
                       <div className={`h-20 bg-gradient-to-r ${type.gradient} flex items-center justify-between px-4`}>
-                        <div className="rounded-lg bg-white/20 backdrop-blur-sm p-2">
+                        <div className="rounded-lg bg-background/20 backdrop-blur-sm p-2">
                           {type.icon}
                         </div>
-                        <Badge className="bg-white/25 text-white border-0 text-[10px] font-bold">
+                        <Badge className="bg-background/25 text-white border-0 text-[10px] font-bold">
                           {type.prevalence}
                         </Badge>
                       </div>
@@ -1690,7 +1694,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.25 }}
           >
-            <Card className="border-orange-200/50 dark:border-orange-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-orange-500" /> Long-term Health Impact
@@ -1714,7 +1718,7 @@ export default function PCOSModule() {
                       className="rounded-xl border border-orange-200/60 dark:border-orange-800/40 bg-orange-50/40 dark:bg-orange-950/10 backdrop-blur-sm p-4 hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <div className="rounded-lg bg-white/70 dark:bg-card/60 p-2 shadow-sm">
+                        <div className="h-11 w-11 rounded-full bg-card/80 flex items-center justify-center shadow-sm shrink-0">
                           {risk.icon}
                         </div>
                         <div className="text-right">
@@ -1744,7 +1748,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
-            <Card className="border-rose-200/50 dark:border-rose-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FlaskConical className="h-5 w-5 text-rose-500" /> Diagnosis &amp; Testing
@@ -1766,7 +1770,7 @@ export default function PCOSModule() {
                       { num: '2', label: 'High androgen levels', desc: 'Blood test or physical signs' },
                       { num: '3', label: 'Polycystic ovaries', desc: '12+ follicles on ultrasound' },
                     ].map((criterion) => (
-                      <div key={criterion.num} className="rounded-lg bg-white/70 dark:bg-card/50 p-3 border border-rose-100 dark:border-rose-900/30">
+                      <div key={criterion.num} className="rounded-lg bg-card/80 p-3 border border-border">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
                             {criterion.num}
@@ -1806,7 +1810,7 @@ export default function PCOSModule() {
                         A transvaginal or abdominal ultrasound checks for <strong className="text-foreground">12 or more follicles (2–9mm)</strong> or enlarged ovarian volume. However, ultrasound is <strong className="text-foreground">not required</strong> for diagnosis if the other two Rotterdam criteria are met.
                       </p>
                     </div>
-                    <div className="rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 bg-emerald-50/40 dark:bg-emerald-950/10 p-4">
+                    <div className="rounded-xl border border-border bg-emerald-50/40 dark:bg-emerald-950/10 p-4">
                       <h4 className="font-semibold text-sm flex items-center gap-2 mb-1.5">
                         <Stethoscope className="h-4 w-4 text-emerald-500" /> When to Get Tested
                       </h4>
@@ -1826,7 +1830,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.35 }}
           >
-            <Card className="border-emerald-200/50 dark:border-emerald-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Pill className="h-5 w-5 text-emerald-500" /> Treatment Approaches
@@ -1874,7 +1878,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.4 }}
           >
-            <Card className="border-amber-200/50 dark:border-amber-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-amber-500" /> Latest Research &amp; Statistics
@@ -1896,7 +1900,7 @@ export default function PCOSModule() {
                       className="rounded-xl border border-border bg-card/60 dark:bg-card/40 backdrop-blur-sm p-4 text-center hover:shadow-md transition-shadow"
                     >
                       <div className="flex justify-center mb-2">
-                        <div className="rounded-lg bg-amber-50 dark:bg-amber-950/30 p-2">
+                        <div className="h-11 w-11 rounded-full bg-gold-soft flex items-center justify-center">
                           {stat.icon}
                         </div>
                       </div>
@@ -1921,7 +1925,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.45 }}
           >
-            <Card className="border-pink-200/50 dark:border-pink-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Brain className="h-5 w-5 text-pink-500" /> Myths vs Facts
@@ -1974,7 +1978,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.5 }}
           >
-            <Card className="border-amber-200/50 dark:border-amber-800/30 backdrop-blur-sm">
+            <Card className="border-border backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <HelpCircle className="h-5 w-5 text-amber-500" /> Frequently Asked Questions
@@ -2004,7 +2008,7 @@ export default function PCOSModule() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.55 }}
           >
-            <Card className="border-rose-200/50 dark:border-rose-800/30 bg-gradient-to-br from-amber-50/30 to-pink-50/30 dark:from-amber-950/10 dark:to-pink-950/10 backdrop-blur-sm">
+            <Card className="border-border bg-gradient-to-br from-amber-50/30 to-pink-50/30 dark:from-amber-950/10 dark:to-pink-950/10 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5 text-rose-500" /> Recommended Reading
@@ -2029,11 +2033,11 @@ export default function PCOSModule() {
                       className="group block rounded-xl border border-border bg-card/60 dark:bg-card/40 backdrop-blur-sm p-4 hover:shadow-md hover:border-rose-200 dark:hover:border-rose-800/50 transition-all"
                     >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="rounded-lg bg-rose-50 dark:bg-rose-950/30 p-1.5 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/40 transition-colors">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="rounded-full bg-rose-50 dark:bg-rose-950/30 p-1.5 group-hover:bg-rose-100 dark:group-hover:bg-rose-900/40 transition-colors shrink-0">
                             <BookOpen className="h-3.5 w-3.5 text-rose-500" />
                           </div>
-                          <h4 className="font-semibold text-xs group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
+                          <h4 className="font-semibold text-xs group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors truncate">
                             {source.name}
                           </h4>
                         </div>
@@ -2046,7 +2050,7 @@ export default function PCOSModule() {
                 </motion.div>
 
                 {/* Disclaimer */}
-                <div className="mt-5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/50 dark:border-amber-800/30 p-3 flex items-start gap-2">
+                <div className="mt-5 rounded-lg bg-amber-50/60 dark:bg-amber-950/20 border border-border p-3 flex items-start gap-2">
                   <Info className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     <strong className="text-foreground">Medical disclaimer:</strong> This educational content is for informational purposes only and is not a substitute for professional medical advice, diagnosis, or treatment. Always consult your healthcare provider before making decisions about your PCOS care.
@@ -2079,7 +2083,7 @@ export default function PCOSModule() {
                     <div className={`h-24 bg-gradient-to-r ${resource.color} flex items-center justify-center relative`}>
                       <BookOpen className="h-10 w-10 text-white/70" />
                       <div className="absolute top-2 right-2">
-                        <Badge className="bg-white/20 text-white border-0 text-[9px]">
+                        <Badge className="bg-background/25 text-white border-0 text-[9px]">
                           {resource.category}
                         </Badge>
                       </div>
