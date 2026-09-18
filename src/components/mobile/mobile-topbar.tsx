@@ -11,6 +11,7 @@ import NotificationPanel from '@/components/notifications/notification-panel'
 interface MobileTopbarProps {
   onTakeTour?: () => void
   userId?: string
+  displayName?: string
 }
 
 /* ─── Module labels map (kept in sync with page.tsx navItems) ─────────────── */
@@ -38,7 +39,7 @@ const MODULE_LABELS: Record<ActiveModule, string> = {
   settings: 'Settings',
 }
 
-export default function MobileTopbar({ onTakeTour, userId }: MobileTopbarProps) {
+export default function MobileTopbar({ onTakeTour, userId, displayName }: MobileTopbarProps) {
   const activeModule = useAppStore((s) => s.activeModule)
   const setActiveModule = useAppStore((s) => s.setActiveModule)
   const hasPremium = useAppStore((s) => s.hasPremium())
@@ -118,7 +119,7 @@ export default function MobileTopbar({ onTakeTour, userId }: MobileTopbarProps) 
           >
             <Avatar className={cn('h-10 w-10 ring-2 ring-primary/20')}>
               <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-                U
+                {(displayName ?? 'U').trim().charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
           </motion.button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,7 @@ import {
   Stethoscope,
   X,
   Loader2,
+  RotateCcw,
 } from 'lucide-react'
 import {
   AlertDialog,
@@ -231,6 +232,49 @@ export default function DashboardModule() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [weeklyInsights, setWeeklyInsights] = useState<string[]>([])
   const [wellnessScore, setWellnessScore] = useState<number | null>(null)
+  const [narrative, setNarrative] = useState<string | null>(null)
+  const [narrativeTip, setNarrativeTip] = useState<string | null>(null)
+  const [narrativeLoading, setNarrativeLoading] = useState(false)
+  const [narrativeCached, setNarrativeCached] = useState(false)
+
+  // ─── LLM weekly narrative (cached server-side, 6h TTL) ─────────────────────
+  const loadNarrative = useCallback(
+    async (force = false) => {
+    if (!userProfile?.id) return
+    setNarrativeLoading(true)
+    try {
+      const res = await fetch('/api/insights/narrative', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userProfile.id, force }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Narrative failed')
+      if (data.narrative) {
+        // Split the "Focus tip:" out of the narrative body. The LLM usually
+        // puts it on its own line, but sometimes inline at the end — handle
+        // both by splitting on the first occurrence anywhere in the text.
+        const raw = String(data.narrative)
+        const match = raw.match(/focus\s+tip\s*:\s*/i)
+        let body = raw
+        let tip: string | null = null
+        if (match && match.index !== undefined) {
+          body = raw.slice(0, match.index).trim()
+          tip = raw.slice(match.index + match[0].length).trim()
+        }
+        body = body.replace(/\s+/g, ' ').trim()
+        setNarrative(body || null)
+        setNarrativeTip(tip)
+        setNarrativeCached(Boolean(data.cached))
+      }
+    } catch {
+      // Narrative is best-effort — the rule-based insights below still show.
+    } finally {
+      setNarrativeLoading(false)
+    }
+    },
+    [userProfile?.id]
+  )
 
   useEffect(() => {
     if (!userProfile?.id) {
@@ -319,6 +363,9 @@ export default function DashboardModule() {
         } catch {
           // insights are best-effort
         }
+
+        // LLM narrative for this week (server-cached, cheap to auto-load)
+        loadNarrative()
 
         // Weekly symptoms bar chart (last 7 days)
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -779,6 +826,71 @@ export default function DashboardModule() {
                     <span className="text-[10px] text-muted-foreground">this week</span>
                   </div>
                 )}
+
+                {/* ─── LLM weekly narrative ─────────────────────────────── */}
+                {narrativeLoading && !narrative ? (
+                  <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/5 via-transparent to-fuchsia-500/5 p-4 space-y-2.5">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                      ChandraCycle AI is reading your week…
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 rounded-full bg-muted animate-pulse w-11/12" />
+                      <div className="h-3 rounded-full bg-muted animate-pulse w-4/5" />
+                      <div className="h-3 rounded-full bg-muted animate-pulse w-2/3" />
+                    </div>
+                  </div>
+                ) : narrative ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.45 }}
+                    className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/5 via-transparent to-fuchsia-500/5 p-4 relative overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                          Weekly AI summary
+                        </span>
+                        {narrativeCached && (
+                          <Badge variant="outline" className="text-[9px] h-4 px-1.5 text-muted-foreground border-muted-foreground/30">
+                            cached
+                          </Badge>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => loadNarrative(true)}
+                        disabled={narrativeLoading}
+                        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors disabled:opacity-50"
+                        aria-label="Regenerate AI summary"
+                      >
+                        {narrativeLoading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <RotateCcw className="h-3 w-3" />
+                        )}
+                        Regenerate
+                      </button>
+                    </div>
+                    <p className="text-xs leading-relaxed text-foreground">{narrative}</p>
+                    {narrativeTip && (
+                      <div className="mt-3 flex items-start gap-2 rounded-lg bg-primary/8 dark:bg-primary/10 border border-primary/15 p-2.5">
+                        <Zap className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                        <p className="text-[11px] leading-relaxed text-foreground/90">
+                          <span className="font-semibold">Focus tip:</span> {narrativeTip}
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setActiveModule('ai-coach')}
+                      className="mt-2.5 text-[10px] font-medium text-primary hover:underline"
+                    >
+                      Continue the conversation in AI Coach →
+                    </button>
+                  </motion.div>
+                ) : null}
+
                 {weeklyInsights.map((insight, i) => (
                   <motion.div
                     key={i}

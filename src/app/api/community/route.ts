@@ -6,28 +6,52 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
+    // ─── Pagination ──────────────────────────────────────────────────────────
+    // When `limit` (and optionally `offset`) is provided, the route returns a
+    // page envelope { posts, total, hasMore }. Without pagination params it
+    // keeps the legacy behaviour of returning the full array (back-compat for
+    // existing callers).
+    const limitParam = searchParams.get('limit');
+    const offsetParam = searchParams.get('offset');
+    const paginated = limitParam !== null;
+    const limit = Math.min(Math.max(parseInt(limitParam ?? '10', 10) || 10, 1), 50);
+    const offset = Math.max(parseInt(offsetParam ?? '0', 10) || 0, 0);
+
     const where: Record<string, unknown> = { hidden: false };
     if (category) {
       where.category = category;
     }
 
-    const posts = await db.communityPost.findMany({
-      where,
-      include: {
-        user: {
-          select: { id: true, name: true, avatar: true },
-        },
-        comments: {
-          include: {
-            user: {
-              select: { id: true, name: true, avatar: true },
-            },
+    const [posts, total] = await Promise.all([
+      db.communityPost.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, avatar: true },
           },
-          orderBy: { createdAt: 'asc' },
+          comments: {
+            include: {
+              user: {
+                select: { id: true, name: true, avatar: true },
+              },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        ...(paginated ? { skip: offset, take: limit } : {}),
+      }),
+      db.communityPost.count({ where }),
+    ]);
+
+    if (paginated) {
+      return NextResponse.json({
+        posts,
+        total,
+        hasMore: offset + posts.length < total,
+        nextOffset: offset + posts.length,
+      });
+    }
 
     return NextResponse.json(posts);
   } catch (error) {

@@ -247,3 +247,116 @@ Stage Summary:
   4. Premium "Manage" panel: show subscription details/invoice + cancel flow in Settings.
   5. Doctor Finder: de-dupe seeded appointments (2x Kavita Mehta rows exist from double-seed).
   6. Consider wiring AI Insights section to LLM-generated narrative instead of rule-based strings.
+
+---
+Task ID: 5
+Agent: Z.ai Code (webDevReview round 5)
+Task: Cron QA + development round — admin moderation console (session auth + audit trail), LLM weekly narrative on dashboard, real premium management panel, community pagination, reports PDF export, styling polish.
+
+Work Log:
+- QA baseline: FOUND DEV SERVER DOWN on round start (port 3000 refused; the container does not
+  supervise the dev process — processes spawned from a tool-call shell get reaped when the call
+  ends). FIX that works: double-fork detach `(setsid bun run dev > /dev/null 2>&1 &)` from the
+  project dir — survives across tool calls. Server died once more mid-round (after next.config
+  edit restart) — same restart command fixed it. Future rounds: check `curl localhost:3000` first.
+- Agent-browser QA before changes: dashboard/community/reports all healthy, session persisted,
+  no real console errors.
+- ADMIN MODERATION CONSOLE (backlog #1) — full feature using previously-unused AdminUser,
+  AdminSession and AuditLog models:
+  - NEW /api/admin/login: verifies credentials against AdminUser (same HMAC password scheme as
+    user auth), issues DB-backed AdminSession token (24h TTL, randomBytes 32), auto-provisions a
+    default operator on first run (admin@chandracycle.app / chandra-admin) when table is empty,
+    housekeeps expired sessions, updates lastLoginAt.
+  - NEW /api/admin/logout: revokes the caller's session.
+  - NEW /api/admin/moderation: GET returns the queue (posts with reportedCount>0 OR hidden=true)
+    incl. author, comment count, plus community stats and the 8 most recent AuditLog entries.
+    PATCH {postId, action} with three moderator actions: 'restore' (unhide + clear reports),
+    'dismiss' (clear reports, KEEP hidden), 'delete' (remove post + comments). EVERY action writes
+    an AuditLog row (admin, action, target, details). 401 without valid Bearer session (verified
+    via curl).
+  - Settings UI: new "Content Moderation" section — login form (email pre-filled + password,
+    Enter-key submit), operator session persisted in sessionStorage (survives reloads), queue
+    cards (amber=reported-only, rose=hidden) with title/content/author/reports/comments/likes,
+    three action buttons with per-post busy spinners, delete confirm dialog, collapsible audit
+    trail with timestamps, empty state "Queue is clear".
+  - E2E VERIFIED IN BROWSER: report post 3x via API → auto-hidden → queue shows it → Refresh →
+    "Restore & clear reports" → success toast, post back in feed (5 visible), queue empty, audit
+    trail records the action. Also verified earlier curl restore appears in the trail.
+- LLM WEEKLY NARRATIVE (backlog #6) on dashboard AI Insights:
+  - NEW POST /api/insights/narrative: builds a 7-day digest straight from the DB (cycle day/phase,
+    sleep avg, hydration avg, mood distribution, energy/stress avgs, top symptoms with severity,
+    logged-days count), feeds it to z-ai-web-dev-sdk with a strict prompt (3–4 sentences + one
+    "Focus tip:" line, no invented numbers, no diagnosis). Cache: SiteSetting key-value row
+    `narrative:{userId}:{weekStart}` with 6h TTL; force flag bypasses (Regenerate button).
+    Returns {narrative:null, reason:'no-data'} for users who never logged.
+  - Dashboard: auto-loads with the wellness section (non-blocking), renders a "Weekly AI summary"
+    card — skeleton shimmer while loading, gradient container, "cached" chip when served from
+    cache, Regenerate with spinner, focus tip highlighted in its own box (robust split: handles
+    the tip inline OR on its own line), "Continue in AI Coach →" link. Verified live: first call
+    ~1.4s LLM generation, cached chip on reload, dark mode renders cleanly.
+- REAL PREMIUM MANAGEMENT (backlog #4) — Settings Subscription section rewritten (was fake local
+  toggle that also wrongly flipped premium state):
+  - Fetches GET /api/subscription on mount and syncs the store both ways.
+  - Active plan card: tier · plan, Active badge, payment method chip, real price breakdown
+    (₹amount + GST = total), Started / Renews-Ends / Invoice / Transaction grid.
+  - Cancel flow: AlertDialog with honest copy ("features remain active until {endDate}") →
+    DELETE /api/subscription → store + UI flip to Free plan. E2E VERIFIED: cancel in UI →
+    DB active:false → Free card + Upgrade CTA. Then re-subscribed via POST API (invoice
+    CC-MU6MAJZZ) → reload → profile dropdown shows Premium badge + Manage Premium again.
+  - Free plan: clear card + "Upgrade to Premium" → jumps to premium module.
+  - app-shell restore fixed to sync BOTH ways (setPremium(Boolean(d?.active))) so a cancellation
+    on another device is reflected after reload.
+- COMMUNITY FEED PAGINATION (backlog #3):
+  - GET /api/community now supports ?limit&offset → {posts, total, hasMore, nextOffset} envelope;
+  no params still returns the full array (back-compat verified).
+  - UI: 4 posts per page, "Load more posts (4 of 5)" dashed button at feed bottom with spinner,
+    "You're all caught up 🌙 N posts" footer when exhausted, total counter updates on new post.
+  - VERIFIED IN BROWSER: initial 4/5 → click → all 5 + caught-up footer.
+- REPORTS PDF EXPORT (backlog #2) + chart polish:
+  - PDF button ENABLED (was disabled "coming soon"): opens a print-ready HTML report in a new tab
+    (brand header, 4 score tiles, key metrics current-vs-previous table, symptom frequency with
+    ASCII bars, mood distribution, trend table, insights, cycle milestones, disclaimer footer) and
+    auto-triggers window.print() → user saves as PDF. Verified in browser: document opens with
+    correct real data ("Last 7 days · 2026-09-12 → 2026-09-18", wellness 63, etc.).
+  - Symptom Frequency chart: integer Y-axis ticks (allowDecimals=false), theme-aware grid/axis
+    colors (was hardcoded light gray — invisible in dark mode), hover Tooltip added.
+  - Trends chart grid/axis theme-aware too.
+- STYLING DETAILS (mandatory):
+  - next.config.ts: devIndicators.position="bottom-right" — the dev-tools "N" bubble no longer
+    overlaps the sidebar Settings button (visible in every screenshot before).
+  - Reports: chart tooltip + integer ticks + theme-aware grid (above).
+  - Community: pagination footer styled to match feed; post-count footer.
+  - Dashboard: narrative card gradient + shimmer skeleton + focus-tip box.
+  - Settings: moderation queue cards color-coded, subscription metric tiles, audit trail rows.
+- BUG FOUND & FIXED (mobile): topbar avatar was HARDCODED "U" for everyone — MobileTopbar now
+  takes displayName and renders the user's initial. Verified: shows "P" for Priya at 640px.
+- NOT A BUG (closed backlog item #5): the two "duplicate" Kavita Mehta appointments belong to two
+  DIFFERENT users (per-user seed data, correct). No de-dupe needed; dashboard only shows the
+  current user's rows anyway.
+- ENVIRONMENT: 3rd instance of transient file corruption observed — doctor-finder.tsx briefly had
+  DUPLICATE import identifiers (Sparkles/Zap/Siren twice → Turbopack "Ecmascript file had an
+  error" at 55:3/57:3). File self-healed between reads; md5 changed between checks; after self-
+  heal the module compiles, renders and search works. Mitigation unchanged: lint is the final
+  gate; re-read files before editing.
+- Theme restored to light after dark-mode verification; viewport restored to 1280×800.
+
+Stage Summary:
+- ✅ Shipped & browser-verified: admin moderation console (login/queue/restore/dismiss/delete +
+  audit trail), LLM weekly AI summary with caching + regenerate, real subscription management
+  (details/cancel/upgrade), community pagination, reports PDF export, mobile avatar fix, plus
+  mandatory styling details (dev indicator reposition, theme-aware charts, tooltips).
+- Lint: 0 errors 0 warnings. dev.log: clean (no errors). Browser console: clean.
+- Admin demo credentials (auto-provisioned on first login): admin@chandracycle.app / chandra-admin
+  — documented only here, session token is DB-backed and revocable.
+- DB state: 7 users (2 real + 5 demo personas), 13 cycles, wellness logs, 5 community posts,
+  10 comments, appointments (2 upcoming across users, 1 cancelled), 3 subscriptions (1 active),
+  AdminUser=1, narrative cache rows in SiteSetting.
+- Remaining backlog (next round):
+  1. Doctor booking de-dupe guard in doctor-finder (prevent double-click double-book, same slot).
+  2. Community pagination could become server-side category filtering (currently client-side on
+     loaded pages).
+  3. Excel export still honestly disabled; could add real XLSX via a sheet library.
+  4. Admin console: add comment moderation + user flagging (model fields exist), bulk actions.
+  5. Consider rendering the LLM narrative with a typewriter effect and per-week re-generation
+     notification ("Your weekly summary was updated").
+  6. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).

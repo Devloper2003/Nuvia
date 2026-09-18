@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
@@ -262,6 +262,10 @@ export default function CommunityModule() {
   const userProfile = useAppStore((s) => s.userProfile)
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [totalPosts, setTotalPosts] = useState(0)
+  const nextOffsetRef = useRef(0)
   const [posting, setPosting] = useState(false)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All')
@@ -285,19 +289,45 @@ export default function CommunityModule() {
   const [reportPost, setReportPost] = useState<Post | null>(null)
   const [reportReason, setReportReason] = useState<string>(REPORT_REASONS[0])
 
-  // ─── Data loading ───────────────────────────────────────────────
+  // ─── Data loading (paginated) ─────────────────────────────────────────────
+  const PAGE_SIZE = 4
+
+  const mapPage = (data: ApiPost[]) =>
+    data.map((p) => mapApiPost(p, userProfile?.id, likedIds))
+
   const loadPosts = useCallback(async () => {
     try {
-      const res = await fetch('/api/community')
+      nextOffsetRef.current = 0
+      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=0`)
       if (!res.ok) throw new Error('Failed to load posts')
-      const data: ApiPost[] = await res.json()
-      setPosts(data.map((p) => mapApiPost(p, userProfile?.id, likedIds)))
+      const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
+      setPosts(mapPage(data.posts))
+      setTotalPosts(data.total)
+      setHasMore(data.hasMore)
+      nextOffsetRef.current = data.nextOffset
     } catch {
       toast.error('Could not load community posts')
     } finally {
       setLoading(false)
     }
-  }, [userProfile?.id])
+  }, [userProfile?.id, likedIds])
+
+  const loadMorePosts = async () => {
+    if (loadingMore) return
+    setLoadingMore(true)
+    try {
+      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=${nextOffsetRef.current}`)
+      if (!res.ok) throw new Error('Failed to load more posts')
+      const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
+      setPosts((prev) => [...prev, ...mapPage(data.posts)])
+      setHasMore(data.hasMore)
+      nextOffsetRef.current = data.nextOffset
+    } catch {
+      toast.error('Could not load more posts')
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   useEffect(() => {
     loadPosts()
@@ -367,6 +397,7 @@ export default function CommunityModule() {
       }
       const created: ApiPost = await res.json()
       setPosts(prev => [mapApiPost(created, userProfile.id, likedIds), ...prev])
+      setTotalPosts(t => t + 1)
       setNewPost({ title: '', content: '', category: 'General', anonymous: true })
       setDialogOpen(false)
       toast.success('Post shared with the community 💙')
@@ -878,6 +909,35 @@ export default function CommunityModule() {
                         </Card>
                       </motion.div>
                     ))}
+
+                    {/* Load more — pagination footer */}
+                    {hasMore && (
+                      <button
+                        onClick={loadMorePosts}
+                        disabled={loadingMore}
+                        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-sky-300 dark:border-sky-800 text-sm font-medium text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors disabled:opacity-60"
+                      >
+                        {loadingMore ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" /> Loading more…
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4" /> Load more posts
+                            <span className="text-[10px] text-muted-foreground">
+                              {posts.length} of {totalPosts}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {!hasMore && posts.length > 0 && (
+                      <div className="text-center py-2">
+                        <p className="text-[11px] text-muted-foreground">
+                          You're all caught up 🌙 {totalPosts} post{totalPosts === 1 ? '' : 's'} in the community
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               )}

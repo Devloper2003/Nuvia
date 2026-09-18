@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useSyncExternalStore } from 'react'
+import React, { useCallback, useState, useEffect, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Settings as SettingsIcon,
@@ -42,6 +42,13 @@ import {
   FileLock2,
   Compass,
   RotateCcw,
+  Loader2,
+  RefreshCw,
+  History,
+  Flag,
+  CheckCircle2,
+  ShieldAlert,
+  Eye,
 } from 'lucide-react'
 import {
   Card,
@@ -164,7 +171,7 @@ function SettingsSection({
 // ─── Main Module ────────────────────────────────────────────────────────────
 
 export default function SettingsModule() {
-  const { isPremium, setPremium, userProfile, setUserProfile } = useAppStore()
+  const { isPremium, setPremium, userProfile, setUserProfile, setActiveModule } = useAppStore()
   const { theme, setTheme } = useTheme()
   // Detect client-side rendering to avoid hydration mismatch with theme
   const mounted = useSyncExternalStore(
@@ -329,6 +336,219 @@ export default function SettingsModule() {
     toast.success('Signed out', {
       description: 'You\'ve been signed out of ChandraCycle.',
     })
+  }
+
+  // ─── Real subscription management (backed by /api/subscription) ────────────
+  interface SubDetails {
+    id: string
+    plan: string
+    tier: string
+    amount: number
+    gst: number
+    total: number
+    currency: string
+    status: string
+    startDate: string
+    endDate: string
+    paymentMethod: string | null
+    transactionId: string | null
+    invoiceId: string | null
+  }
+  const [subDetails, setSubDetails] = useState<SubDetails | null>(null)
+  const [subLoading, setSubLoading] = useState(true)
+  const [cancelSubOpen, setCancelSubOpen] = useState(false)
+  const [cancellingSub, setCancellingSub] = useState(false)
+
+  useEffect(() => {
+    if (!userProfile?.id) {
+      setSubLoading(false)
+      return
+    }
+    let cancelled = false
+    fetch(`/api/subscription?userId=${encodeURIComponent(userProfile.id)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        setSubDetails(data?.subscription ?? null)
+        setPremium(Boolean(data?.active))
+        setSubLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) setSubLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userProfile?.id, setPremium])
+
+  const handleCancelSubscription = async () => {
+    if (!userProfile?.id) return
+    setCancellingSub(true)
+    try {
+      const res = await fetch(
+        `/api/subscription?userId=${encodeURIComponent(userProfile.id)}`,
+        { method: 'DELETE' }
+      )
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Cancellation failed')
+      setSubDetails(null)
+      setPremium(false)
+      toast.success('Subscription cancelled', {
+        description: 'Premium features stay available until the end of the paid period, then the account returns to Free.',
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not cancel subscription')
+    } finally {
+      setCancellingSub(false)
+      setCancelSubOpen(false)
+    }
+  }
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  // ─── Admin moderation console (operator session via /api/admin/*) ─────────
+  const ADMIN_STORAGE_KEY = 'chandracycle_admin_token'
+  interface ModPost {
+    id: string
+    title: string
+    content: string
+    category: string
+    likes: number
+    reportedCount: number
+    hidden: boolean
+    createdAt: string
+    author: { id: string; name: string | null; email: string }
+    commentCount: number
+  }
+  interface AuditEntry {
+    id: string
+    adminName: string | null
+    action: string
+    targetLabel: string | null
+    details: string | null
+    createdAt: string
+  }
+  const [adminToken, setAdminToken] = useState<string | null>(null)
+  const [adminName, setAdminName] = useState<string | null>(null)
+  const [adminEmail, setAdminEmail] = useState('admin@chandracycle.app')
+  const [adminPassword, setAdminPassword] = useState('')
+  const [adminLoggingIn, setAdminLoggingIn] = useState(false)
+  const [modQueue, setModQueue] = useState<ModPost[]>([])
+  const [modStats, setModStats] = useState<{ totalPosts: number; hiddenCount: number; queueSize: number } | null>(null)
+  const [modAudit, setModAudit] = useState<AuditEntry[]>([])
+  const [modLoading, setModLoading] = useState(false)
+  const [modBusyId, setModBusyId] = useState<string | null>(null)
+  const [deletePostId, setDeletePostId] = useState<string | null>(null)
+
+  const loadModQueue = useCallback(async (token: string) => {
+    setModLoading(true)
+    try {
+      const res = await fetch('/api/admin/moderation', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to load queue')
+      setModQueue(data.queue ?? [])
+      setModStats(data.stats ?? null)
+      setModAudit(data.auditLog ?? [])
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Moderation queue failed to load')
+    } finally {
+      setModLoading(false)
+    }
+  }, [])
+
+  // Restore an existing operator session on mount.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(ADMIN_STORAGE_KEY)
+      if (saved) {
+        setAdminToken(saved)
+        loadModQueue(saved)
+      }
+    } catch {
+      // sessionStorage unavailable — operator just logs in again
+    }
+  }, [loadModQueue])
+
+  const handleAdminLogin = async () => {
+    if (!adminEmail.trim() || !adminPassword) {
+      toast.error('Email and password are required')
+      return
+    }
+    setAdminLoggingIn(true)
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: adminEmail, password: adminPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Login failed')
+      setAdminToken(data.token)
+      setAdminName(data.admin?.name ?? 'Admin')
+      setAdminPassword('')
+      try {
+        sessionStorage.setItem(ADMIN_STORAGE_KEY, data.token)
+      } catch {
+        // best-effort
+      }
+      toast.success(`Signed in as ${data.admin?.role ?? 'admin'}`)
+      loadModQueue(data.token)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Admin login failed')
+    } finally {
+      setAdminLoggingIn(false)
+    }
+  }
+
+  const handleAdminLogout = async () => {
+    if (adminToken) {
+      try {
+        await fetch('/api/admin/logout', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${adminToken}` },
+        })
+      } catch {
+        // best-effort — clear locally regardless
+      }
+    }
+    setAdminToken(null)
+    setAdminName(null)
+    setModQueue([])
+    setModStats(null)
+    setModAudit([])
+    try {
+      sessionStorage.removeItem(ADMIN_STORAGE_KEY)
+    } catch {
+      // ignore
+    }
+    toast.success('Moderator signed out')
+  }
+
+  const handleModAction = async (postId: string, action: 'restore' | 'dismiss' | 'delete') => {
+    if (!adminToken) return
+    setModBusyId(postId)
+    try {
+      const res = await fetch('/api/admin/moderation', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ postId, action }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Action failed')
+      toast.success(data.message || 'Done')
+      loadModQueue(adminToken)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Moderation action failed')
+    } finally {
+      setModBusyId(null)
+      setDeletePostId(null)
+    }
   }
 
   const themeOptions = [
@@ -703,6 +923,223 @@ export default function SettingsModule() {
         </div>
       </SettingsSection>
 
+      {/* ─── Content Moderation (operator console) ─────────────────── */}
+      <SettingsSection
+        title="Content Moderation"
+        description="Operator console for reported community posts"
+        icon={ShieldAlert}
+        iconColor="bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400"
+        delay={0.32}
+      >
+        {!adminToken ? (
+          <div className="space-y-3">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg border border-violet-200 dark:border-violet-900 bg-violet-50/50 dark:bg-violet-950/10 text-xs text-muted-foreground">
+              <ShieldAlert className="h-4 w-4 text-violet-500 shrink-0 mt-0.5" />
+              <span>
+                Reports from the community feed (3+ reports auto-hide a post) land here for review.
+                Every action is written to an audit trail. Operator sessions last 24 hours.
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-email" className="text-xs">Operator email</Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="admin@chandracycle.app"
+                  autoComplete="off"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-password" className="text-xs">Password</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="off"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAdminLogin()
+                  }}
+                />
+              </div>
+            </div>
+            <Button className="w-full sm:w-auto" onClick={handleAdminLogin} disabled={adminLoggingIn}>
+              {adminLoggingIn ? (
+                <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Signing in…</>
+              ) : (
+                <><ShieldCheck className="h-4 w-4 mr-1.5" /> Open moderation console</>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Header row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300 border-0 gap-1">
+                <ShieldCheck className="h-3 w-3" /> {adminName ?? 'Moderator'} signed in
+              </Badge>
+              {modStats && (
+                <Badge variant="outline" className="text-[10px]">
+                  {modStats.totalPosts} posts · {modStats.hiddenCount} hidden · queue {modStats.queueSize}
+                </Badge>
+              )}
+              <div className="ml-auto flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => adminToken && loadModQueue(adminToken)} disabled={modLoading}>
+                  <RefreshCw className={cn('h-3.5 w-3.5 mr-1', modLoading && 'animate-spin')} /> Refresh
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleAdminLogout}>
+                  Sign out
+                </Button>
+              </div>
+            </div>
+
+            {/* Queue */}
+            {modLoading && modQueue.length === 0 ? (
+              <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading moderation queue…
+              </div>
+            ) : modQueue.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-6 text-center border rounded-xl bg-muted/20">
+                <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2" />
+                <p className="text-sm font-medium">Queue is clear</p>
+                <p className="text-xs text-muted-foreground mt-0.5 max-w-xs">
+                  No reported or hidden posts right now. Reported content will appear here automatically.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                {modQueue.map((post) => (
+                  <div
+                    key={post.id}
+                    className={cn(
+                      'rounded-xl border p-3.5 space-y-2.5',
+                      post.hidden
+                        ? 'border-rose-200 dark:border-rose-900 bg-rose-50/40 dark:bg-rose-950/10'
+                        : 'border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/10'
+                    )}
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold leading-snug">{post.title}</span>
+                          {post.hidden ? (
+                            <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border-0 text-[10px] h-5">
+                              <Eye className="h-2.5 w-2.5 mr-1" /> Hidden
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-0 text-[10px] h-5">
+                              <Flag className="h-2.5 w-2.5 mr-1" /> Reported
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-[10px] h-5 capitalize">
+                            {post.category.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{post.content}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                          <span>by {post.author.name ?? post.author.email}</span>
+                          <span>{post.reportedCount} report{post.reportedCount === 1 ? '' : 's'}</span>
+                          <span>{post.commentCount} comment{post.commentCount === 1 ? '' : 's'}</span>
+                          <span>{post.likes} likes</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                        disabled={modBusyId === post.id}
+                        onClick={() => handleModAction(post.id, 'restore')}
+                      >
+                        {modBusyId === post.id ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                        )}
+                        Restore & clear reports
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        disabled={modBusyId === post.id}
+                        onClick={() => handleModAction(post.id, 'dismiss')}
+                      >
+                        Dismiss (keep hidden)
+                      </Button>
+                      <AlertDialog open={deletePostId === post.id} onOpenChange={(open) => setDeletePostId(open ? post.id : null)}>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                            disabled={modBusyId === post.id}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" /> Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this post permanently?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm leading-relaxed">
+                              &ldquo;{post.title}&rdquo; and its {post.commentCount} comment{post.commentCount === 1 ? '' : 's'} will be
+                              permanently removed. This action is recorded in the audit trail and cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                              onClick={() => handleModAction(post.id, 'delete')}
+                            >
+                              Delete post
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Audit trail */}
+            {modAudit.length > 0 && (
+              <div className="pt-1">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <History className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-muted-foreground">Recent moderation audit trail</span>
+                </div>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                  {modAudit.map((entry) => (
+                    <div key={entry.id} className="flex items-start gap-2 text-[11px] p-2 rounded-lg bg-muted/30">
+                      <Badge variant="outline" className="text-[9px] h-4 px-1.5 shrink-0 capitalize">
+                        {entry.action.replace('moderation:', '')}
+                      </Badge>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium">{entry.targetLabel ?? '—'}</span>
+                        <span className="text-muted-foreground"> · {entry.adminName}</span>
+                        {entry.details && (
+                          <div className="text-muted-foreground truncate">{entry.details}</div>
+                        )}
+                      </div>
+                      <span className="text-muted-foreground shrink-0">
+                        {new Date(entry.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </SettingsSection>
+
       {/* ─── Appearance ────────────────────────────────────────────── */}
       <SettingsSection
         title="Appearance"
@@ -805,7 +1242,7 @@ export default function SettingsModule() {
         </div>
       </SettingsSection>
 
-      {/* ─── Subscription ──────────────────────────────────────────── */}
+      {/* ─── Subscription (real, DB-backed) ────────────────────────── */}
       <SettingsSection
         title="Subscription"
         description="Manage your ChandraCycle plan"
@@ -813,70 +1250,115 @@ export default function SettingsModule() {
         iconColor="bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
         delay={0.4}
       >
-        <div className="rounded-xl border overflow-hidden">
-          <div className={cn(
-            'p-4 flex items-center gap-4',
-            isPremium
-              ? 'bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20'
-              : 'bg-muted/40'
-          )}>
-            <div className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl shrink-0',
-              isPremium
-                ? 'bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white shadow-md'
-                : 'bg-muted text-muted-foreground'
-            )}>
-              <Crown className="h-6 w-6" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold">
-                  {isPremium ? 'Premium Plan' : 'Free Plan'}
-                </span>
-                {isPremium && (
-                  <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-                    Active
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isPremium
-                  ? '₹299/month · Unlimited AI coach, predictions & reports'
-                  : 'Basic period tracking, mood logging & community access'}
-              </p>
-            </div>
+        {subLoading ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading your plan…
           </div>
-          <div className="p-3 flex flex-col sm:flex-row gap-2 bg-card">
-            <Button
-              variant={isPremium ? 'outline' : 'default'}
-              className="flex-1"
-              onClick={() => {
-                if (isPremium) {
-                  setPremium(false)
-                  toast.success('Subscription cancelled', {
-                    description: 'Your premium access will end at the next billing cycle.',
-                  })
-                } else {
-                  setPremium(true)
-                  toast.success('Welcome to Premium! 🎉', {
-                    description: 'You now have access to all premium features.',
-                  })
-                }
-              }}
-            >
-              {isPremium ? (
-                <><X className="h-4 w-4 mr-1.5" /> Cancel Subscription</>
-              ) : (
-                <><Crown className="h-4 w-4 mr-1.5" /> Upgrade to Premium</>
-              )}
-            </Button>
-            {isPremium && (
-              <Button variant="ghost" className="flex-1" onClick={() => toast.info('Billing portal', { description: 'Opening billing portal to update payment method...' })}>
+        ) : subDetails ? (
+          <div className="rounded-xl border overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-orange-500 text-white shadow-md">
+                  <Crown className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold capitalize">
+                      {subDetails.tier} · {subDetails.plan}
+                    </span>
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Active
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px] capitalize">
+                      {subDetails.paymentMethod?.replace('_', ' ') ?? 'paypal'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ₹{subDetails.amount.toFixed(0)} + ₹{subDetails.gst.toFixed(2)} GST = ₹{subDetails.total.toFixed(2)} / {subDetails.plan === 'yearly' ? 'year' : 'month'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 bg-card">
+              {[
+                { label: 'Started', value: formatDate(subDetails.startDate) },
+                { label: 'Renews / Ends', value: formatDate(subDetails.endDate) },
+                { label: 'Invoice', value: subDetails.invoiceId ?? '—' },
+                { label: 'Transaction', value: subDetails.transactionId ?? '—' },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg bg-muted/40 p-2.5 min-w-0">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{item.label}</div>
+                  <div className="text-xs font-semibold mt-0.5 truncate" title={item.value}>
+                    {item.value}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-3 flex flex-col sm:flex-row gap-2 border-t bg-card">
+              <AlertDialog open={cancelSubOpen} onOpenChange={setCancelSubOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="flex-1 border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30">
+                    <X className="h-4 w-4 mr-1.5" /> Cancel Subscription
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Cancel your {subDetails.tier} plan?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-sm leading-relaxed">
+                      Your premium features — unlimited AI coaching, advanced reports and predictions —
+                      will remain active until <strong className="text-foreground">{formatDate(subDetails.endDate)}</strong>,
+                      after which your account returns to the Free plan. Your invoices stay available.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={cancellingSub}>Keep plan</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleCancelSubscription()
+                      }}
+                      disabled={cancellingSub}
+                      className="bg-rose-600 hover:bg-rose-700 text-white"
+                    >
+                      {cancellingSub ? (
+                        <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Cancelling…</>
+                      ) : (
+                        'Cancel subscription'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button
+                variant="ghost"
+                className="flex-1"
+                onClick={() => toast.info('Billing portal', { description: 'Payment method updates coming soon — PayPal sandbox is used in this deployment.' })}
+              >
                 <FileText className="h-4 w-4 mr-1.5" /> Manage Billing
               </Button>
-            )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-xl border overflow-hidden">
+            <div className="p-4 flex items-center gap-4 bg-muted/40">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl shrink-0 bg-muted text-muted-foreground">
+                <Crown className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold">Free Plan</span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Basic period tracking, mood logging & community access
+                </p>
+              </div>
+            </div>
+            <div className="p-3 bg-card">
+              <Button className="w-full" onClick={() => setActiveModule('premium')}>
+                <Crown className="h-4 w-4 mr-1.5" /> Upgrade to Premium
+                <ChevronRight className="h-4 w-4 ml-auto" />
+              </Button>
+            </div>
+          </div>
+        )}
       </SettingsSection>
 
       {/* ─── About ─────────────────────────────────────────────────── */}

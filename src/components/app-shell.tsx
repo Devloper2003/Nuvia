@@ -131,7 +131,9 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
     fetch(`/api/subscription?userId=${encodeURIComponent(user.id)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (!cancelled && d?.active) setPremium(true)
+        // Sync BOTH ways: restore premium after reload and drop it when the
+        // subscription was cancelled/expired (e.g. from another device).
+        if (!cancelled) setPremium(Boolean(d?.active))
       })
       .catch(() => {
         // best-effort — offline users keep their in-session state
@@ -488,7 +490,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
           </header>
 
           {/* Mobile Topbar (below lg) */}
-          <MobileTopbar onTakeTour={() => setTourOpen(true)} userId={user.id} />
+          <MobileTopbar onTakeTour={() => setTourOpen(true)} userId={user.id} displayName={displayName} />
 
           {/* Module Content — scrollable. Bottom padding on mobile for bottom nav. */}
           <main className="flex-1 overflow-y-auto">

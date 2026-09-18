@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   allowedDevOrigins: ["*.space-z.ai", "*.chatglm.cn"],
+  // Keep the Next.js dev-tools indicator out of the way — by default it sits
+  // bottom-left where it overlaps the app sidebar's Settings button.
+  devIndicators: {
+    position: "bottom-right",
+  },
   // Optimize heavy barrel imports (lucide-react, recharts, etc.) so only
   // the icons/components actually used end up in the client bundle.
   experimental: {

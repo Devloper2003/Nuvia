@@ -22,6 +22,7 @@ import {
   Cell,
   ResponsiveContainer,
   Legend,
+  Tooltip,
 } from 'recharts'
 import {
   Download,
@@ -214,6 +215,139 @@ export default function ReportsModule() {
     toast.success('CSV report downloaded')
   }
 
+  // ── PDF export: opens a print-ready report in a new tab and triggers the ──
+  // browser's "Save as PDF" flow. Works fully client-side with real data.
+  const handleExportPdf = () => {
+    if (!data) return
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+    const metricRow = (label: string, current: number, previous?: number) => `
+      <tr>
+        <td>${esc(label)}</td>
+        <td><strong>${current}</strong></td>
+        <td>${previous !== undefined ? previous : '—'}</td>
+      </tr>`
+
+    const symptomRows = data.symptomFrequency
+      .map(
+        (s) =>
+          `<tr><td>${esc(s.name)}</td><td>${s.count}</td><td>${'█'.repeat(Math.min(s.count, 20))}</td></tr>`
+      )
+      .join('')
+    const moodRows = data.moodDistribution
+      .map(
+        (m) =>
+          `<tr><td><span class="dot" style="background:${m.color}"></span>${esc(m.name)}</td><td>${m.value}</td></tr>`
+      )
+      .join('')
+    const insightItems = data.insights.map((i) => `<li>${esc(i)}</li>`).join('')
+    const cycleItems = data.cycleSummary
+      .map((c) => `<li><strong>Day ${c.day}</strong> (${esc(c.phase)}) — ${esc(c.note)}</li>`)
+      .join('')
+    const trendRows = data.trendLine
+      .map((t) => `<tr><td>${esc(t.label)}</td><td>${t.wellness}</td><td>${t.symptoms}</td></tr>`)
+      .join('')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>ChandraCycle ${period} report</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #1f2937; margin: 32px; max-width: 780px; }
+  h1 { font-size: 20px; margin: 0; color: #0f766e; }
+  h2 { font-size: 14px; color: #0f766e; border-bottom: 2px solid #ccfbf1; padding-bottom: 4px; margin-top: 28px; }
+  .sub { color: #6b7280; font-size: 12px; margin-top: 2px; }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .logo { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #e5e7eb; }
+  th { background: #f0fdfa; color: #0f766e; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .scores { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+  .score { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px; text-align: center; }
+  .score .num { font-size: 22px; font-weight: 700; color: #0f766e; }
+  .score .lbl { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.4px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  ul { font-size: 12px; padding-left: 18px; }
+  li { margin: 4px 0; }
+  .foot { margin-top: 30px; font-size: 10px; color: #9ca3af; border-top: 1px solid #e5e7eb; padding-top: 8px; }
+  .bar { color: #14b8a6; font-size: 10px; letter-spacing: -1px; }
+  @media print { body { margin: 16px; } }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <div class="logo">C</div>
+    <div>
+      <h1>ChandraCycle Health Report</h1>
+      <div class="sub">${esc(data.period?.label ?? '')} · ${esc(data.period?.startDate ?? '')} → ${esc(data.period?.endDate ?? '')}</div>
+    </div>
+  </div>
+
+  <div class="scores">
+    <div class="score"><div class="num">${data.wellnessScore}</div><div class="lbl">Wellness</div></div>
+    <div class="score"><div class="num">${data.cycleRegularity}</div><div class="lbl">Cycle regularity</div></div>
+    <div class="score"><div class="num">${data.moodStability}</div><div class="lbl">Mood stability</div></div>
+    <div class="score"><div class="num">${100 - data.symptomSeverity}</div><div class="lbl">Symptom comfort</div></div>
+  </div>
+
+  <h2>Key Metrics</h2>
+  <table>
+    <tr><th>Metric</th><th>Current</th><th>Previous</th></tr>
+    ${metricRow('Wellness Score', data.wellnessScore, data.prevWellnessScore)}
+    ${metricRow('Cycle Regularity', data.cycleRegularity, data.prevCycleRegularity)}
+    ${metricRow('Symptom Severity', data.symptomSeverity, data.prevSymptomSeverity)}
+    ${metricRow('Mood Stability', data.moodStability, data.prevMoodStability)}
+    ${metricRow('Sleep Average (h)', data.sleepAvg)}
+    ${metricRow('Water Average (glasses/day)', data.waterAvg)}
+  </table>
+
+  <h2>Symptom Frequency</h2>
+  <table>
+    <tr><th>Symptom</th><th>Count</th><th></th></tr>
+    ${symptomRows || '<tr><td colspan="3">No symptoms logged this period 🎉</td></tr>'}
+  </table>
+
+  <h2>Mood Distribution</h2>
+  <table>
+    <tr><th>Mood</th><th>Count</th></tr>
+    ${moodRows || '<tr><td colspan="2">No mood entries this period</td></tr>'}
+  </table>
+
+  <h2>Wellness Trend</h2>
+  <table>
+    <tr><th>Point</th><th>Wellness</th><th>Symptom load</th></tr>
+    ${trendRows}
+  </table>
+
+  <h2>Insights</h2>
+  <ul>${insightItems || '<li>No insights for this period yet.</li>'}</ul>
+
+  <h2>Cycle Milestones</h2>
+  <ul>${cycleItems || '<li>No cycle milestones in this window.</li>'}</ul>
+
+  <div class="foot">
+    Generated by ChandraCycle · AI Women's Health Companion · ${new Date().toLocaleString('en-IN')} ·
+    Wellness information only — not medical advice.
+  </div>
+
+  <script>window.onload = function () { setTimeout(function () { window.print(); }, 350); };</script>
+</body>
+</html>`
+
+    const win = window.open('', '_blank', 'width=860,height=1000')
+    if (!win) {
+      toast.error('Pop-up blocked — allow pop-ups to export PDF')
+      return
+    }
+    win.document.open()
+    win.document.write(html)
+    win.document.close()
+    toast.success('Print view opened — choose "Save as PDF"')
+  }
+
   const chartConfig = {
     wellness: { label: 'Wellness', color: '#14b8a6' },
     symptoms: { label: 'Symptoms', color: '#f59e0b' },
@@ -375,9 +509,14 @@ export default function ReportsModule() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data.symptomFrequency} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" stroke="var(--border)" />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)' }}
+                        labelStyle={{ color: 'var(--foreground)', fontWeight: 600 }}
+                        cursor={{ fill: 'var(--muted)', opacity: 0.4 }}
+                      />
                       <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -444,9 +583,9 @@ export default function ReportsModule() {
                 <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={data.trendLine} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                      <XAxis dataKey="label" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} tickLine={false} axisLine={false} domain={[0, 100]} />
                       <Line
                         type="monotone"
                         dataKey="wellness"
@@ -716,9 +855,9 @@ export default function ReportsModule() {
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled
-                    title="PDF export is coming soon"
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700/50 dark:text-teal-300/50"
+                    disabled={!data}
+                    onClick={handleExportPdf}
+                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
                   >
                     <FileText className="size-3.5 mr-1.5" />
                     PDF
