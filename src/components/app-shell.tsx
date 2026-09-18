@@ -545,7 +545,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
 
           {/* Module Content — scrollable. Bottom padding on mobile for bottom nav. */}
           <main className="flex-1 overflow-y-auto">
-            <div className="p-3 sm:p-4 lg:p-5 pb-28 lg:pb-8 max-w-7xl mx-auto">
+            <div className="p-3 pb-28 sm:p-4 sm:pb-28 lg:p-5 lg:pb-8 max-w-7xl mx-auto">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeModule}

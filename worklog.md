@@ -1616,3 +1616,32 @@ Stage Summary:
 - ✅ Tour 视觉升级到 Plum & Gold 品牌体系（backlog #2 关闭）；backlog #1（日期输入自动化）关闭。
 - ⚠️ 最高优先级新 backlog：数据路由 userId 零鉴权（详见上）——下轮应率先处理。
 - 其余遗留：i18n 深度、analytics 审计表、时区静默时段、外部服务配置（PayPal/Google OAuth/Doctor Places）。
+
+---
+Task ID: 17
+Agent: Z.ai Code (main)
+Task: 用户报告"裁切问题很多地方都有，只修 guide tour 没用，要求全面分析扫描并修复，任何 tab / UI 都不能行为异常" → 全 App 20 模块 × 6 视口 × 明暗双模式自动化 UI 审计 + 修复
+
+Work Log:
+- 基建：新建 scripts/ui-audit.js（单页深度审计：H-SCROLL / 元素级裁切(最近裁切祖先+可滚动豁免) / 视口 poke / 底部不可达交互元素 / fixed 遮挡(elementFromPoint) / 无省略号截断文本）、scripts/ui-switch.js（按英文 nav 标签切模块：桌面侧栏按钮 / 移动 More sheet dialog）、scripts/run-audit.sh（20 模块串行驱动）、scripts/audit-summary.ts（JSONL 汇总）。
+- QA 用户 audit.qc17@nuvia.app：signup → onboarding 补齐（发现 lastPeriodStart 是 String 列，传 DateTime 会 Prisma 校验错）→ /api/seed-demo（6 周期+21 天体征）→ Subscription 直接建行（premium 全解锁）。轮次后已删，7 人基线恢复。
+- 审计矩阵：390×844 / 360×640 / 412×915 / 820×1180 / 1440×900 / 844×390(横屏) × 明暗。首两轮被 WelcomeTour 的 fixed inset-0 z-[60] 全屏层污染（QA 新用户自动弹 tour）→ 写入 tour_seen key 后重跑，数据才干净。
+- 发现 1（系统性、影响全部 20 模块）：app-shell 主内容 wrapper `p-3 sm:p-4 lg:p-5 pb-28 lg:pb-8` 在 Tailwind 4 中，响应式简写 sm:p-4 会覆盖无前缀长写 pb-28（级联顺序：带 variant 的规则在后）→ 640–1023px（平板/大屏手机）所有长页面底部内容被 bottom-nav 永久遮挡（实测 pb=16px 而非 112px；390px 正常 112px 因为同 variant 下长写在简写后）。修复：`p-3 pb-28 sm:p-4 sm:pb-28 lg:p-5 lg:pb-8`。820 复测：最后按钮 bottom 1073 < navTop 1115 ✓。
+- 发现 2（AI Coach 聊天输入在首屏外，y=1061 vs 视口 844）：固定 h-[480px] 消息区 + 横幅 + 7 个 prompt chips 换行 5 行(278px) 把输入框推到折叠线下。修复：消息区 `max-lg:h-[max(240px,calc(100dvh-520px))]`（桌面保持 480px）；chips 移动端单行横滚 `flex-nowrap overflow-x-auto lg:flex-wrap`。复测：输入框 701–745 < navTop 779 ✓ 亮暗双模式截图确认。
+- 发现 3（Diet Advisor 同型）：h-[440px] 消息区同改 viewport-fit（offset 540）；输入框补 min-h-11 触控标准。
+- 发现 4（Hormone IQ 图表 "Today" 标签被 SVG 顶边裁切）：ReferenceLine label position 'top' → 'insideTopRight' + dy:-4。
+- 发现 5（SW 版本 v6→v7）：强制清除用户手机上可能残留的旧缓存（用户"很多页面都坏"的高概率根因之一：v5 时代 SWR 旧 bundle 仍在手机上）。v6 机制不变（API 不拦截、JS/CSS network-first、仅缓存 2xx）。
+- 排除的假阳性（记录避免重复排查）：装饰性出血（-top-8 圆形在 overflow-hidden 卡内）、shadcn Progress fill transition 中间态、侧栏 shimmer；Radix Tabs 用 .click() 不激活是自动化假象（pointerdown+mousedown+pointerup+click 全序列激活正常）；Symptoms 水杯按钮"无变化"是点已选中杯（状态本就 4→1 生效，计数器 1/8→8/8 端到端验证 ✓）；Fertility/Menopause 表单输入在页面流深处属正常。
+- OPS：dev server 本轮又被 OOM 杀 2 次；重启加 NODE_OPTIONS=--max-old-space-size=1536 且常驻 dev-watchdog.sh 已重新拉起。SW bump 后 fresh visitor 渲染登录页正常。
+
+VERIFIED（agent-browser）：
+- 390×844 亮/暗全 20 模块：0 H-SCROLL、0 遮挡、0 poke、0 不可达、0 截断、模块全渲染
+- 360×640 / 412×915 / 844×390 横屏 / 820×1180 修复前后对比：遮挡唯一命中（Period Tracker 平板）已修复归零
+- 交互： coach/diet 输入可见且可聚焦、水杯计数、Period 内层 Tabs 真实指针事件切换 ✓
+- Lint exit 0；QA 用户删除后 auth/me 正确吊销（复用 Task 16 的会话撤销）
+- 剩余 CLIP 命中均为已记录假阳性（装饰性设计出血）
+
+Stage Summary:
+- ✅ 回答了用户"issue 很多地方都有"：找到并修复 1 个全 App 系统性 Tailwind 级联 bug（平板段内容被导航遮挡）+ 2 个聊天模块输入折叠线 bug + 1 个图表标签裁切 + SW 缓存保险。
+- 🛠 审计工具沉淀在 scripts/（ui-audit.js / ui-switch.js / run-audit.sh / audit-summary.ts），下轮 cron 可直接复用做回归。
+- 遗留 backlog（优先级序）：① 数据路由 userId 零鉴权（安全，最高）；② Fertility BBT/Menopause 服药等长表单在移动端可考虑抽屉化；③ i18n 深度、analytics 审计表、时区静默时段、PayPal/Google OAuth/Doctor Places 配置。

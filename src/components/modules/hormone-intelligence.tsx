@@ -452,7 +452,7 @@ export default function HormoneModule() {
                       stroke="#a855f7"
                       strokeWidth={2}
                       strokeDasharray="5 5"
-                      label={{ value: 'Today', position: 'top', fill: '#a855f7', fontSize: 12, fontWeight: 600 }}
+                      label={{ value: 'Today', position: 'insideTopRight', fill: '#a855f7', fontSize: 12, fontWeight: 600, dy: -4 }}
                     />
                   )}
                   <Area type="monotone" dataKey="estrogen" name="Estrogen" stroke="#8b5cf6" strokeWidth={2.5} fill="url(#estrogenGradient)" dot={false} />

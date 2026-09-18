@@ -203,8 +203,9 @@ export default function CoachModule() {
       {/* Chat Container */}
       <Card className="border-border bg-card shadow-lg overflow-hidden">
         <CardContent className="p-0">
-          {/* Messages Area */}
-          <ScrollArea className="h-[480px] p-4" ref={scrollRef}>
+          {/* Messages Area — fills remaining viewport on mobile so the chat
+              input stays visible without scrolling (chat-first UX) */}
+          <ScrollArea className="h-[480px] max-lg:h-[max(240px,calc(100dvh-520px))] p-4" ref={scrollRef}>
             <div className="space-y-4">
               {messages.length === 0 && !isLoading && (
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
@@ -289,9 +290,10 @@ export default function CoachModule() {
 
           <Separator />
 
-          {/* Quick Prompts */}
+          {/* Quick Prompts — single horizontally-scrollable row on mobile
+              (wrapping to 5 rows pushed the chat input below the fold) */}
           <div className="px-4 py-3">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 flex-nowrap overflow-x-auto chandracycle-scroll pb-1 lg:flex-wrap lg:overflow-x-visible lg:pb-0">
               {quickPrompts.map((prompt) => (
                 <Button
                   key={prompt.label}

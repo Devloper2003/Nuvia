@@ -1606,10 +1606,10 @@ export default function DietAdvisorModule() {
         </CardHeader>
 
         <CardContent className="p-0">
-          {/* Messages Area */}
+          {/* Messages Area — viewport-fit on mobile so the input stays visible */}
           <div
             ref={scrollRef}
-            className="h-[440px] overflow-y-auto px-4 diet-scroll"
+            className="h-[440px] max-lg:h-[max(240px,calc(100dvh-540px))] overflow-y-auto px-4 diet-scroll"
           >
             <div className="space-y-4 py-2">
               {messages.length === 0 && !isLoading && (
@@ -1740,7 +1740,7 @@ export default function DietAdvisorModule() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask me about nutrition, foods, meal ideas..."
-              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary"
+              className="flex-1 rounded-full bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary min-h-11"
               disabled={isLoading}
             />
             <Button

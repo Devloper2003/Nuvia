@@ -1,5 +1,5 @@
 // Nuvia Service Worker — offline shell + push, WITHOUT data caching.
-const CACHE = 'nuvia-v6'
+const CACHE = 'nuvia-v7'
 const CORE = ['/', '/manifest.json', '/brand/nuvia-mark-192.png', '/brand/nuvia-mark-512.png', '/offline']
 
 self.addEventListener('install', (event) => {
