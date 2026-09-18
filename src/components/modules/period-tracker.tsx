@@ -34,6 +34,8 @@ import {
   FileText,
   Plus,
   Check,
+  CalendarPlus,
+  Loader2,
 } from 'lucide-react'
 import {
   Card,
@@ -1007,10 +1009,89 @@ function PeriodPredictions({
   periodLength: number
   historyCount: number
 }) {
+  const [exportingIcs, setExportingIcs] = useState(false)
   const nextPeriodStart = addDays(cycleStart, cycleLength)
   const daysUntilNext = differenceInDays(nextPeriodStart, new Date())
   // Confidence grows with history but caps at 90% — purely a heuristic, not a fake number.
   const confidence = Math.min(90, Math.round(50 + historyCount * 8))
+
+  // ─── Export the next 6 predicted cycles as an .ics calendar file ────────
+  // All-day events: period days (DTEND exclusive), fertile window, ovulation.
+  const handleExportIcs = () => {
+    setExportingIcs(true)
+    try {
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const toIcsDate = (d: Date) => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
+      const stamp = toIcsDate(new Date())
+      const escape = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,')
+
+      const events: string[] = []
+      for (let i = 1; i <= 6; i++) {
+        const pStart = addDays(cycleStart, i * cycleLength)
+        const pEndExclusive = addDays(pStart, periodLength)
+        const ovulation = addDays(pStart, -14)
+        const fertileStart = addDays(ovulation, -4)
+        const fertileEndExclusive = addDays(ovulation, 2)
+        const cycleNum = i + 1
+
+        events.push(
+          'BEGIN:VEVENT',
+          `UID:period-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `DTSTAMP;VALUE=DATE:${stamp}`,
+          `DTSTART;VALUE=DATE:${toIcsDate(pStart)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(pEndExclusive)}`,
+          `SUMMARY:${escape(`🌸 Predicted period · Cycle ${cycleNum}`)}`,
+          `DESCRIPTION:${escape(`Predicted from ${historyCount} logged cycle(s) with a ${cycleLength}-day average. ChandraCycle estimate — not medical advice.`)}`,
+          'CATEGORIES:HEALTH',
+          'END:VEVENT',
+          'BEGIN:VEVENT',
+          `UID:fertile-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `DTSTAMP;VALUE=DATE:${stamp}`,
+          `DTSTART;VALUE=DATE:${toIcsDate(fertileStart)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(fertileEndExclusive)}`,
+          `SUMMARY:${escape(`🌙 Fertile window · Cycle ${cycleNum}`)}`,
+          `DESCRIPTION:${escape(`Estimated fertile window ending with ovulation on ${format(ovulation, 'MMM d')}.`)}`,
+          'CATEGORIES:HEALTH',
+          'END:VEVENT',
+          'BEGIN:VEVENT',
+          `UID:ovulation-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `DTSTAMP;VALUE=DATE:${stamp}`,
+          `DTSTART;VALUE=DATE:${toIcsDate(ovulation)}`,
+          `DTEND;VALUE=DATE:${toIcsDate(addDays(ovulation, 1))}`,
+          `SUMMARY:${escape(`🥚 Estimated ovulation · Cycle ${cycleNum}`)}`,
+          'CATEGORIES:HEALTH',
+          'END:VEVENT'
+        )
+      }
+
+      const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//ChandraCycle//Period Predictions//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'X-WR-CALNAME:ChandraCycle Period Predictions',
+        'X-WR-CALDESC:Predicted periods\\, fertile windows and ovulation days',
+        ...events,
+        'END:VCALENDAR',
+      ].join('\r\n')
+
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `chandracycle-predictions-${format(new Date(), 'yyyy-MM-dd')}.ics`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      toast.success('Calendar file downloaded — import it into Google Calendar, Apple Calendar or Outlook 📅')
+    } catch {
+      toast.error('Could not generate the calendar file')
+    } finally {
+      setExportingIcs(false)
+    }
+  }
 
   return (
     <motion.div
@@ -1059,6 +1140,20 @@ function PeriodPredictions({
         <Progress value={confidence} className="h-2 [&>div]:bg-gradient-to-r [&>div]:from-rose-400 [&>div]:to-emerald-400" />
         <p className="text-[10px] text-muted-foreground">Based on {historyCount} tracked cycle{historyCount === 1 ? '' : 's'}</p>
       </div>
+
+      <Button
+        variant="outline"
+        disabled={exportingIcs}
+        onClick={handleExportIcs}
+        className="w-full h-9 text-xs border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:border-rose-300 dark:hover:border-rose-800 transition-all group"
+      >
+        {exportingIcs ? (
+          <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+        ) : (
+          <CalendarPlus className="h-3.5 w-3.5 mr-2 transition-transform group-hover:-rotate-12" />
+        )}
+        Sync 6 cycles to my calendar (.ics)
+      </Button>
     </motion.div>
   )
 }

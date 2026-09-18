@@ -32,6 +32,7 @@ import {
   Gem,
   ShieldCheck,
   HelpCircle,
+  Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -109,6 +110,24 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentTime, setCurrentTime] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
+  const [installable, setInstallable] = useState(false)
+
+  // Track PWA installability (prompt captured by <PwaRegister />)
+  useEffect(() => {
+    const onInstallable = (e: Event) => {
+      const detail = (e as CustomEvent<{ available: boolean }>).detail
+      setInstallable(Boolean(detail?.available))
+    }
+    const onInstalled = () => setInstallable(false)
+    window.addEventListener('chandracycle-installable', onInstallable)
+    window.addEventListener('chandracycle-installed', onInstalled)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('chandracycle-installable', onInstallable)
+      window.removeEventListener('chandracycle-installed', onInstalled)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
 
   // Sync auth user into the global store
   useEffect(() => {
@@ -335,8 +354,23 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
             })}
           </nav>
 
-          {/* Bottom section — tour, premium + settings */}
+          {/* Bottom section — install, tour, premium + settings */}
           <div className="border-t border-border p-3 space-y-1.5">
+            {installable && (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('chandracycle-install-request'))}
+                aria-label="Install ChandraCycle on this device"
+                className="group flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+              >
+                <Smartphone className="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
+                {sidebarOpen && (
+                  <span className="flex items-center gap-1.5">
+                    Install app
+                    <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-0">PWA</Badge>
+                  </span>
+                )}
+              </button>
+            )}
             <button
               onClick={() => setTourOpen(true)}
               data-tour="replay"

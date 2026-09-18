@@ -435,6 +435,8 @@ export default function SettingsModule() {
     id: string
     content: string
     createdAt: string
+    reportedCount: number
+    hidden: boolean
     author: { id: string; name: string | null; email: string }
     post: { id: string; title: string }
   }
@@ -445,7 +447,7 @@ export default function SettingsModule() {
   const [adminLoggingIn, setAdminLoggingIn] = useState(false)
   const [modQueue, setModQueue] = useState<ModPost[]>([])
   const [modComments, setModComments] = useState<ModComment[]>([])
-  const [modStats, setModStats] = useState<{ totalPosts: number; totalComments: number; hiddenCount: number; hiddenComments: number; queueSize: number } | null>(null)
+  const [modStats, setModStats] = useState<{ totalPosts: number; totalComments: number; hiddenCount: number; hiddenComments: number; reportedComments: number; queueSize: number } | null>(null)
   const [modAudit, setModAudit] = useState<AuditEntry[]>([])
   const [modLoading, setModLoading] = useState(false)
   const [modBusyId, setModBusyId] = useState<string | null>(null)
@@ -1040,7 +1042,7 @@ export default function SettingsModule() {
               </Badge>
               {modStats && (
                 <Badge variant="outline" className="text-[10px]">
-                  {modStats.totalPosts} posts · {modStats.hiddenCount} hidden · {modStats.hiddenComments} hidden comments · queue {modStats.queueSize}
+                  {modStats.totalPosts} posts · {modStats.hiddenCount} hidden posts · {modStats.hiddenComments} hidden comments · {modStats.reportedComments} reported · queue {modStats.queueSize}
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-2">
@@ -1209,21 +1211,31 @@ export default function SettingsModule() {
                   </div>
                 ))}
 
-                {/* Hidden comments queue */}
+                {/* Reported & hidden comments queue */}
                 {modComments.map((comment) => (
                   <div
                     key={comment.id}
-                    className="rounded-xl border border-orange-200 dark:border-orange-900 bg-orange-50/40 dark:bg-orange-950/10 p-3.5 space-y-2.5"
+                    className={`rounded-xl border p-3.5 space-y-2.5 transition-colors ${
+                      comment.hidden
+                        ? 'border-orange-200 dark:border-orange-900 bg-orange-50/40 dark:bg-orange-950/10'
+                        : 'border-amber-200 dark:border-amber-900 bg-amber-50/40 dark:bg-amber-950/10'
+                    }`}
                   >
                     <div className="flex items-start gap-2.5">
-                      <div className="mt-0.5 flex h-4 w-4 items-center justify-center text-orange-500">
+                      <div className={`mt-0.5 flex h-4 w-4 items-center justify-center ${comment.hidden ? 'text-orange-500' : 'text-amber-500'}`}>
                         <MessageSquare className="h-3.5 w-3.5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-0 text-[10px] h-5">
-                            <EyeOff className="h-2.5 w-2.5 mr-1" /> Hidden comment
-                          </Badge>
+                          {comment.hidden ? (
+                            <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-0 text-[10px] h-5">
+                              <EyeOff className="h-2.5 w-2.5 mr-1" /> Hidden comment
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-0 text-[10px] h-5">
+                              <Flag className="h-2.5 w-2.5 mr-1" /> Reported · {comment.reportedCount} report{comment.reportedCount === 1 ? '' : 's'}
+                            </Badge>
+                          )}
                           <span className="text-[10px] text-muted-foreground">
                             on &ldquo;{comment.post.title}&rdquo;
                           </span>
@@ -1236,20 +1248,37 @@ export default function SettingsModule() {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                        disabled={modBusyId === comment.id}
-                        onClick={() => handleModAction('comment', comment.id, 'restore')}
-                      >
-                        {modBusyId === comment.id ? (
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                        )}
-                        Restore comment
-                      </Button>
+                      {comment.hidden ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                          disabled={modBusyId === comment.id}
+                          onClick={() => handleModAction('comment', comment.id, 'restore')}
+                        >
+                          {modBusyId === comment.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                          )}
+                          Restore comment
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                          disabled={modBusyId === comment.id}
+                          onClick={() => handleModAction('comment', comment.id, 'dismiss')}
+                        >
+                          {modBusyId === comment.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                          )}
+                          Dismiss reports
+                        </Button>
+                      )}
                       <AlertDialog open={deleteCommentId === comment.id} onOpenChange={(open) => setDeleteCommentId(open ? comment.id : null)}>
                         <AlertDialogTrigger asChild>
                           <Button

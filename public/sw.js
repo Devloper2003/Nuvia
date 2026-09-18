@@ -1,5 +1,5 @@
 // ChandraCycle Service Worker — offline-first caching for PWA
-const CACHE = 'chandracycle-v1'
+const CACHE = 'chandracycle-v2'
 const CORE = ['/', '/manifest.json', '/icon.svg', '/icon-maskable.svg']
 
 self.addEventListener('install', (event) => {
@@ -39,18 +39,22 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Cache-first for static assets (JS/CSS/fonts/images)
+  // Stale-while-revalidate for static assets (JS/CSS/fonts/images):
+  // serve the cached copy instantly, refresh it in the background. This keeps
+  // the app fast AND avoids serving stale code after a new deployment.
   if (req.destination === 'script' || req.destination === 'style' || req.destination === 'font' || req.destination === 'image') {
     event.respondWith(
       caches.match(req).then((cached) => {
-        if (cached) return cached
-        return fetch(req).then((res) => {
-          if (res && res.status === 200) {
-            const copy = res.clone()
-            caches.open(CACHE).then((c) => c.put(req, copy))
-          }
-          return res
-        }).catch(() => cached)
+        const network = fetch(req)
+          .then((res) => {
+            if (res && res.status === 200) {
+              const copy = res.clone()
+              caches.open(CACHE).then((c) => c.put(req, copy))
+            }
+            return res
+          })
+          .catch(() => cached)
+        return cached || network
       })
     )
     return

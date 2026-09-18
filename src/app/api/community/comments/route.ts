@@ -69,3 +69,52 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// ─── PATCH /api/community/comments ───────────────────────────────────────────
+// Body: { commentId, action: 'report', reason?: string }
+// Increments reportedCount and auto-hides the comment at 3 reports — mirrors
+// the post reporting flow in PATCH /api/community so both content types share
+// the same moderation semantics.
+export async function PATCH(request: NextRequest) {
+  try {
+    const { commentId, action } = await request.json();
+
+    if (!commentId || action !== 'report') {
+      return NextResponse.json(
+        { error: 'commentId and action "report" are required' },
+        { status: 400 }
+      );
+    }
+
+    const existing = await db.comment.findUnique({ where: { id: commentId } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
+    }
+
+    const nextReports = existing.reportedCount + 1;
+    const shouldHide = nextReports >= 3;
+
+    const comment = await db.comment.update({
+      where: { id: commentId },
+      data: { reportedCount: nextReports, hidden: shouldHide },
+      include: {
+        user: { select: { id: true, name: true, avatar: true } },
+      },
+    });
+
+    return NextResponse.json({
+      comment,
+      hidden: shouldHide,
+      reportedCount: nextReports,
+      message: shouldHide
+        ? 'Comment has been hidden pending moderator review'
+        : 'Report recorded. Thank you for keeping the community safe.',
+    });
+  } catch (error) {
+    console.error('Error reporting comment:', error);
+    return NextResponse.json(
+      { error: 'Failed to report comment' },
+      { status: 500 }
+    );
+  }
+}

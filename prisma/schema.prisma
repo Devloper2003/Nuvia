@@ -472,6 +472,7 @@ model Comment {
   content   String
   isAnonymous Boolean @default(true)
   hidden    Boolean  @default(false)
+  reportedCount Int  @default(0)
   createdAt DateTime @default(now())
 
   post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)

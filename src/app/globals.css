@@ -537,3 +537,34 @@ summary, label {
     animation: none !important;
   }
 }
+
+/* ─── Brand text selection ─────────────────────────────────────────────────── */
+::selection {
+  background: oklch(0.78 0.16 350 / 38%);
+  color: inherit;
+}
+.dark ::selection {
+  background: oklch(0.45 0.18 350 / 55%);
+}
+
+/* ─── Document-level scrollbar (thin, brand-tinted) ───────────────────────── */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.78 0.1 350 / 55%) transparent;
+}
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, oklch(0.82 0.1 350 / 70%), oklch(0.7 0.16 350 / 70%));
+  border-radius: 999px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ─── iOS safe-area helper for fixed bottom bars ───────────────────────────── */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}

@@ -83,6 +83,7 @@ interface CommentItem {
   author: string
   timeAgo: string
   isAnonymous: boolean
+  isOwn: boolean
 }
 
 interface Post {
@@ -293,6 +294,7 @@ export default function CommunityModule() {
   const [newComment, setNewComment] = useState('')
   const [commentPosting, setCommentPosting] = useState(false)
   const [reportPost, setReportPost] = useState<Post | null>(null)
+  const [reportComment, setReportComment] = useState<CommentItem | null>(null)
   const [reportReason, setReportReason] = useState<string>(REPORT_REASONS[0])
 
   // ─── Server-side paginated + category-filtered loading ────────────────────
@@ -552,6 +554,29 @@ export default function CommunityModule() {
     }
   }
 
+  // ─── Report a comment (moderation flow, mirrors post reporting) ─────────
+  const handleReportComment = async (commentId: string, reason: string) => {
+    const prevList = commentsList
+    // The reporter should not keep seeing the flagged comment
+    setCommentsList(prev => prev.filter(c => c.id !== commentId))
+    try {
+      const res = await fetch('/api/community/comments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId, action: 'report', reason }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to report comment')
+      }
+      const data = await res.json()
+      toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
+    } catch (e) {
+      setCommentsList(prevList)
+      toast.error(e instanceof Error ? e.message : 'Could not report comment')
+    }
+  }
+
   // ─── Comments ───────────────────────────────────────────────────
   const openComments = async (postId: string) => {
     setCommentsPostId(postId)
@@ -569,6 +594,7 @@ export default function CommunityModule() {
           author: c.isAnonymous ? anonName(c.id) : (c.user?.name || 'Member'),
           timeAgo: timeAgo(c.createdAt),
           isAnonymous: c.isAnonymous,
+          isOwn: c.user?.id === userProfile?.id,
         }))
       )
     } catch {
@@ -1276,19 +1302,29 @@ export default function CommunityModule() {
               ) : (
                 <div className="space-y-3 pr-2">
                   {commentsList.map(c => (
-                    <div key={c.id} className="flex items-start gap-2.5">
+                    <div key={c.id} className="group flex items-start gap-2.5">
                       <Avatar className="h-7 w-7 shrink-0">
                         <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-[10px] font-semibold">
                           {c.author.split('_')[0][0]}{c.author.split('_')[1]?.[0] || ''}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 bg-muted/60 rounded-xl rounded-tl-sm px-3 py-2">
+                      <div className="flex-1 bg-muted/60 group-hover:bg-muted rounded-xl rounded-tl-sm px-3 py-2 transition-colors">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold">{c.author}</span>
                           <span className="text-[10px] text-muted-foreground">{c.timeAgo}</span>
                         </div>
                         <p className="text-xs text-foreground/90 mt-0.5 leading-relaxed">{c.content}</p>
                       </div>
+                      {!c.isOwn && (
+                        <button
+                          onClick={() => { setReportReason(REPORT_REASONS[0]); setReportComment(c) }}
+                          className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 shrink-0 rounded-md p-1.5 text-muted-foreground/70 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-all"
+                          aria-label="Report comment"
+                          title="Report comment"
+                        >
+                          <Flag className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1316,16 +1352,21 @@ export default function CommunityModule() {
         </DialogContent>
       </Dialog>
 
-      {/* Report Post Dialog */}
-      <Dialog open={!!reportPost} onOpenChange={(open) => !open && setReportPost(null)}>
+      {/* Report Post / Comment Dialog */}
+      <Dialog
+        open={!!reportPost || !!reportComment}
+        onOpenChange={(open) => { if (!open) { setReportPost(null); setReportComment(null) } }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Flag className="h-4 w-4 text-orange-500" />
-              Report this post?
+              {reportComment ? 'Report this comment?' : 'Report this post?'}
             </DialogTitle>
             <DialogDescription>
-              &quot;{reportPost?.title}&quot; — your report is anonymous and helps keep this space safe.
+              {reportComment
+                ? `"${reportComment.content.slice(0, 90)}${reportComment.content.length > 90 ? '…' : ''}" — your report is anonymous and helps keep this space safe.`
+                : `"${reportPost?.title}" — your report is anonymous and helps keep this space safe.`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-1">
@@ -1345,7 +1386,7 @@ export default function CommunityModule() {
               ))}
             </div>
             <div className="flex justify-end gap-2 pt-1">
-              <Button variant="ghost" size="sm" onClick={() => setReportPost(null)}>
+              <Button variant="ghost" size="sm" onClick={() => { setReportPost(null); setReportComment(null) }}>
                 Cancel
               </Button>
               <Button
@@ -1353,8 +1394,11 @@ export default function CommunityModule() {
                 className="bg-orange-500 hover:bg-orange-600 text-white"
                 onClick={() => {
                   const postId = reportPost?.id
+                  const commentId = reportComment?.id
                   setReportPost(null)
+                  setReportComment(null)
                   if (postId) void handleReportPost(postId, reportReason)
+                  if (commentId) void handleReportComment(commentId, reportReason)
                 }}
               >
                 <Flag className="h-3.5 w-3.5 mr-1.5" />

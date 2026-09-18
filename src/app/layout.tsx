@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ChunkErrorRecovery } from "@/components/chunk-error-recovery";
 import { ThemeProvider } from "@/components/theme-provider";
+import { PwaRegister } from "@/components/pwa-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +28,21 @@ export const metadata: Metadata = {
   description: "Your intelligent women's health ecosystem. Track cycles, hormones, fertility, pregnancy, and more with AI-powered insights.",
   keywords: ["women's health", "period tracker", "fertility", "pregnancy", "PCOS", "AI health coach", "hormone tracking"],
   authors: [{ name: "ChandraCycle Health" }],
+  manifest: "/manifest.json",
+  applicationName: "ChandraCycle",
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/icon-maskable.svg", type: "image/svg+xml" }],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "ChandraCycle",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
@@ -58,6 +67,7 @@ export default function RootLayout({
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <ChunkErrorRecovery />
+          <PwaRegister />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

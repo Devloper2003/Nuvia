@@ -442,3 +442,85 @@ Stage Summary:
      "demo directory" notice.
   4. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
   5. Consider i18n (hi/ta) for the menstrual-health copy, and PWA manifest for installability.
+
+---
+Task ID: 7
+Agent: Z.ai Code (webDevReview round 7)
+Task: Cron QA + development round — user-facing comment reporting + admin reported-comment queue, PWA installability (manifest/SW/install button), .ics calendar export of cycle predictions, mandatory styling round.
+
+Work Log:
+- QA baseline: lint 0/0, dashboard clean, session persisted. Dev server reaped TWICE mid-round again
+  (curl exit 7) — setsid double-fork restart used both times. FUTURE ROUNDS: curl localhost:3000 FIRST.
+- COMMENT REPORTING FLOW (backlog #1, closed):
+  - Schema: Comment.reportedCount Int @default(0) added, db:push done.
+  - API: PATCH /api/community/comments {commentId, action:'report'} → increments reportedCount,
+    auto-hides at 3 (mirrors post semantics). Admin moderation: commentQueue now includes
+    reported-but-visible comments (OR hidden OR reportedCount>0), stats.reportedComments added,
+    comment restore ALSO resets reportedCount, new comment 'dismiss' action clears reports keeping
+    the comment visible; audit details now record reports/wasHidden.
+  - Community UI: hover-reveal flag button on every non-own comment (always visible at 60% opacity
+    on mobile, full reveal on desktop hover), unified report dialog handles posts AND comments
+    (title/description adapt, reason chips shared), reporter stops seeing the flagged comment
+    immediately, optimistic revert on failure.
+  - Settings admin UI: comment cards are color-coded — amber "Reported · N report(s)" (visible) with
+    Dismiss reports + Delete vs orange "Hidden comment" with Restore + Delete; stats badge line now
+    shows "N reported".
+  - E2E VERIFIED (desktop + mobile 390px): report via UI → toast "Report recorded", comment removed
+    for reporter, DB reportedCount=1; admin queue shows amber card with post context + author;
+    3× API reports → hidden:true at 3, excluded from GET /api/community/comments; admin restore →
+    reportedCount 0 + visible again; dismiss path verified via UI ("Comment dismissed — 1 processed").
+    All test reports dismissed/restored — final DB state clean (all comments reportedCount=0).
+- PWA INSTALLABILITY (backlog #5 partially, closed):
+  - Found manifest.json + sw.js + icons ALREADY in /public but never wired: layout metadata pointed
+    the icon at an external CDN logo and NO manifest link / SW registration existed.
+  - layout.tsx: metadata.manifest="/manifest.json", applicationName, local /icon.svg + apple
+    /icon-maskable.svg, formatDetection.telephone=false.
+  - NEW src/components/pwa-register.tsx: registers /sw.js on load, captures beforeinstallprompt,
+    re-broadcasts installability via 'chandracycle-installable' window event, handles
+    'chandracycle-install-request' → prompt().
+  - AppShell sidebar: "Install app · PWA" button (Smartphone icon, hover-scale) appears only when
+    installable, hides on appinstalled. VERIFIED in browser via main-world event dispatch.
+  - sw.js: script strategy changed cache-first → STALE-WHILE-REVALIDATE and cache bumped to
+    chandracycle-v2. Root cause found the hard way: cache-first served STALE dev chunks after edits
+    (new AppShell code on disk + in fetched chunk, but old module running) — SWR fixes staleness
+    forever and is still a standard production pattern.
+  - VERIFIED: manifest link in HTML head, /manifest.json + /sw.js 200, SW active + controlling page
+    ("SW active: .../sw.js"), Install button renders in sidebar (desktop), zero console errors.
+- CYCLE CALENDAR EXPORT (new feature):
+  - PeriodPredictions card gained "Sync 6 cycles to my calendar (.ics)" — client-side RFC5545
+    generator: 18 all-day events (6 cycles × predicted period with exclusive DTEND, 6-day fertile
+    window, ovulation day), emoji summaries, confidence note in DESCRIPTION, escaped text, CRLF
+    line endings, downloads chandracycle-predictions-YYYY-MM-DD.md→.ics via Blob.
+  - E2E VERIFIED: browser download captured; file validated — VCALENDAR header + 18 VEVENTs, dates
+    correct (next period Oct 16 = Sep 18 + 28d, ovulation Oct 2 = start − 14d, DTEND exclusive).
+- STYLING DETAILS (mandatory):
+  - Dashboard quick-stat cards: hover lift (-translate-y-0.5) + shadow-lg + icon chip scale via
+    group/card — subtle premium micro-interaction.
+  - Comment bubbles: hover bg transition + hover-reveal flag button (mobile-visible fallback).
+  - ICS button: rose outline, icon -rotate-12 on hover, loading spinner state.
+  - Install button: primary-tinted with hover bg + icon scale + PWA badge.
+  - globals.css: brand ::selection (light + dark), thin brand-tinted document scrollbar, .safe-bottom
+    utility for iOS safe areas.
+  - Dark mode verified on dashboard after changes — clean.
+- TEST METHOD NOTE: agent-browser eval runs in an ISOLATED world — window CustomEvents dispatched
+  from eval do NOT reach page listeners. To simulate page-scope events (beforeinstallprompt etc.),
+  inject a <script> tag. window.__probe-style cross-eval tests are misleading for event flows.
+
+Stage Summary:
+- ✅ Shipped & browser-verified: comment reporting (user + admin sides incl. auto-hide-at-3,
+  dismiss/restore semantics, audit trail), full PWA installability (manifest + SW with SWR + install
+  button), .ics calendar export of 6 predicted cycles, mandatory styling round (hover lifts, hover
+  reveals, brand selection/scrollbar, safe-area utility).
+- Lint: 0 errors 0 warnings. Fresh browser console: clean (only pre-existing benign recharts
+  width-0 warnings during module transitions). dev.log: clean.
+- DB state changes: Comment.reportedCount column added (all rows 0 after test cleanup); audit trail
+  gained comment dismiss/restore entries; no other data mutated.
+- Remaining backlog (next round):
+  1. Push notification scaffolding (SW 'push' listener + permission ask + server endpoint) — natural
+     next PWA step; enables period reminders.
+  2. Community: report counter visible on posts ("2 reports") for transparency, per-user report
+     de-dupe (one report per user per comment — currently repeatable).
+  3. i18n (hi/ta) for menstrual-health copy; in-app offline banner using SW online/offline events.
+  4. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider a
+     visible "demo directory" notice.
+  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).

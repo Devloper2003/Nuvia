@@ -777,11 +777,11 @@ export default function DashboardModule() {
           ].map((stat) => (
             <Card
               key={stat.title}
-              className="glass border-0 shadow-md hover:shadow-lg transition-shadow"
+              className="glass border-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group/card"
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${stat.bg}`}>
+                  <div className={`p-2 rounded-lg ${stat.bg} transition-transform duration-200 group-hover/card:scale-110`}>
                     <stat.icon className={`h-4 w-4 ${stat.color}`} />
                   </div>
                   {stat.badge && (

@@ -44,18 +44,23 @@ export async function GET(request: NextRequest) {
     })
 
     const commentQueue = await db.comment.findMany({
-      where: { hidden: true },
+      where: {
+        OR: [{ hidden: true }, { reportedCount: { gt: 0 } }],
+      },
       include: {
         user: { select: { id: true, name: true, email: true } },
         post: { select: { id: true, title: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ hidden: 'desc' }, { reportedCount: 'desc' }, { createdAt: 'desc' }],
     })
 
     const totalPosts = await db.communityPost.count()
     const totalComments = await db.comment.count()
     const hiddenCount = await db.communityPost.count({ where: { hidden: true } })
     const hiddenComments = await db.comment.count({ where: { hidden: true } })
+    const reportedComments = await db.comment.count({
+      where: { reportedCount: { gt: 0 } },
+    })
 
     const auditLog = await db.auditLog.findMany({
       where: { targetType: { in: ['community_post', 'community_comment'] } },
@@ -80,11 +85,20 @@ export async function GET(request: NextRequest) {
       commentQueue: commentQueue.map((c) => ({
         id: c.id,
         content: c.content,
+        reportedCount: c.reportedCount,
+        hidden: c.hidden,
         createdAt: c.createdAt,
         author: c.user,
         post: c.post,
       })),
-      stats: { totalPosts, totalComments, hiddenCount, hiddenComments, queueSize: queue.length },
+      stats: {
+        totalPosts,
+        totalComments,
+        hiddenCount,
+        hiddenComments,
+        reportedComments,
+        queueSize: queue.length,
+      },
       auditLog,
       admin: { name: admin.name, email: admin.email, role: admin.role },
     })
@@ -210,7 +224,13 @@ export async function PATCH(request: NextRequest) {
         if (action === 'restore') {
           await db.comment.update({
             where: { id: targetId },
-            data: { hidden: false },
+            data: { hidden: false, reportedCount: 0 },
+          })
+        } else if (action === 'dismiss') {
+          // Reports were false positives — clear them but keep a visible comment visible.
+          await db.comment.update({
+            where: { id: targetId },
+            data: { reportedCount: 0 },
           })
         } else {
           await db.comment.delete({ where: { id: targetId } })
@@ -223,7 +243,7 @@ export async function PATCH(request: NextRequest) {
             targetType: 'community_comment',
             targetId: comment.id,
             targetLabel: comment.content.slice(0, 80),
-            details: `Author: ${comment.user.name ?? comment.user.email} · post: "${comment.post.title}" · action: ${action}`,
+            details: `Author: ${comment.user.name ?? comment.user.email} · post: "${comment.post.title}" · reports: ${comment.reportedCount} · wasHidden: ${comment.hidden} · action: ${action}`,
           },
         })
         results.processed++
