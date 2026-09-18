@@ -62,6 +62,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ─── De-dupe guard: reject double-booking of the exact same slot ─────────
+    // Blocks double-clicks and accidental re-submits of the same doctor/date/
+    // time combination while a booking is still upcoming.
+    const duplicate = await db.appointment.findFirst({
+      where: {
+        userId,
+        doctorName,
+        date,
+        time,
+        status: { not: 'cancelled' },
+      },
+    });
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: 'You already have an appointment with this doctor at the selected date and time.',
+          appointmentId: duplicate.id,
+        },
+        { status: 409 }
+      );
+    }
+
     const appointment = await db.appointment.create({
       data: {
         userId,

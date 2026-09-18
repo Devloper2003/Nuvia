@@ -435,6 +435,9 @@ export default function DoctorFinderModule() {
   const [bookingReason, setBookingReason] = useState('')
   const [bookingConfirmed, setBookingConfirmed] = useState(false)
   const [bookingSaving, setBookingSaving] = useState(false)
+  // Keys of `${doctorName}|${YYYY-MM-DD}|${slot}` the user has ALREADY booked —
+  // used to grey out slots in the picker and block duplicate submissions.
+  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set())
 
   // ─── Location autocomplete ──────────────────────────────────────────────
   const fetchSuggestions = React.useCallback(async (q: string) => {
@@ -592,12 +595,32 @@ export default function DoctorFinderModule() {
     setSelectedSpecialty((cur) => (cur === s ? null : s))
   }
 
+  const dateKey = (d: Date) => d.toISOString().split('T')[0]
+  const slotKey = (doctor: string, d: Date, time: string) => `${doctor}|${dateKey(d)}|${time}`
+
   const openBooking = (doctor: Doctor) => {
     setBookingDoctor(doctor)
     setBookingDate(undefined)
     setBookingTime('')
     setBookingReason('')
     setBookingConfirmed(false)
+    setBookedSlots(new Set())
+    // Load existing appointments so already-booked slots appear disabled.
+    const userId = userProfile?.id
+    if (userId) {
+      fetch(`/api/appointments?userId=${userId}`)
+        .then((r) => (r.ok ? r.json() : Promise.resolve([])))
+        .then((appts: Array<{ doctorName: string; date: string; time: string; status: string }>) => {
+          const keys = new Set<string>()
+          for (const a of Array.isArray(appts) ? appts : []) {
+            if (a.status && a.status !== 'cancelled') {
+              keys.add(`${a.doctorName}|${a.date}|${a.time}`)
+            }
+          }
+          setBookedSlots(keys)
+        })
+        .catch(() => {})
+    }
   }
 
   const closeBooking = () => {
@@ -610,6 +633,13 @@ export default function DoctorFinderModule() {
     const userId = userProfile?.id
     if (!userId) {
       toast.error('Please sign in to book an appointment')
+      return
+    }
+    // Client-side de-dupe: block booking a slot already on the calendar.
+    if (bookedSlots.has(slotKey(bookingDoctor.name, bookingDate, bookingTime))) {
+      toast.error('That slot is already booked', {
+        description: 'Pick a different date or time for this doctor.',
+      })
       return
     }
     setBookingSaving(true)
@@ -627,10 +657,20 @@ export default function DoctorFinderModule() {
           notes: bookingReason.trim() || undefined,
         }),
       })
+      if (res.status === 409) {
+        // Server-side de-dupe triggered — sync the booked set and prompt retry.
+        setBookedSlots((prev) => new Set(prev).add(slotKey(bookingDoctor.name, bookingDate, bookingTime)))
+        setBookingTime('')
+        toast.error('That slot is already booked', {
+          description: 'Please choose a different date or time.',
+        })
+        return
+      }
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || 'Booking failed')
       }
+      setBookedSlots((prev) => new Set(prev).add(slotKey(bookingDoctor.name, bookingDate, bookingTime)))
       setBookingConfirmed(true)
       toast.success('Appointment booked! 🎉', {
         description: `${bookingDoctor.name} · ${bookingDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} at ${bookingTime}. See it on your dashboard.`,
@@ -1347,17 +1387,24 @@ export default function DoctorFinderModule() {
                 <div className="grid grid-cols-4 gap-1.5 max-h-32 overflow-y-auto p-0.5">
                   {TIME_SLOTS.map((slot) => {
                     const isSelected = bookingTime === slot
+                    const isBooked =
+                      !!bookingDate &&
+                      !!bookingDoctor &&
+                      bookedSlots.has(slotKey(bookingDoctor.name, bookingDate, slot))
                     return (
                       <button
                         key={slot}
                         type="button"
-                        disabled={!bookingDate}
+                        disabled={!bookingDate || isBooked}
                         onClick={() => setBookingTime(slot)}
+                        title={isBooked ? 'You already have an appointment at this time' : undefined}
                         className={cn(
                           'rounded-md border px-2 py-1.5 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed',
                           isSelected
                             ? 'border-teal-500 bg-teal-600 text-white shadow-sm'
-                            : 'border-border bg-background hover:border-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30'
+                            : isBooked
+                              ? 'border-muted bg-muted/40 text-muted-foreground line-through'
+                              : 'border-border bg-background hover:border-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30'
                         )}
                       >
                         {slot}
@@ -1367,6 +1414,12 @@ export default function DoctorFinderModule() {
                 </div>
                 {!bookingDate && (
                   <p className="text-[11px] text-muted-foreground">Pick a date to see available slots.</p>
+                )}
+                {bookingDate && bookedSlots.size > 0 && (
+                  <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+                    Crossed-out slots are already booked by you.
+                  </p>
                 )}
               </div>
 

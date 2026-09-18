@@ -360,3 +360,85 @@ Stage Summary:
   5. Consider rendering the LLM narrative with a typewriter effect and per-week re-generation
      notification ("Your weekly summary was updated").
   6. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+
+---
+Task ID: 6
+Agent: Z.ai Code (webDevReview round 6)
+Task: Cron QA + development round — appointment double-booking guard, server-side community category filtering, real XLSX export, admin comment moderation + bulk actions, typewriter AI narrative, styling polish.
+
+Work Log:
+- QA baseline: dev server was DOWN again on round start (same reaping issue as round 5) — restarted with
+  `(setsid bun run dev > /dev/null 2>&1 &)` from project dir. Lint 0 errors, app healthy, session persisted.
+  Also died once mid-round after tool call ended; same restart command fixed it. FUTURE ROUNDS: check
+  `curl localhost:3000` FIRST, restart detached if refused.
+- APPOINTMENT DOUBLE-BOOKING GUARD (backlog #1):
+  - Server: POST /api/appointments now returns 409 + existing appointmentId when the same user already has a
+    non-cancelled appointment with the same doctorName+date+time.
+  - Client: booking dialog loads the user's appointments on open; booked slots render crossed-out, greyed,
+    disabled with tooltip + legend line ("Crossed-out slots are already booked by you."); confirmBooking has
+    a client-side guard AND handles 409 by syncing the booked set + clearing the selection + toast.
+  - E2E VERIFIED: curl duplicate → HTTP 409; browser: booked Dr. Vidya Sharma 2026-09-21 10:00 AM → reopened
+    dialog → 10:00 AM crossed-out and unclickable, other slots enabled (screenshot /tmp/booking2.png).
+    Test booking deleted afterwards to restore DB state.
+- COMMUNITY SERVER-SIDE CATEGORY FILTERING (backlog #2):
+  - UI now passes `&category=<api>` to /api/community when a filter is active; loadPosts(cat)/loadMorePosts
+    are category-aware; changing chip reloads page 1 from the server (with loading skeleton).
+  - New post only prepends when it matches the active filter, else toast suggests switching category.
+  - Fixed 2 real bugs while in there: (a) likedIds in loadPosts deps caused a FULL FEED RELOAD on every like —
+    now a ref mirror keeps mapping dependency-free; (b) gamification `myPosts` counted ALL non-anonymous posts
+    instead of the user's own — now uses p.isOwn against a full stats snapshot.
+  - Trending topics + chip counts now computed from a legacy full-feed stats fetch (accurate under pagination);
+    filter chips show live count badges ("All 5", "PCOS 1") in rounded-full pills.
+  - E2E VERIFIED: clicking PCOS → `GET /api/community?limit=4&offset=0&category=pcos` in dev.log, only the PCOS
+    post renders, caught-up footer shows category total ("1 post in the community").
+- REPORTS REAL XLSX EXPORT (backlog #3) — Excel button no longer disabled/"coming soon":
+  - Installed `xlsx` (SheetJS). handleExportExcel builds a 6-sheet workbook (Summary current-vs-previous,
+    Trends, Symptoms, Mood, Cycle Log, Insights) with column widths, downloads via XLSX.writeFile.
+  - E2E VERIFIED: browser click downloaded chandracycle-weekly-report-2026-09-18.xlsx (25.7KB); read back with
+    SheetJS: all 6 sheets present, Wellness 63 vs 54 in Summary, 7 trend rows, real mood/cycle/insight data.
+- ADMIN COMMENT MODERATION + BULK ACTIONS (backlog #4):
+  - Schema: Comment.hidden Boolean @default(false) added, db:push done.
+  - Feed: all comment queries in /api/community + /api/community/comments now filter hidden:false, so moderator
+    -hidden comments vanish from the UI everywhere.
+  - /api/admin/moderation GET: adds commentQueue (hidden comments + author + parent post) and stats.hiddenComments;
+    audit log now covers community_comment too (take 12). PATCH: unified {targetType: 'post'|'comment', id|ids,
+    action} — supports bulk (ids array, ≤50), legacy {postId, action} still accepted, one AuditLog row per target.
+  - Settings UI: bulk action bar (N selected → Restore/Dismiss/Delete selected + clear), per-post checkboxes,
+    hidden-comment cards (orange, EyeOff badge, parent post title, Restore/Delete with confirm dialog).
+    Queue-empty state now requires BOTH queues empty.
+  - E2E VERIFIED via API: hide comment → commentQueue size 1 + stats.hiddenComments 1 → bulk restore via ids →
+    "Comment restored — 1 processed"; 401 without session; hidden comment excluded from /api/community/comments;
+    UI console shows "5 posts · 0 hidden · 0 hidden comments · queue 0" badge + the comment-restore row in the
+    audit trail (screenshot /tmp/mod2.png).
+- AI NARRATIVE TYPEWRITER + REGENERATION TOAST (backlog #5):
+  - Dashboard types the weekly summary out progressively (~150 ticks @16ms, cursor blink); focus-tip box and
+    "Continue in AI Coach" fade in only after typing completes; text renders instantly when the user prefers
+    reduced-motion (a11y).
+  - Regenerating shows toast "Your weekly summary was updated ✨" (only when a previous narrative existed).
+  - E2E VERIFIED: screenshot caught mid-type ("...this we|") + toast visible (/tmp/mid-type.png).
+- STYLING DETAILS (mandatory):
+  - Community: rounded-full filter chips with live count pills; luxury `chandracycle-scroll` scrollbar on feed
+    ScrollArea and comments dialog.
+  - Doctor finder: booked-slot line-through/grey state + legend dot.
+  - Settings: violet bulk-action bar, orange hidden-comment cards, luxury scrollbar on moderation queue.
+  - Reports: Excel button now live (was disabled/greyed).
+  - Dashboard: typewriter cursor + min-height to prevent layout shift.
+- ENVIRONMENT: dev server reaped twice this round again — the setsid double-fork restart is the reliable fix.
+  Stale browser-console errors for doctor-finder.tsx:55/57 from the OLD pre-self-heal session reappear in
+  `agent-browser console` history; file verified clean (single imports), fresh load has ZERO console errors.
+  Mitigation stands: always hard-reload + console --clear before trusting console output.
+
+Stage Summary:
+- ✅ Shipped & verified: appointment double-booking guard (server+client+UI), server-side community category
+  filtering (+like-reload & gamification bug fixes), real 6-sheet XLSX export, admin comment moderation with
+  bulk actions + audit trail, typewriter AI narrative with regeneration toast, and the mandatory styling round.
+- Lint: 0 errors 0 warnings. Fresh browser console: clean. dev.log: clean.
+- DB state changes: Comment.hidden column added (default false, all visible); test appointment created+deleted;
+  1 comment hidden+restored during verification (final state unchanged); narrative cache refreshed by regenerate.
+- Remaining backlog (next round):
+  1. Community: report-comment flow for users (currently only admins can hide comments; model field ready).
+  2. Admin console: user flagging surface (AdminUser model ready), moderation stats over time.
+  3. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider a visible
+     "demo directory" notice.
+  4. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+  5. Consider i18n (hi/ta) for the menstrual-health copy, and PWA manifest for installability.

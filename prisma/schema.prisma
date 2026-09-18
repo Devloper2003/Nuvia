@@ -471,6 +471,7 @@ model Comment {
   userId    String
   content   String
   isAnonymous Boolean @default(true)
+  hidden    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   post CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)

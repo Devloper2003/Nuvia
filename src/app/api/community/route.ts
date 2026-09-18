@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
             select: { id: true, name: true, avatar: true },
           },
           comments: {
+            where: { hidden: false },
             include: {
               user: {
                 select: { id: true, name: true, avatar: true },
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
           select: { id: true, name: true, avatar: true },
         },
         comments: {
+          where: { hidden: false },
           include: {
             user: {
               select: { id: true, name: true, avatar: true },
@@ -190,6 +192,7 @@ export async function PATCH(request: NextRequest) {
         include: {
           user: { select: { id: true, name: true, avatar: true } },
           comments: {
+            where: { hidden: false },
             include: { user: { select: { id: true, name: true, avatar: true } } },
           },
         },
@@ -214,6 +217,7 @@ export async function PATCH(request: NextRequest) {
       include: {
         user: { select: { id: true, name: true, avatar: true } },
         comments: {
+          where: { hidden: false },
           include: { user: { select: { id: true, name: true, avatar: true } } },
         },
       },

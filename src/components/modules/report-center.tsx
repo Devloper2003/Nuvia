@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import * as XLSX from 'xlsx'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -213,6 +214,74 @@ export default function ReportsModule() {
     a.click()
     URL.revokeObjectURL(url)
     toast.success('CSV report downloaded')
+  }
+
+  // ── Excel export (real multi-sheet .xlsx workbook via SheetJS) ────────────
+  const handleExportExcel = () => {
+    if (!data) return
+    try {
+      const wb = XLSX.utils.book_new()
+
+      // Sheet 1 — Summary: headline metrics current vs previous
+      const summary = XLSX.utils.aoa_to_sheet([
+        ['ChandraCycle Health Report'],
+        ['Window', `${data.period?.startDate ?? ''} → ${data.period?.endDate ?? ''}`],
+        ['Generated', new Date().toLocaleString('en-IN')],
+        [],
+        ['Metric', 'Current', 'Previous'],
+        ['Wellness Score', data.wellnessScore, data.prevWellnessScore],
+        ['Cycle Regularity', data.cycleRegularity, data.prevCycleRegularity],
+        ['Symptom Severity', data.symptomSeverity, data.prevSymptomSeverity],
+        ['Mood Stability', data.moodStability, data.prevMoodStability],
+        ['Sleep Average (h)', data.sleepAvg, ''],
+        ['Water Average (glasses)', data.waterAvg, ''],
+      ])
+      summary['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }]
+      XLSX.utils.book_append_sheet(wb, summary, 'Summary')
+
+      // Sheet 2 — Trends
+      const trends = XLSX.utils.json_to_sheet(
+        data.trendLine.map((t) => ({ Period: t.label, Wellness: t.wellness, Symptoms: t.symptoms }))
+      )
+      trends['!cols'] = [{ wch: 16 }, { wch: 12 }, { wch: 12 }]
+      XLSX.utils.book_append_sheet(wb, trends, 'Trends')
+
+      // Sheet 3 — Symptoms
+      const symptoms = XLSX.utils.json_to_sheet(
+        data.symptomFrequency.map((s) => ({ Symptom: s.name, Count: s.count }))
+      )
+      symptoms['!cols'] = [{ wch: 26 }, { wch: 10 }]
+      XLSX.utils.book_append_sheet(wb, symptoms, 'Symptoms')
+
+      // Sheet 4 — Mood
+      const moods = XLSX.utils.json_to_sheet(
+        data.moodDistribution.map((m) => ({ Mood: m.name, Entries: m.value }))
+      )
+      moods['!cols'] = [{ wch: 18 }, { wch: 10 }]
+      XLSX.utils.book_append_sheet(wb, moods, 'Mood')
+
+      // Sheet 5 — Cycle milestones
+      const cycle = XLSX.utils.json_to_sheet(
+        data.cycleSummary.map((c) => ({ Day: c.day, Phase: c.phase, Note: c.note }))
+      )
+      cycle['!cols'] = [{ wch: 8 }, { wch: 18 }, { wch: 52 }]
+      XLSX.utils.book_append_sheet(wb, cycle, 'Cycle Log')
+
+      // Sheet 6 — Insights
+      const insights = XLSX.utils.aoa_to_sheet([
+        ['AI Insights'],
+        ...data.insights.map((i, idx) => [`${idx + 1}.`, i]),
+      ])
+      insights['!cols'] = [{ wch: 6 }, { wch: 80 }]
+      XLSX.utils.book_append_sheet(wb, insights, 'Insights')
+
+      XLSX.writeFile(wb, `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.xlsx`)
+      toast.success('Excel workbook downloaded', {
+        description: '6 sheets: Summary, Trends, Symptoms, Mood, Cycle Log, Insights.',
+      })
+    } catch {
+      toast.error('Could not generate the Excel file')
+    }
   }
 
   // ── PDF export: opens a print-ready report in a new tab and triggers the ──
@@ -865,9 +934,9 @@ export default function ReportsModule() {
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled
-                    title="Excel export is coming soon"
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700/50 dark:text-teal-300/50"
+                    disabled={!data}
+                    onClick={handleExportExcel}
+                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
                   >
                     <FileSpreadsheet className="size-3.5 mr-1.5" />
                     Excel

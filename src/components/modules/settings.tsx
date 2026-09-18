@@ -49,6 +49,8 @@ import {
   CheckCircle2,
   ShieldAlert,
   Eye,
+  EyeOff,
+  MessageSquare,
 } from 'lucide-react'
 import {
   Card,
@@ -429,17 +431,29 @@ export default function SettingsModule() {
     details: string | null
     createdAt: string
   }
+  interface ModComment {
+    id: string
+    content: string
+    createdAt: string
+    author: { id: string; name: string | null; email: string }
+    post: { id: string; title: string }
+  }
   const [adminToken, setAdminToken] = useState<string | null>(null)
   const [adminName, setAdminName] = useState<string | null>(null)
   const [adminEmail, setAdminEmail] = useState('admin@chandracycle.app')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminLoggingIn, setAdminLoggingIn] = useState(false)
   const [modQueue, setModQueue] = useState<ModPost[]>([])
-  const [modStats, setModStats] = useState<{ totalPosts: number; hiddenCount: number; queueSize: number } | null>(null)
+  const [modComments, setModComments] = useState<ModComment[]>([])
+  const [modStats, setModStats] = useState<{ totalPosts: number; totalComments: number; hiddenCount: number; hiddenComments: number; queueSize: number } | null>(null)
   const [modAudit, setModAudit] = useState<AuditEntry[]>([])
   const [modLoading, setModLoading] = useState(false)
   const [modBusyId, setModBusyId] = useState<string | null>(null)
   const [deletePostId, setDeletePostId] = useState<string | null>(null)
+  const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null)
+  // Bulk selection on the post queue
+  const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const loadModQueue = useCallback(async (token: string) => {
     setModLoading(true)
@@ -450,8 +464,10 @@ export default function SettingsModule() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to load queue')
       setModQueue(data.queue ?? [])
+      setModComments(data.commentQueue ?? [])
       setModStats(data.stats ?? null)
       setModAudit(data.auditLog ?? [])
+      setSelectedPostIds(new Set())
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Moderation queue failed to load')
     } finally {
@@ -517,8 +533,10 @@ export default function SettingsModule() {
     setAdminToken(null)
     setAdminName(null)
     setModQueue([])
+    setModComments([])
     setModStats(null)
     setModAudit([])
+    setSelectedPostIds(new Set())
     try {
       sessionStorage.removeItem(ADMIN_STORAGE_KEY)
     } catch {
@@ -527,9 +545,13 @@ export default function SettingsModule() {
     toast.success('Moderator signed out')
   }
 
-  const handleModAction = async (postId: string, action: 'restore' | 'dismiss' | 'delete') => {
+  const handleModAction = async (
+    targetType: 'post' | 'comment',
+    id: string,
+    action: 'restore' | 'dismiss' | 'delete'
+  ) => {
     if (!adminToken) return
-    setModBusyId(postId)
+    setModBusyId(id)
     try {
       const res = await fetch('/api/admin/moderation', {
         method: 'PATCH',
@@ -537,7 +559,7 @@ export default function SettingsModule() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${adminToken}`,
         },
-        body: JSON.stringify({ postId, action }),
+        body: JSON.stringify({ targetType, id, action }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Action failed')
@@ -548,7 +570,41 @@ export default function SettingsModule() {
     } finally {
       setModBusyId(null)
       setDeletePostId(null)
+      setDeleteCommentId(null)
     }
+  }
+
+  // Bulk moderation on the selected post queue items.
+  const handleBulkAction = async (action: 'restore' | 'dismiss' | 'delete') => {
+    if (!adminToken || selectedPostIds.size === 0) return
+    setBulkBusy(true)
+    try {
+      const res = await fetch('/api/admin/moderation', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ targetType: 'post', ids: Array.from(selectedPostIds), action }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Bulk action failed')
+      toast.success(data.message || 'Bulk action done')
+      loadModQueue(adminToken)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Bulk action failed')
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const togglePostSelection = (postId: string) => {
+    setSelectedPostIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(postId)) next.delete(postId)
+      else next.add(postId)
+      return next
+    })
   }
 
   const themeOptions = [
@@ -984,7 +1040,7 @@ export default function SettingsModule() {
               </Badge>
               {modStats && (
                 <Badge variant="outline" className="text-[10px]">
-                  {modStats.totalPosts} posts · {modStats.hiddenCount} hidden · queue {modStats.queueSize}
+                  {modStats.totalPosts} posts · {modStats.hiddenCount} hidden · {modStats.hiddenComments} hidden comments · queue {modStats.queueSize}
                 </Badge>
               )}
               <div className="ml-auto flex items-center gap-2">
@@ -997,12 +1053,46 @@ export default function SettingsModule() {
               </div>
             </div>
 
+            {/* Bulk action bar */}
+            {selectedPostIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-50/60 dark:bg-violet-950/20 px-3 py-2">
+                <Badge className="bg-violet-600 text-white border-0 text-[10px] h-5">
+                  {selectedPostIds.size} selected
+                </Badge>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkAction('restore')}
+                >
+                  {bulkBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
+                  Restore selected
+                </Button>
+                <Button size="sm" variant="outline" className="h-7 text-xs" disabled={bulkBusy} onClick={() => handleBulkAction('dismiss')}>
+                  Dismiss selected
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                  disabled={bulkBusy}
+                  onClick={() => handleBulkAction('delete')}
+                >
+                  <Trash2 className="h-3 w-3 mr-1" /> Delete selected
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedPostIds(new Set())}>
+                  Clear selection
+                </Button>
+              </div>
+            )}
+
             {/* Queue */}
             {modLoading && modQueue.length === 0 ? (
               <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" /> Loading moderation queue…
               </div>
-            ) : modQueue.length === 0 ? (
+            ) : modQueue.length === 0 && modComments.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-6 text-center border rounded-xl bg-muted/20">
                 <CheckCircle2 className="h-8 w-8 text-emerald-500 mb-2" />
                 <p className="text-sm font-medium">Queue is clear</p>
@@ -1011,7 +1101,7 @@ export default function SettingsModule() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1 chandracycle-scroll">
                 {modQueue.map((post) => (
                   <div
                     key={post.id}
@@ -1023,6 +1113,19 @@ export default function SettingsModule() {
                     )}
                   >
                     <div className="flex items-start gap-2.5">
+                      <button
+                        type="button"
+                        aria-label={selectedPostIds.has(post.id) ? 'Deselect post' : 'Select post'}
+                        onClick={() => togglePostSelection(post.id)}
+                        className={cn(
+                          'mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors',
+                          selectedPostIds.has(post.id)
+                            ? 'bg-violet-600 border-violet-600 text-white'
+                            : 'border-muted-foreground/40 hover:border-violet-500'
+                        )}
+                      >
+                        {selectedPostIds.has(post.id) && <Check className="h-3 w-3" />}
+                      </button>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold leading-snug">{post.title}</span>
@@ -1054,7 +1157,7 @@ export default function SettingsModule() {
                         variant="outline"
                         className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                         disabled={modBusyId === post.id}
-                        onClick={() => handleModAction(post.id, 'restore')}
+                        onClick={() => handleModAction('post', post.id, 'restore')}
                       >
                         {modBusyId === post.id ? (
                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -1068,7 +1171,7 @@ export default function SettingsModule() {
                         variant="outline"
                         className="h-7 text-xs"
                         disabled={modBusyId === post.id}
-                        onClick={() => handleModAction(post.id, 'dismiss')}
+                        onClick={() => handleModAction('post', post.id, 'dismiss')}
                       >
                         Dismiss (keep hidden)
                       </Button>
@@ -1095,9 +1198,84 @@ export default function SettingsModule() {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
                               className="bg-rose-600 hover:bg-rose-700 text-white"
-                              onClick={() => handleModAction(post.id, 'delete')}
+                              onClick={() => handleModAction('post', post.id, 'delete')}
                             >
                               Delete post
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Hidden comments queue */}
+                {modComments.map((comment) => (
+                  <div
+                    key={comment.id}
+                    className="rounded-xl border border-orange-200 dark:border-orange-900 bg-orange-50/40 dark:bg-orange-950/10 p-3.5 space-y-2.5"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 flex h-4 w-4 items-center justify-center text-orange-500">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300 border-0 text-[10px] h-5">
+                            <EyeOff className="h-2.5 w-2.5 mr-1" /> Hidden comment
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            on &ldquo;{comment.post.title}&rdquo;
+                          </span>
+                        </div>
+                        <p className="text-xs text-foreground mt-1 line-clamp-2">{comment.content}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                          <span>by {comment.author.name ?? comment.author.email}</span>
+                          <span>{new Date(comment.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                        disabled={modBusyId === comment.id}
+                        onClick={() => handleModAction('comment', comment.id, 'restore')}
+                      >
+                        {modBusyId === comment.id ? (
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                        )}
+                        Restore comment
+                      </Button>
+                      <AlertDialog open={deleteCommentId === comment.id} onOpenChange={(open) => setDeleteCommentId(open ? comment.id : null)}>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                            disabled={modBusyId === comment.id}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" /> Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this comment permanently?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-sm leading-relaxed">
+                              &ldquo;{comment.content.slice(0, 100)}&rdquo; will be permanently removed from
+                              &ldquo;{comment.post.title}&rdquo;. This action is recorded in the audit trail and cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                              onClick={() => handleModAction('comment', comment.id, 'delete')}
+                            >
+                              Delete comment
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

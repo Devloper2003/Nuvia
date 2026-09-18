@@ -19,8 +19,8 @@ async function requireAdmin(request: NextRequest) {
 
 // ─── GET /api/admin/moderation ───────────────────────────────────────────────
 // Returns the moderation queue: every community post that has been reported
-// (reportedCount > 0) or auto-hidden (hidden = true), plus recent audit-log
-// entries so the operator sees what other moderators did.
+// (reportedCount > 0) or auto-hidden (hidden = true), every hidden comment,
+// plus recent audit-log entries so the operator sees what other moderators did.
 export async function GET(request: NextRequest) {
   try {
     const admin = await requireAdmin(request)
@@ -43,14 +43,24 @@ export async function GET(request: NextRequest) {
       orderBy: [{ hidden: 'desc' }, { reportedCount: 'desc' }, { updatedAt: 'desc' }],
     })
 
+    const commentQueue = await db.comment.findMany({
+      where: { hidden: true },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        post: { select: { id: true, title: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
     const totalPosts = await db.communityPost.count()
     const totalComments = await db.comment.count()
     const hiddenCount = await db.communityPost.count({ where: { hidden: true } })
+    const hiddenComments = await db.comment.count({ where: { hidden: true } })
 
     const auditLog = await db.auditLog.findMany({
-      where: { targetType: 'community_post' },
+      where: { targetType: { in: ['community_post', 'community_comment'] } },
       orderBy: { createdAt: 'desc' },
-      take: 8,
+      take: 12,
     })
 
     return NextResponse.json({
@@ -67,7 +77,14 @@ export async function GET(request: NextRequest) {
         author: p.user,
         commentCount: p._count.comments,
       })),
-      stats: { totalPosts, totalComments, hiddenCount, queueSize: queue.length },
+      commentQueue: commentQueue.map((c) => ({
+        id: c.id,
+        content: c.content,
+        createdAt: c.createdAt,
+        author: c.user,
+        post: c.post,
+      })),
+      stats: { totalPosts, totalComments, hiddenCount, hiddenComments, queueSize: queue.length },
       auditLog,
       admin: { name: admin.name, email: admin.email, role: admin.role },
     })
@@ -81,11 +98,18 @@ export async function GET(request: NextRequest) {
 }
 
 // ─── PATCH /api/admin/moderation ─────────────────────────────────────────────
-// Body: { postId, action: 'restore' | 'dismiss' | 'delete' }
-//   restore  → unhide the post and clear its reports (false-positive review)
-//   dismiss  → clear the reports but KEEP the post hidden (reports were valid)
-//   delete   → permanently remove the post and its comments
-// Every action is written to the AuditLog trail.
+// Body (single):
+//   { targetType: 'post',    id, action: 'restore' | 'dismiss' | 'delete' }
+//   { targetType: 'comment', id, action: 'restore' | 'delete' }
+// Body (bulk):
+//   { targetType: 'post' | 'comment', ids: string[], action: '...' }
+// Legacy body still accepted: { postId, action }.
+//   post restore  → unhide the post and clear its reports (false-positive review)
+//   post dismiss  → clear the reports but KEEP the post hidden (reports were valid)
+//   post delete   → permanently remove the post and its comments
+//   comment restore → unhide a moderator-hidden comment
+//   comment delete  → permanently remove the comment
+// Every action is written to the AuditLog trail (one row per target).
 export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireAdmin(request)
@@ -96,54 +120,122 @@ export async function PATCH(request: NextRequest) {
       )
     }
 
-    const { postId, action } = await request.json()
-    if (!postId || !['restore', 'dismiss', 'delete'].includes(action)) {
+    const body = await request.json()
+    const { targetType = 'post', action, ids } = body
+    const id = body.id ?? body.postId
+    const validActions = ['restore', 'dismiss', 'delete']
+
+    if (!action || !validActions.includes(action)) {
       return NextResponse.json(
-        { error: 'postId and action (restore|dismiss|delete) are required' },
+        { error: 'action (restore|dismiss|delete) is required' },
+        { status: 400 }
+      )
+    }
+    if (targetType !== 'post' && targetType !== 'comment') {
+      return NextResponse.json(
+        { error: 'targetType must be "post" or "comment"' },
         { status: 400 }
       )
     }
 
-    const post = await db.communityPost.findUnique({
-      where: { id: postId },
-      include: { user: { select: { name: true, email: true } } },
-    })
-    if (!post) {
-      return NextResponse.json({ error: 'Post not found' }, { status: 404 })
+    const targetIds: string[] = Array.isArray(ids)
+      ? ids.filter((x: unknown): x is string => typeof x === 'string')
+      : [id]
+    if (targetIds.length === 0 || targetIds.some((x) => !x)) {
+      return NextResponse.json(
+        { error: 'id (or ids array) is required' },
+        { status: 400 }
+      )
+    }
+    if (targetIds.length > 50) {
+      return NextResponse.json(
+        { error: 'Bulk actions are limited to 50 items at a time' },
+        { status: 400 }
+      )
     }
 
-    let message = ''
-    if (action === 'restore') {
-      await db.communityPost.update({
-        where: { id: postId },
-        data: { hidden: false, reportedCount: 0 },
-      })
-      message = `"${post.title}" restored to the community feed`
-    } else if (action === 'dismiss') {
-      await db.communityPost.update({
-        where: { id: postId },
-        data: { reportedCount: 0, hidden: true },
-      })
-      message = `Reports dismissed — "${post.title}" stays hidden`
-    } else {
-      await db.comment.deleteMany({ where: { postId } })
-      await db.communityPost.delete({ where: { id: postId } })
-      message = `"${post.title}" permanently deleted`
+    const results = { processed: 0, missing: 0 }
+    for (const targetId of targetIds) {
+      if (targetType === 'post') {
+        const post = await db.communityPost.findUnique({
+          where: { id: targetId },
+          include: { user: { select: { name: true, email: true } } },
+        })
+        if (!post) {
+          results.missing++
+          continue
+        }
+        let message = ''
+        if (action === 'restore') {
+          await db.communityPost.update({
+            where: { id: targetId },
+            data: { hidden: false, reportedCount: 0 },
+          })
+          message = `"${post.title}" restored to the community feed`
+        } else if (action === 'dismiss') {
+          await db.communityPost.update({
+            where: { id: targetId },
+            data: { reportedCount: 0, hidden: true },
+          })
+          message = `Reports dismissed — "${post.title}" stays hidden`
+        } else {
+          await db.comment.deleteMany({ where: { postId: targetId } })
+          await db.communityPost.delete({ where: { id: targetId } })
+          message = `"${post.title}" permanently deleted`
+        }
+        await db.auditLog.create({
+          data: {
+            adminId: admin.id,
+            adminName: admin.name,
+            action: `moderation:${action}`,
+            targetType: 'community_post',
+            targetId: post.id,
+            targetLabel: post.title,
+            details: `Author: ${post.user.name ?? post.user.email} · reports: ${post.reportedCount} · wasHidden: ${post.hidden}`,
+          },
+        })
+        results.processed++
+      } else {
+        const comment = await db.comment.findUnique({
+          where: { id: targetId },
+          include: {
+            user: { select: { name: true, email: true } },
+            post: { select: { id: true, title: true } },
+          },
+        })
+        if (!comment) {
+          results.missing++
+          continue
+        }
+        if (action === 'restore') {
+          await db.comment.update({
+            where: { id: targetId },
+            data: { hidden: false },
+          })
+        } else {
+          await db.comment.delete({ where: { id: targetId } })
+        }
+        await db.auditLog.create({
+          data: {
+            adminId: admin.id,
+            adminName: admin.name,
+            action: `moderation:${action}`,
+            targetType: 'community_comment',
+            targetId: comment.id,
+            targetLabel: comment.content.slice(0, 80),
+            details: `Author: ${comment.user.name ?? comment.user.email} · post: "${comment.post.title}" · action: ${action}`,
+          },
+        })
+        results.processed++
+      }
     }
 
-    await db.auditLog.create({
-      data: {
-        adminId: admin.id,
-        adminName: admin.name,
-        action: `moderation:${action}`,
-        targetType: 'community_post',
-        targetId: post.id,
-        targetLabel: post.title,
-        details: `Author: ${post.user.name ?? post.user.email} · reports: ${post.reportedCount} · wasHidden: ${post.hidden}`,
-      },
-    })
+    const message =
+      targetIds.length === 1
+        ? `${targetType === 'post' ? 'Post' : 'Comment'} ${action === 'restore' ? 'restored' : action === 'dismiss' ? 'dismissed' : 'deleted'} — ${results.processed} processed`
+        : `Bulk ${action}: ${results.processed} ${targetType}(s) processed${results.missing ? `, ${results.missing} not found` : ''}`
 
-    return NextResponse.json({ success: true, message })
+    return NextResponse.json({ success: true, message, ...results })
   } catch (error) {
     console.error('Moderation action error:', error)
     return NextResponse.json(

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     }
 
     const comments = await db.comment.findMany({
-      where: { postId },
+      where: { postId, hidden: false },
       include: {
         user: { select: { id: true, name: true, avatar: true } },
       },

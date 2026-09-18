@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
@@ -268,6 +268,12 @@ export default function CommunityModule() {
   const nextOffsetRef = useRef(0)
   const [posting, setPosting] = useState(false)
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
+  // Ref mirror of likedIds so mapping/loading doesn't need it in deps
+  // (otherwise every like would re-trigger a full feed reload).
+  const likedIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    likedIdsRef.current = likedIds
+  }, [likedIds])
   const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All')
   const [supportGroups] = useState<SupportGroup[]>(initialSupportGroups)
   const [challenges] = useState<Challenge[]>(initialChallenges)
@@ -289,16 +295,18 @@ export default function CommunityModule() {
   const [reportPost, setReportPost] = useState<Post | null>(null)
   const [reportReason, setReportReason] = useState<string>(REPORT_REASONS[0])
 
-  // ─── Data loading (paginated) ─────────────────────────────────────────────
+  // ─── Server-side paginated + category-filtered loading ────────────────────
   const PAGE_SIZE = 4
+  const categoryQuery = (cat: Category | 'All') =>
+    cat === 'All' ? '' : `&category=${encodeURIComponent(toApiCategory[cat])}`
 
   const mapPage = (data: ApiPost[]) =>
-    data.map((p) => mapApiPost(p, userProfile?.id, likedIds))
+    data.map((p) => mapApiPost(p, userProfile?.id, likedIdsRef.current))
 
-  const loadPosts = useCallback(async () => {
+  const loadPosts = useCallback(async (cat: Category | 'All' = 'All') => {
     try {
       nextOffsetRef.current = 0
-      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=0`)
+      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=0${categoryQuery(cat)}`)
       if (!res.ok) throw new Error('Failed to load posts')
       const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
       setPosts(mapPage(data.posts))
@@ -310,13 +318,15 @@ export default function CommunityModule() {
     } finally {
       setLoading(false)
     }
-  }, [userProfile?.id, likedIds])
+  }, [userProfile?.id])
 
   const loadMorePosts = async () => {
     if (loadingMore) return
     setLoadingMore(true)
     try {
-      const res = await fetch(`/api/community?limit=${PAGE_SIZE}&offset=${nextOffsetRef.current}`)
+      const res = await fetch(
+        `/api/community?limit=${PAGE_SIZE}&offset=${nextOffsetRef.current}${categoryQuery(activeCategory)}`
+      )
       if (!res.ok) throw new Error('Failed to load more posts')
       const data = (await res.json()) as { posts: ApiPost[]; total: number; hasMore: boolean; nextOffset: number }
       setPosts((prev) => [...prev, ...mapPage(data.posts)])
@@ -329,30 +339,70 @@ export default function CommunityModule() {
     }
   }
 
+  // Initial load (All)
   useEffect(() => {
-    loadPosts()
+    loadPosts('All')
   }, [loadPosts])
+
+  // Server-side category filter: reload page 1 whenever the filter changes.
+  const firstCategoryRender = useRef(true)
+  useEffect(() => {
+    if (firstCategoryRender.current) {
+      firstCategoryRender.current = false
+      return
+    }
+    setLoading(true)
+    loadPosts(activeCategory)
+  }, [activeCategory, loadPosts])
 
   // ─── Derived ────────────────────────────────────────────────────
   const filteredPosts = activeCategory === 'All'
     ? posts
     : posts.filter(p => p.category === activeCategory)
 
+  // Full-stats snapshot (legacy endpoint returns the entire feed) — keeps
+  // trending topics, category chip counts and gamification accurate even
+  // though the visible feed is paginated/filtered.
+  const [statsPosts, setStatsPosts] = useState<ApiPost[]>([])
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/community')
+      .then((r) => (r.ok ? r.json() : Promise.resolve([])))
+      .then((data: ApiPost[]) => {
+        if (!cancelled && Array.isArray(data)) setStatsPosts(data)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [totalPosts])
+
+  const mappedStats = useMemo(
+    () => statsPosts.map((p) => mapApiPost(p, userProfile?.id, likedIdsRef.current)),
+    [statsPosts, userProfile?.id]
+  )
+
+  // Per-category totals for the filter chips
+  const categoryCounts = useMemo(() => {
+    const counts = {} as Record<Category, number>
+    for (const cat of categories) counts[cat] = 0
+    for (const p of mappedStats) counts[p.category] = (counts[p.category] ?? 0) + 1
+    return counts
+  }, [mappedStats])
+
   // Live trending topics — top categories by post count
   const trendingTopics: TrendingTopic[] = categories
     .map((cat, i) => ({
       id: String(i + 1),
       topic: `#${cat.replace(' ', '')}`,
-      posts: posts.filter(p => p.category === cat).length,
-      trending: posts.filter(p => p.category === cat).length >= 2,
+      posts: categoryCounts[cat] ?? 0,
+      trending: (categoryCounts[cat] ?? 0) >= 2,
     }))
     .filter(t => t.posts > 0)
     .sort((a, b) => b.posts - a.posts)
     .slice(0, 5)
 
   // Gamification — derived from REAL community activity
-  const myPosts = posts.filter(p => userProfile && !p.isAnonymous).length
-  const supportScore = myPosts * 20 + posts.reduce((acc, p) => acc + p.likes, 0) * 5
+  const myPosts = mappedStats.filter(p => userProfile && p.isOwn).length
+  const supportScore = myPosts * 20 + mappedStats.reduce((acc, p) => acc + p.likes, 0) * 5
   const nextLevel = 100
   const level = Math.floor(supportScore / nextLevel) + 1
   const levelNames = ['Newcomer', 'Friend', 'Supporter', 'Advocate', 'Champion', 'Guardian']
@@ -361,8 +411,8 @@ export default function CommunityModule() {
     ...b,
     earned:
       (b.id === '1' && myPosts >= 1) ||
-      (b.id === '5' && posts.some(p => p.likes >= 5)) ||
-      (b.id === '3' && posts.reduce((acc, p) => acc + p.comments, 0) >= 3),
+      (b.id === '5' && mappedStats.some(p => p.likes >= 5)) ||
+      (b.id === '3' && mappedStats.reduce((acc, p) => acc + p.comments, 0) >= 3),
   }))
 
   const generateAnonName = () => {
@@ -396,8 +446,14 @@ export default function CommunityModule() {
         throw new Error(err.error || 'Failed to create post')
       }
       const created: ApiPost = await res.json()
-      setPosts(prev => [mapApiPost(created, userProfile.id, likedIds), ...prev])
-      setTotalPosts(t => t + 1)
+      const createdUi = mapApiPost(created, userProfile.id, likedIdsRef.current)
+      // Only prepend when it matches the active server-side filter.
+      if (activeCategory === 'All' || createdUi.category === activeCategory) {
+        setPosts(prev => [createdUi, ...prev])
+        setTotalPosts(t => t + 1)
+      } else {
+        toast.success(`Posted! Switch to #${createdUi.category} to see it in the feed.`)
+      }
       setNewPost({ title: '', content: '', category: 'General', anonymous: true })
       setDialogOpen(false)
       toast.success('Post shared with the community 💙')
@@ -760,21 +816,27 @@ export default function CommunityModule() {
                 <Button
                   size="sm"
                   variant={activeCategory === 'All' ? 'default' : 'outline'}
-                  className={`text-xs shrink-0 ${activeCategory === 'All' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+                  className={`text-xs shrink-0 rounded-full ${activeCategory === 'All' ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
                   onClick={() => setActiveCategory('All')}
                 >
                   <Filter className="h-3 w-3 mr-1" /> All
+                  <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === 'All' ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+                    {totalPosts}
+                  </span>
                 </Button>
                 {categories.map(cat => (
                   <Button
                     key={cat}
                     size="sm"
                     variant={activeCategory === cat ? 'default' : 'outline'}
-                    className={`text-xs shrink-0 ${activeCategory === cat ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
+                    className={`text-xs shrink-0 rounded-full ${activeCategory === cat ? 'bg-sky-500 hover:bg-sky-600 text-white' : ''}`}
                     onClick={() => setActiveCategory(cat)}
                   >
                     <Hash className="h-3 w-3 mr-1" />
                     {cat}
+                    <span className={`ml-1.5 rounded-full px-1.5 text-[10px] leading-4 ${activeCategory === cat ? 'bg-white/25 text-white' : 'bg-muted text-muted-foreground'}`}>
+                      {categoryCounts[cat] ?? 0}
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -809,7 +871,7 @@ export default function CommunityModule() {
                   </CardContent>
                 </Card>
               ) : (
-                <ScrollArea className="max-h-[600px]">
+                <ScrollArea className="max-h-[600px] chandracycle-scroll">
                   <div className="space-y-3">
                     {filteredPosts.map((post, idx) => (
                       <motion.div
@@ -1202,7 +1264,7 @@ export default function CommunityModule() {
             <DialogDescription>Support others with a kind reply</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-1">
-            <ScrollArea className="max-h-64">
+            <ScrollArea className="max-h-64 chandracycle-scroll">
               {commentsLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-sky-500" />

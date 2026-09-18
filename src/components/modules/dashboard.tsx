@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -236,6 +236,41 @@ export default function DashboardModule() {
   const [narrativeTip, setNarrativeTip] = useState<string | null>(null)
   const [narrativeLoading, setNarrativeLoading] = useState(false)
   const [narrativeCached, setNarrativeCached] = useState(false)
+  // Typewriter rendering of the narrative
+  const [narrativeTyped, setNarrativeTyped] = useState('')
+  const [typingDone, setTypingDone] = useState(false)
+  const hadNarrativeRef = useRef(false)
+
+  // Type the narrative out progressively whenever a new one arrives.
+  useEffect(() => {
+    if (!narrative) {
+      setNarrativeTyped('')
+      setTypingDone(false)
+      return
+    }
+    setNarrativeTyped('')
+    setTypingDone(false)
+    // Respect reduced-motion preferences: show the full text immediately.
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setNarrativeTyped(narrative)
+      setTypingDone(true)
+      return
+    }
+    let i = 0
+    // Finish in roughly 150 ticks (~2.4s at 16ms) regardless of length.
+    const step = Math.max(2, Math.ceil(narrative.length / 150))
+    const timer = setInterval(() => {
+      i += step
+      if (i >= narrative.length) {
+        setNarrativeTyped(narrative)
+        setTypingDone(true)
+        clearInterval(timer)
+      } else {
+        setNarrativeTyped(narrative.slice(0, i))
+      }
+    }, 16)
+    return () => clearInterval(timer)
+  }, [narrative])
 
   // ─── LLM weekly narrative (cached server-side, 6h TTL) ─────────────────────
   const loadNarrative = useCallback(
@@ -266,6 +301,10 @@ export default function DashboardModule() {
         setNarrative(body || null)
         setNarrativeTip(tip)
         setNarrativeCached(Boolean(data.cached))
+        if (force && hadNarrativeRef.current) {
+          toast.success('Your weekly summary was updated ✨')
+        }
+        hadNarrativeRef.current = true
       }
     } catch {
       // Narrative is best-effort — the rule-based insights below still show.
@@ -873,21 +912,39 @@ export default function DashboardModule() {
                         Regenerate
                       </button>
                     </div>
-                    <p className="text-xs leading-relaxed text-foreground">{narrative}</p>
-                    {narrativeTip && (
-                      <div className="mt-3 flex items-start gap-2 rounded-lg bg-primary/8 dark:bg-primary/10 border border-primary/15 p-2.5">
+                    <p className="text-xs leading-relaxed text-foreground min-h-[2.5rem]">
+                      {narrativeTyped}
+                      {!typingDone && (
+                        <span
+                          aria-hidden
+                          className="ml-0.5 inline-block h-3 w-[2px] translate-y-[2px] rounded-sm bg-primary animate-pulse"
+                        />
+                      )}
+                    </p>
+                    {narrativeTip && typingDone && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35 }}
+                        className="mt-3 flex items-start gap-2 rounded-lg bg-primary/8 dark:bg-primary/10 border border-primary/15 p-2.5"
+                      >
                         <Zap className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
                         <p className="text-[11px] leading-relaxed text-foreground/90">
                           <span className="font-semibold">Focus tip:</span> {narrativeTip}
                         </p>
-                      </div>
+                      </motion.div>
                     )}
-                    <button
-                      onClick={() => setActiveModule('ai-coach')}
-                      className="mt-2.5 text-[10px] font-medium text-primary hover:underline"
-                    >
-                      Continue the conversation in AI Coach →
-                    </button>
+                    {typingDone && (
+                      <motion.button
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        onClick={() => setActiveModule('ai-coach')}
+                        className="mt-2.5 text-[10px] font-medium text-primary hover:underline"
+                      >
+                        Continue the conversation in AI Coach →
+                      </motion.button>
+                    )}
                   </motion.div>
                 ) : null}
 
