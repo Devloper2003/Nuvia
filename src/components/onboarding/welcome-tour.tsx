@@ -63,6 +63,10 @@ export interface TourStep {
  *  dismissed it on the same browser. */
 export const TOUR_SEEN_KEY = 'chandracycle_tour_seen'
 
+/** Initial height ESTIMATE for the tooltip card, used until the real rendered
+ *  height has been measured (see cardH state inside WelcomeTour). */
+const CARD_HEIGHT_ESTIMATE = 320
+
 /** Build a per-user "tour seen" localStorage key. Falls back to the legacy
  *  global key when no userId is available so existing flags still work. */
 export function getTourSeenKey(userId?: string | null): string {
@@ -179,6 +183,11 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  // Real rendered height of the tooltip card. Placement math uses this instead
+  // of a static estimate — on narrow phones the copy wraps to more lines than
+  // any guess can cover, which used to push the card past the viewport bottom.
+  const [cardH, setCardH] = useState(CARD_HEIGHT_ESTIMATE)
+  const cardRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number | null>(null)
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -278,6 +287,18 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
     measure()
   }, [open, stepIndex, isMobile, measure])
 
+  // ── Keep cardH in sync with the real card height ────────────────────────────
+  // Re-measured after every step render (copy changes height per step) and on
+  // viewport resize. Converges: setCardH only fires when the height moved >2px.
+  useEffect(() => {
+    if (!open) return
+    const id = requestAnimationFrame(() => {
+      const h = cardRef.current?.offsetHeight
+      if (h && Math.abs(h - cardH) > 2) setCardH(h)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [open, stepIndex, isMobile, cardH])
+
   // Listen to scroll & resize to keep the spotlight glued to its target
   useEffect(() => {
     if (!open) return
@@ -310,10 +331,18 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
   }
 
   // ── Tooltip placement math ────────────────────────────────────────────────
+  // NOTE: positioning NEVER relies on a CSS `transform` — framer-motion writes
+  // its own transform while animating scale/y, which would wipe out a
+  // `translate(-50%, -50%)` centering offset and throw the card into the
+  // bottom-right quadrant (cut off on mobile — seen on iPhone Safari).
+  // Centering is done with flex instead; spotlight placement uses numeric
+  // top/left only.
   const CARD_WIDTH = 360
-  const CARD_MAX_HEIGHT = 280
   const GAP = 16
   const edge = 16
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800
+  const vwW = typeof window !== 'undefined' ? window.innerWidth : 1200
+  const hClamp = Math.min(cardH, vh - edge * 2)
   // Effective width accounts for small viewports so positioning math never
   // pushes the tooltip off-screen on mobile (e.g. 320px wide phones).
   const effectiveWidth = Math.min(CARD_WIDTH, (typeof window !== 'undefined' ? window.innerWidth : 1200) - edge * 2)
@@ -329,60 +358,85 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
         }
         switch (activePlacement) {
           case 'top': {
-            style.top = Math.max(edge, rect.top - CARD_MAX_HEIGHT - GAP)
+            // Prefer above the target; if the card would poke past the top
+            // edge AND fits below instead, flip below (typical mobile case:
+            // tall card + bottom-nav target).
+            const above = rect.top - hClamp - GAP
+            if (above >= edge || rect.bottom + hClamp + GAP > vh) {
+              style.top = Math.max(edge, above)
+            } else {
+              style.top = Math.min(rect.bottom + GAP, vh - hClamp - edge)
+            }
             const proposedLeft = rect.left + rect.width / 2 - effectiveWidth / 2
             style.left = Math.min(
               Math.max(edge, proposedLeft),
-              window.innerWidth - effectiveWidth - edge,
+              vwW - effectiveWidth - edge,
             )
             break
           }
           case 'bottom': {
-            style.top = rect.bottom + GAP
+            style.top = Math.max(
+              edge,
+              Math.min(rect.bottom + GAP, vh - hClamp - edge),
+            )
             const proposedLeft = rect.left + rect.width / 2 - effectiveWidth / 2
             style.left = Math.min(
               Math.max(edge, proposedLeft),
-              window.innerWidth - effectiveWidth - edge,
+              vwW - effectiveWidth - edge,
             )
             break
           }
           case 'left': {
             style.left = Math.max(edge, rect.left - effectiveWidth - GAP)
-            const proposedTop = rect.top + rect.height / 2 - CARD_MAX_HEIGHT / 2
+            const proposedTop = rect.top + rect.height / 2 - hClamp / 2
             style.top = Math.min(
               Math.max(edge, proposedTop),
-              window.innerHeight - CARD_MAX_HEIGHT - edge,
+              vh - hClamp - edge,
             )
             break
           }
           case 'right': {
             style.left = Math.min(
-              window.innerWidth - effectiveWidth - edge,
+              vwW - effectiveWidth - edge,
               rect.right + GAP,
             )
-            const proposedTop = rect.top + rect.height / 2 - CARD_MAX_HEIGHT / 2
+            const proposedTop = rect.top + rect.height / 2 - hClamp / 2
             style.top = Math.min(
               Math.max(edge, proposedTop),
-              window.innerHeight - CARD_MAX_HEIGHT - edge,
+              vh - hClamp - edge,
             )
             break
           }
           default: {
-            style.top = '50%'
-            style.left = '50%'
-            style.transform = 'translate(-50%, -50%)'
-            style.width = 'min(92vw, 440px)'
+            // Numeric centering — no transform (framer-motion owns transform).
+            style.width = effectiveWidth
+            style.left = Math.max(
+              edge,
+              Math.round((vwW - effectiveWidth) / 2),
+            )
+            style.top = Math.max(
+              edge,
+              Math.min(
+                Math.round((vh - hClamp) / 2),
+                vh - hClamp - edge,
+              ),
+            )
           }
         }
         return style
       })()
     : {
+        // Centered fallback (intro/outro steps & steps without a target):
+        // a full-screen flex container centers the card WITHOUT transforms,
+        // so framer-motion's scale/y animation can never knock it off-center.
+        // Padding respects iOS/Android safe areas (notches, home indicator).
         position: 'fixed',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 'min(92vw, 440px)',
-        maxHeight: 'calc(100dvh - 32px)',
+        inset: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding:
+          'max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))',
         zIndex: 62,
       }
 
@@ -426,7 +480,7 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
               pointerEvents: 'none',
               zIndex: 61,
             }}
-            className="ring-2 ring-amber-400/80 ring-offset-0"
+            className="ring-2 ring-gold/90 ring-offset-0"
           />
         )}
       </AnimatePresence>
@@ -441,9 +495,17 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
           style={tooltipStyle}
         >
-          <Card className="overflow-hidden border-amber-300/40 shadow-2xl shadow-rose-500/20 max-h-[calc(100dvh-32px)] flex flex-col">
-            {/* Gradient header */}
-            <div className="relative bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 p-4 text-white">
+          <Card
+            ref={cardRef}
+            className={cn(
+              'overflow-hidden border-gold/40 shadow-2xl shadow-primary/25 max-h-[calc(100dvh-32px)] flex flex-col',
+              // Only the centered fallback spans its flex container; spotlight
+              // cards fill the numeric width from tooltipStyle instead.
+              !rect && 'w-full max-w-[440px]',
+            )}
+          >
+            {/* Gradient header — signature plum→rose (matches brand FAB) */}
+            <div className="relative bg-gradient-to-r from-[#6E366F] via-[#8E4463] to-[#C2497E] p-4 text-white">
               <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/15 blur-2xl pointer-events-none" />
               <div className="relative flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -487,7 +549,7 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
                       className={cn(
                         'h-1.5 rounded-full transition-all',
                         i === stepIndex
-                          ? 'w-6 bg-gradient-to-r from-amber-500 to-rose-500'
+                          ? 'w-6 bg-gradient-to-r from-gold to-amber-400'
                           : 'w-1.5 bg-muted-foreground/30',
                       )}
                     />
@@ -515,7 +577,7 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
                   <Button
                     size="sm"
                     onClick={handleNext}
-                    className="bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 text-white border-0 hover:opacity-90 shadow-md shadow-rose-500/30"
+                    className="btn-plum rounded-full min-h-11 border-0"
                   >
                     {isLast ? (
                       <>
@@ -555,7 +617,7 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.4 }}
           transition={{ delay: 0.3 }}
-          className="absolute bottom-6 right-6 text-amber-300/60 pointer-events-none"
+          className="absolute bottom-6 right-6 text-gold/60 pointer-events-none"
         >
           <Sparkles className="h-6 w-6" />
         </motion.div>

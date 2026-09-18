@@ -1576,3 +1576,43 @@ Stage Summary:
   4. i18n depth, analytics audit table, timezone quiet hours (carried).
   5. Known ops: sandbox OOM reaping — always restart with NODE_OPTIONS cap.
 - FINAL OPS: dev server OOM-killed a second time post-cleanup → restarted again with cap (HTTP 200); stale QA browser session (deleted user's JWT) cleared via localStorage.clear() — auth screen restored for the user. App gracefully rendered empty states for the deleted-user session (good resilience signal).
+
+---
+Task ID: 16
+Agent: Z.ai Code (main)
+Task: 用户报告移动端引导 tour 卡片被切断（"guide wala senario cut ho rha h"，附 iPhone 截图）→ 修复 + 顺带排掉 3 个深层 bug + tour Plum&Gold 配色升级
+
+Work Log:
+- BUGFIX-1 WelcomeTour 移动端切断（用户报告的 bug）：
+  - 根因：居中卡片用 CSS `transform: translate(-50%,-50%)` 定位，framer-motion 动画 scale/y 时重写整个 transform → 居中偏移被抹掉 → 卡片左上角停在视口中心，右/下被切（截图完全吻合）。
+  - 修复：居中步骤改为全屏 flex 容器（inset:0 + alignItems/justifyContent center + safe-area padding），彻底不依赖 transform；spotlight 步骤保持数字 top/left。switch default 分支同样改为数字居中。
+- BUGFIX-2 tour 卡片高度溢出（QA 中发现，STEP 4/5 底部超出 24px @390×844）：
+  - 新增 cardH state + cardRef（挂 Card）每步渲染后 rAF 实测卡片高度（收敛阈值 2px）；放置计算全部改用实测高度（hClamp=min(cardH, vh-32)）；'top' 加翻转逻辑（放不下上方且下方能容纳时翻到下方）；'bottom' 加 vh-hClamp-edge clamp。CARD_HEIGHT_ESTIMATE=320 仅作初值（模块作用域，避免 TDZ——曾因组件内声明顺序引发 "Cannot access before initialization" 客户端崩溃，已修）。
+- BUGFIX-3 Service Worker 缓存污染（public/sw.js，深挖时发现）：
+  - 旧行为：默认分支缓存所有 GET（含 /api/auth/me！）+ JS/CSS 用 stale-while-revalidate（先给旧缓存）→ 已删除用户的 auth 响应缓存复用 + 部署后用户拿到旧 bundle。
+  - 新策略（v5→v6）：/api/* 完全不拦截；JS/CSS network-first（离线才用缓存）；字体/图片保留 SWR；仅缓存 2xx。
+- BUGFIX-4 幽灵会话（src/app/api/auth/me/route.ts，安全修复）：
+  - 旧行为：cookie 里已删用户的 JWT 在 DB 查无此人时回退到 JWT 内嵌用户信息 → 删除账号/重置 DB 后浏览器仍是幽灵登录态，UI 渲染旧用户名而所有数据查询为空。
+  - 修复：DB 可达且用户不存在 → 直接返回 user:null（会话吊销）；仅 DB 异常（Vercel 临时 FS 场景）才回退 JWT。端到端验证：删除用户后刷新 → 正确弹回登录页。
+- [SECURITY-BACKLOG 发现未修] /api/symptoms 等约 20 个数据路由信任客户端 userId 参数、零鉴权（知道 userId 即可读写任意用户数据）。需专门一轮：加 requireUser(request) helper + 全路由 sweep + 各模块回归。→ 下轮最高优先级。
+- Styling：tour 配色升级到 Nuvia Plum & Gold（backlog #2 关闭）：header 玫红渐变 → plum 系（#6E366F→#8E4463→#C2497E，与品牌 FAB 一致）；spotlight ring amber → ring-gold/90；active 进度点 → from-gold to-amber-400；CTA → btn-plum rounded-full min-h-11（44px 触控目标）；卡片边框/阴影 → border-gold/40 + shadow-primary/25；角标 sparkle → text-gold/60。
+- OPS：devIndicators: false（next.config.ts）——截图中的黑色 "N" 徽章即 Next dev indicator，曾遮挡 AI Coach FAB/设置按钮。
+- Onboarding 日期输入自动化（backlog #1 关闭）：native date input 用 Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set + input/change 事件可成功设置（此前 backlog 记录"无法自动化"不成立）。
+- 验证（agent-browser，QA 用户 tourqa@test.com 创建→种子→删除，7 人基线恢复）：
+  - 390×844：9/9 步卡片全部 inside 视口（含修复前溢出的 STEP4 y=385/b=809）；STEP4 spotlight 金圈准确套住底部导航 Period Tracker；完成 tour → per-user flag 写入 → 对话框关闭。
+  - 375×667 (iPhone SE)：steps 1/4/5/7 inside（h=424 的最高卡片 b=609<667）。
+  - 360×640 (小屏 Android)：steps 1/4/6 inside + scrollWidth==innerWidth（无水平滚动）。
+  - 820×1180 (平板)：steps 2/4 inside。
+  - 1440×900 (桌面)：steps 1/2/4/7 inside；STEP7 定位在顶栏头像正下方。
+  - 暗/明双模式：plum 渐变 + 金色点缀在两模式下均正常（暗色截图确认 border-gold 可见）。
+  - Console：MARKER 后 fresh load 0 错误 0 警告（此前 buffer 中的 duplicate-key 警告为旧 bundle 残留）。
+  - tsc/lint：无新增错误（预存 5 处 examples/skills/cron 均已知）。
+  - 幽灵会话端到端：删除 tourqa 后刷新 → 正确显示登录页。
+- OPS 复盘：本轮 dev server 被 OOM 杀 3 次；已启动 scripts/dev-watchdog.sh（setsid nohup 常驻，20s 间隔自动拉起）+ NODE_OPTIONS=--max-old-space-size=1536。
+
+Stage Summary:
+- ✅ 用户报告的移动端 tour 切断 bug 已修复并在 5 种视口 × 明暗双模式量化验证（9/9 步卡片 inside）。
+- ✅ 附赠修复：SW 缓存污染（旧 bundle/跨会话数据泄漏）、幽灵会话（会话撤销失效）、SWR 旧代码问题、dev indicator 遮挡。
+- ✅ Tour 视觉升级到 Plum & Gold 品牌体系（backlog #2 关闭）；backlog #1（日期输入自动化）关闭。
+- ⚠️ 最高优先级新 backlog：数据路由 userId 零鉴权（详见上）——下轮应率先处理。
+- 其余遗留：i18n 深度、analytics 审计表、时区静默时段、外部服务配置（PayPal/Google OAuth/Doctor Places）。

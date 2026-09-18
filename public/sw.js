@@ -1,5 +1,5 @@
-// Nuvia Service Worker — offline-first caching for PWA
-const CACHE = 'nuvia-v5'
+// Nuvia Service Worker — offline shell + push, WITHOUT data caching.
+const CACHE = 'nuvia-v6'
 const CORE = ['/', '/manifest.json', '/brand/nuvia-mark-192.png', '/brand/nuvia-mark-512.png', '/offline']
 
 self.addEventListener('install', (event) => {
@@ -61,6 +61,15 @@ self.addEventListener('notificationclick', (event) => {
 })
 
 // ─── Fetch handling ───────────────────────────────────────────────────────────
+// RULES (learned the hard way):
+//  • NEVER cache /api/* responses. Caching /api/auth/me served a DELETED
+//    user's session to the next visitor — stale identity, stale cycles,
+//    stale everything. API data must always come from the network; the app
+//    already renders friendly error/offline states when it fails.
+//  • Code assets (JS/CSS) are NETWORK-FIRST. Stale-while-revalidate ran old
+//    bundles after each deploy because dev/un-hashed chunk URLs collide in
+//    the cache — users kept seeing the previous version of the app.
+//  • Only cache 2xx responses, so error pages never poison the cache.
 self.addEventListener('fetch', (event) => {
   const req = event.request
   if (req.method !== 'GET') return
@@ -68,9 +77,10 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return
 
-  // Network-first for navigation (HTML), cache fallback → /offline page.
-  // Only OK responses are cached — error pages (404/500) must not poison the
-  // navigation cache, or they would be served forever while offline.
+  // ── API: pass straight through to the network (no interception) ──────────
+  if (url.pathname.startsWith('/api/')) return
+
+  // ── Navigation (HTML): network-first, offline fallback → /offline ────────
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
@@ -91,10 +101,24 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Stale-while-revalidate for static assets (JS/CSS/fonts/images):
-  // serve the cached copy instantly, refresh it in the background. This keeps
-  // the app fast AND avoids serving stale code after a new deployment.
-  if (req.destination === 'script' || req.destination === 'style' || req.destination === 'font' || req.destination === 'image') {
+  // ── App code (JS/CSS): network-first, cache only as OFFLINE fallback ─────
+  if (req.destination === 'script' || req.destination === 'style') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put(req, copy))
+          }
+          return res
+        })
+        .catch(() => caches.match(req).then((r) => r || Response.error()))
+    )
+    return
+  }
+
+  // ── Fonts & images: stale-while-revalidate (immutable content) ───────────
+  if (req.destination === 'font' || req.destination === 'image') {
     event.respondWith(
       caches.match(req).then((cached) => {
         const network = fetch(req)
@@ -112,12 +136,14 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Default: try network, fall back to cache
+  // ── Everything else: network-first, cache only 2xx responses ─────────────
   event.respondWith(
     fetch(req)
       .then((res) => {
-        const copy = res.clone()
-        caches.open(CACHE).then((c) => c.put(req, copy))
+        if (res && res.status >= 200 && res.status < 300) {
+          const copy = res.clone()
+          caches.open(CACHE).then((c) => c.put(req, copy))
+        }
         return res
       })
       .catch(() => caches.match(req))

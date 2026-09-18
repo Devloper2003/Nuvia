@@ -32,9 +32,17 @@ export async function GET(request: NextRequest) {
         if (fresh) {
           return NextResponse.json({ user: toSessionUser(fresh) })
         }
+        // The DB answered but the user no longer exists (account deleted,
+        // DB reset). The session is REVOKED — do NOT fall through to the JWT's
+        // embedded user copy, otherwise deleted accounts stay logged in as
+        // "ghosts": the UI keeps rendering their name while every data query
+        // comes back empty. Return null so the client signs out cleanly.
+        return NextResponse.json({ user: null }, { status: 200 })
       } catch {
         // DB unavailable (ephemeral Vercel filesystem, missing DATABASE_URL,
         // table not created, etc.). Fall through to JWT-embedded user below.
+        // This is what keeps login working when the DB itself is unreachable —
+        // it must only apply when the DB is DOWN, not when the row is gone.
       }
     }
 
