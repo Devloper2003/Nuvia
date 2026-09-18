@@ -29,6 +29,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import { useAppStore } from '@/lib/store'
 import {
   MapPin,
   Stethoscope,
@@ -38,6 +40,7 @@ import {
   Calendar as CalendarIcon,
   Clock,
   Search,
+  Loader2,
   Filter,
   AlertTriangle,
   CheckCircle2,
@@ -51,7 +54,6 @@ import {
   Baby,
   Sparkles,
   Zap,
-  Loader2,
   Siren,
   Eye,
   Droplet,
@@ -398,6 +400,7 @@ function StarRating({ rating }: { rating: number }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function DoctorFinderModule() {
+  const userProfile = useAppStore((s) => s.userProfile)
   // Search state
   const [location, setLocation] = useState('')
   const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null)
@@ -406,7 +409,7 @@ export default function DoctorFinderModule() {
   const [isSearching, setIsSearching] = useState(false)
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [searchSource, setSearchSource] = useState<'google' | 'empty' | null>(null)
+  const [searchSource, setSearchSource] = useState<'google' | 'simulated' | null>(null)
   const [searchedLocation, setSearchedLocation] = useState('')
 
   // Autocomplete state
@@ -431,6 +434,7 @@ export default function DoctorFinderModule() {
   const [bookingTime, setBookingTime] = useState<string>('')
   const [bookingReason, setBookingReason] = useState('')
   const [bookingConfirmed, setBookingConfirmed] = useState(false)
+  const [bookingSaving, setBookingSaving] = useState(false)
 
   // ─── Location autocomplete ──────────────────────────────────────────────
   const fetchSuggestions = React.useCallback(async (q: string) => {
@@ -601,9 +605,41 @@ export default function DoctorFinderModule() {
     setTimeout(() => setBookingConfirmed(false), 200)
   }
 
-  const confirmBooking = () => {
-    if (!bookingDate || !bookingTime) return
-    setBookingConfirmed(true)
+  const confirmBooking = async () => {
+    if (!bookingDate || !bookingTime || !bookingDoctor) return
+    const userId = userProfile?.id
+    if (!userId) {
+      toast.error('Please sign in to book an appointment')
+      return
+    }
+    setBookingSaving(true)
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          doctorName: bookingDoctor.name,
+          specialty: bookingDoctor.specialty,
+          date: bookingDate.toISOString().split('T')[0],
+          time: bookingTime,
+          type: bookingDoctor.videoConsult ? 'video' : 'in_person',
+          notes: bookingReason.trim() || undefined,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Booking failed')
+      }
+      setBookingConfirmed(true)
+      toast.success('Appointment booked! 🎉', {
+        description: `${bookingDoctor.name} · ${bookingDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} at ${bookingTime}. See it on your dashboard.`,
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not book appointment')
+    } finally {
+      setBookingSaving(false)
+    }
   }
 
   const canConfirm = bookingDate && bookingTime
@@ -1026,7 +1062,11 @@ export default function DoctorFinderModule() {
                         <span className="truncate max-w-[260px]">{searchedLocation}</span>
                         <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 text-[10px] font-medium">
                           <Globe className="h-2.5 w-2.5" />
-                          {searchSource === 'google' ? 'Google Places' : 'Live results'}
+                          {searchSource === 'google'
+                            ? 'Google Places'
+                            : searchSource === 'simulated'
+                              ? 'Demo listings'
+                              : 'Live results'}
                         </span>
                       </div>
                     )}
@@ -1350,12 +1390,21 @@ export default function DoctorFinderModule() {
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button
-                  onClick={confirmBooking}
-                  disabled={!canConfirm}
+                  onClick={() => confirmBooking()}
+                  disabled={!canConfirm || bookingSaving}
                   className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
                 >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Confirm Appointment
+                  {bookingSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Booking…
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      Confirm Appointment
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </>

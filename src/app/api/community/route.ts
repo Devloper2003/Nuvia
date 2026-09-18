@@ -98,6 +98,46 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// ─── DELETE: remove your own post (ownership enforced) ──────────────────────
+// Query: postId + userId — deletes the post and its comments only when the
+// requesting user owns the post.
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const postId = searchParams.get('postId');
+    const userId = searchParams.get('userId');
+
+    if (!postId || !userId) {
+      return NextResponse.json(
+        { error: 'postId and userId are required' },
+        { status: 400 }
+      );
+    }
+
+    const existing = await db.communityPost.findUnique({ where: { id: postId } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+    if (existing.userId !== userId) {
+      return NextResponse.json(
+        { error: 'You can only delete your own posts' },
+        { status: 403 }
+      );
+    }
+
+    await db.comment.deleteMany({ where: { postId } });
+    await db.communityPost.delete({ where: { id: postId } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete post' },
+      { status: 500 }
+    );
+  }
+}
+
 // ─── PATCH: like / unlike a post (persists the like count) ──────────────────
 // Body: { postId: string, action: 'like' | 'unlike' }
 export async function PATCH(request: NextRequest) {

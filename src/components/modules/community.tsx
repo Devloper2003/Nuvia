@@ -31,6 +31,7 @@ import {
   UserCircle,
   Hash,
   Loader2,
+  Trash2,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -50,6 +51,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import {
   Select,
   SelectContent,
@@ -83,6 +95,7 @@ interface Post {
   timeAgo: string
   liked: boolean
   isAnonymous: boolean
+  isOwn: boolean
   createdAt: string
 }
 
@@ -216,6 +229,7 @@ function mapApiPost(p: ApiPost, currentUserId: string | undefined, likedIds: Set
     timeAgo: timeAgo(p.createdAt),
     liked: likedIds.has(p.id),
     isAnonymous: p.isAnonymous,
+    isOwn: !!isOwn,
     createdAt: p.createdAt,
   }
 }
@@ -393,6 +407,27 @@ export default function CommunityModule() {
         )
       )
       toast.error('Could not update like')
+    }
+  }
+
+  const handleDeletePost = async (postId: string) => {
+    if (!userProfile) return
+    const prevPosts = posts
+    // Optimistic removal
+    setPosts(prev => prev.filter(p => p.id !== postId))
+    try {
+      const res = await fetch(
+        `/api/community?postId=${encodeURIComponent(postId)}&userId=${encodeURIComponent(userProfile.id)}`,
+        { method: 'DELETE' }
+      )
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to delete post')
+      }
+      toast.success('Post deleted')
+    } catch (e) {
+      setPosts(prevPosts)
+      toast.error(e instanceof Error ? e.message : 'Could not delete post')
     }
   }
 
@@ -760,6 +795,35 @@ export default function CommunityModule() {
                                     <MessageCircle className="h-3.5 w-3.5" />
                                     {post.comments}
                                   </button>
+                                  {post.isOwn && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button
+                                          aria-label="Delete post"
+                                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors h-9 px-1 rounded-md ml-auto"
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            &quot;{post.title}&quot; and all its comments will be permanently removed. This cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            className="bg-red-500 hover:bg-red-600 text-white"
+                                            onClick={() => handleDeletePost(post.id)}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
                                 </div>
                               </div>
                             </div>

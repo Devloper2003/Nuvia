@@ -586,12 +586,21 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Try real Google Places. If no API key is configured or the search
-  // returns no results, return an empty list — we do NOT generate fake
-  // simulated doctors (that would be demo data, which we don't want).
+  // Try real Google Places first. When no API key is configured (or the API
+  // errors), fall back to deterministic simulated listings so the module
+  // stays fully functional (search → book → dashboard reminders) without a
+  // paid key. The client shows a clear "simulated" badge in that case.
   const googleResults = await searchGooglePlaces(location, specialty, geo)
-  const doctors = googleResults ?? []
-  const source: 'google' | 'empty' = googleResults !== null ? 'google' : 'empty'
+
+  let doctors: DoctorResult[]
+  let source: 'google' | 'simulated'
+  if (googleResults && googleResults.length > 0) {
+    doctors = googleResults
+    source = 'google'
+  } else {
+    doctors = generateSimulatedDoctors(location, specialty, geo)
+    source = 'simulated'
+  }
 
   return NextResponse.json({
     ok: true,

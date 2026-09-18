@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ChunkErrorRecovery } from "@/components/chunk-error-recovery";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,9 +56,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased bg-background text-foreground`}
       >
-        <ChunkErrorRecovery />
-        {children}
-        <Toaster richColors position="top-right" />
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+          <ChunkErrorRecovery />
+          {children}
+          <Toaster richColors position="top-right" />
+        </ThemeProvider>
       </body>
     </html>
   );

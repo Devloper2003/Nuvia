@@ -693,16 +693,16 @@ export default function DashboardModule() {
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={weeklySymptoms} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                     <XAxis
                       dataKey="day"
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
                       allowDecimals={false}
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
                       axisLine={false}
                       tickLine={false}
                     />
@@ -763,7 +763,9 @@ export default function DashboardModule() {
                       <Bell className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">Dr. {r.doctorName} — {r.specialty}</p>
+                      <p className="text-sm font-medium truncate">
+                        {r.doctorName.startsWith('Dr.') ? r.doctorName : `Dr. ${r.doctorName}`} — {r.specialty}
+                      </p>
                       <p className="text-xs text-muted-foreground">{r.type} appointment</p>
                     </div>
                     <div className="text-right shrink-0">

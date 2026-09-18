@@ -105,3 +105,55 @@ Stage Summary:
   3. Dark-mode pass on new components (activity icons/reminder cards use dark: variants — verify contrast).
   4. Community: add "delete own post", report/flag flow; admin moderation later.
   5. Consider pagination for community feed when posts grow.
+
+---
+Task ID: 3
+Agent: Z.ai Code (webDevReview round 3)
+Task: Cron QA + development round — bug fixes (file corruption, theme provider, Dr. prefix), doctor booking persistence, community delete-own-post, dark mode polish.
+
+Work Log:
+- QA baseline: server healthy (200), lint clean, session persisted.
+- TRANSIENT FILE CORRUPTION (2nd occurrence): doctor-finder.tsx briefly showed corrupted lines
+  (`const asSearched, setHasSearched]` / `}, asSearched, doctors, …])` — the literal "[h" substring
+  dropped, same class of corruption as ai-coach.tsx "[m" drop in round 2). Confirmed via grep+sed+cat -A;
+  the file SELF-HEALED between reads (sandbox file-sync race). Mitigation adopted: never trust a single
+  read — verify with lint as the final gate; re-read before editing; replace via exact unique strings.
+- Find Doctor → appointment booking PERSISTED (was client-only):
+  - confirmBooking now POSTs /api/appointments (userId, doctorName, specialty, date, time,
+    type video/in_person from doctor.videoConsult, notes=reason) with loading state ("Booking…"),
+    success toast, error toasts.
+  - Verified end-to-end in browser: search "Mumbai" → 12 demo doctors → Book → date 23 Sep + 11:00 AM
+    slot + reason → Confirm → success dialog → appointment appears in Dashboard Upcoming Reminders.
+- Doctor finder fallback (backlog #4) SHIPPED:
+  - Root cause: search route intentionally returned [] without GOOGLE_PLACES_API_KEY (module dead in
+    sandbox; generateSimulatedDoctors existed but was never called — dead code).
+  - Now: falls back to deterministic simulated listings (seeded RNG, Indian clinics/names) with
+    source:"simulated"; client badge shows "Demo listings" (was "Live results" for everything non-google).
+  - Real Google Places still used first when key present.
+- Community delete-own-post SHIPPED:
+  - NEW DELETE /api/community?postId&userId — ownership enforced server-side (403 for non-owner,
+    verified via cross-user curl test: non-owner→403, owner→200).
+  - UI: Trash icon on own posts only (isOwn mapped from API user.id), shadcn AlertDialog confirm,
+    optimistic removal + revert on failure.
+- Theme toggle FIXED (was non-functional):
+  - Settings used next-themes useTheme but NO ThemeProvider was mounted → setTheme was a no-op.
+  - Added src/components/theme-provider.tsx and wrapped layout (attribute="class", defaultTheme="light",
+    enableSystem). globals.css already had @custom-variant dark (.dark class) — now actually works.
+  - Verified in browser: Settings → Dark → whole app flips (dashboard cards/sidebar/chart); Light restores.
+- Styling polish:
+  - Weekly Symptoms chart now theme-aware: grid stroke var(--border), axis ticks var(--muted-foreground)
+    (were hardcoded light grays — glaring in dark mode).
+  - Fixed "Dr. Dr. Karthik Kapoor" double-prefix in dashboard reminders (startsWith('Dr.') guard).
+  - Mobile (390×844) verified: chart, reminders, activity feed all render cleanly.
+
+Stage Summary:
+- ✅ Shipped: booking persistence E2E, doctor-search demo fallback, community delete-own-post (+authz),
+  working dark mode via ThemeProvider, chart theming, Dr.-prefix fix.
+- Known environment risk: intermittent file corruption in sandbox sync (2 incidents, both self-healed);
+  always lint before finishing a round.
+- Remaining backlog (next round):
+  1. Delete/cancel appointment UI (settings or reminders) to complete the appointments CRUD.
+  2. Community feed pagination + report/flag flow.
+  3. Wire "Start Video Consult" to a room/flow (currently decorative) or hide without config.
+  4. Hormone IQ / Reports modules: verify with 7 seeded cycles, polish visuals.
+  5. Premium module: mock checkout mode (PayPal keys absent).
