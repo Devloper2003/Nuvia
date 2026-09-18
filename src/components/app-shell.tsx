@@ -47,6 +47,9 @@ import NotificationPanel from '@/components/notifications/notification-panel'
 import MobileTopbar from '@/components/mobile/mobile-topbar'
 import MobileBottomNav from '@/components/mobile/mobile-bottom-nav'
 import WelcomeTour, { getTourSeenKey } from '@/components/onboarding/welcome-tour'
+import { useLanguage } from '@/components/language-provider'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 // ─── Lazy-load all feature modules ───────────────────────────────────────────
 const DashboardModule = dynamic(() => import('@/components/modules/dashboard'), { loading: () => <ModuleSkeleton /> })
@@ -79,25 +82,25 @@ function ModuleSkeleton() {
   )
 }
 
-const navItems: { id: ActiveModule; label: string; icon: React.ElementType; color: string; badge?: string }[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-primary' },
-  { id: 'period', label: 'Period Tracker', icon: CalendarDays, color: 'text-rose-500' },
-  { id: 'hormone', label: 'Hormone IQ', icon: Brain, color: 'text-purple-500' },
-  { id: 'symptoms', label: 'Symptoms', icon: HeartPulse, color: 'text-pink-500' },
-  { id: 'pcos', label: 'PCOS Care', icon: Flower2, color: 'text-amber-600' },
-  { id: 'fertility', label: 'Fertility', icon: Baby, color: 'text-orange-500' },
-  { id: 'pregnancy', label: 'Pregnancy', icon: Stethoscope, color: 'text-purple-600' },
-  { id: 'menopause', label: 'Menopause', icon: SunDim, color: 'text-red-400' },
-  { id: 'coach', label: 'AI Coach', icon: MessageCircle, color: 'text-emerald-500', badge: 'AI' },
-  { id: 'diet', label: 'Diet Advisor', icon: Salad, color: 'text-emerald-600', badge: 'AI' },
-  { id: 'doctors', label: 'Find Doctor', icon: MapPin, color: 'text-teal-600' },
-  { id: 'mental', label: 'Mind & Soul', icon: Sparkles, color: 'text-violet-500', badge: 'NEW' },
-  { id: 'fitness', label: 'Move & Flow', icon: Dumbbell, color: 'text-orange-500', badge: 'NEW' },
-  { id: 'beauty', label: 'Skin & Beauty', icon: Sparkles, color: 'text-fuchsia-500' },
-  { id: 'marketplace', label: 'Wellness Market', icon: ShoppingBag, color: 'text-rose-500', badge: 'NEW' },
-  { id: 'community', label: 'Community', icon: Users, color: 'text-sky-500' },
-  { id: 'reports', label: 'Reports', icon: FileBarChart, color: 'text-teal-500' },
-  { id: 'ai-insights', label: 'AI Insights', icon: BrainCircuit, color: 'text-violet-500', badge: 'PRO' },
+const navItems: { id: ActiveModule; labelKey: TranslationKey; icon: React.ElementType; color: string; badge?: string }[] = [
+  { id: 'dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, color: 'text-primary' },
+  { id: 'period', labelKey: 'nav.period', icon: CalendarDays, color: 'text-rose-500' },
+  { id: 'hormone', labelKey: 'nav.hormone', icon: Brain, color: 'text-purple-500' },
+  { id: 'symptoms', labelKey: 'nav.symptoms', icon: HeartPulse, color: 'text-pink-500' },
+  { id: 'pcos', labelKey: 'nav.pcos', icon: Flower2, color: 'text-amber-600' },
+  { id: 'fertility', labelKey: 'nav.fertility', icon: Baby, color: 'text-orange-500' },
+  { id: 'pregnancy', labelKey: 'nav.pregnancy', icon: Stethoscope, color: 'text-purple-600' },
+  { id: 'menopause', labelKey: 'nav.menopause', icon: SunDim, color: 'text-red-400' },
+  { id: 'coach', labelKey: 'nav.coach', icon: MessageCircle, color: 'text-emerald-500', badge: 'AI' },
+  { id: 'diet', labelKey: 'nav.diet', icon: Salad, color: 'text-emerald-600', badge: 'AI' },
+  { id: 'doctors', labelKey: 'nav.doctors', icon: MapPin, color: 'text-teal-600' },
+  { id: 'mental', labelKey: 'nav.mental', icon: Sparkles, color: 'text-violet-500', badge: 'NEW' },
+  { id: 'fitness', labelKey: 'nav.fitness', icon: Dumbbell, color: 'text-orange-500', badge: 'NEW' },
+  { id: 'beauty', labelKey: 'nav.beauty', icon: Sparkles, color: 'text-fuchsia-500' },
+  { id: 'marketplace', labelKey: 'nav.marketplace', icon: ShoppingBag, color: 'text-rose-500', badge: 'NEW' },
+  { id: 'community', labelKey: 'nav.community', icon: Users, color: 'text-sky-500' },
+  { id: 'reports', labelKey: 'nav.reports', icon: FileBarChart, color: 'text-teal-500' },
+  { id: 'ai-insights', labelKey: 'nav.insights', icon: BrainCircuit, color: 'text-violet-500', badge: 'PRO' },
 ]
 
 interface AppShellProps {
@@ -107,6 +110,7 @@ interface AppShellProps {
 
 export default function AppShell({ user, onLogout }: AppShellProps) {
   const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, setPremium, setUserProfile, isPremium } = useAppStore()
+  const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentTime, setCurrentTime] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
@@ -240,11 +244,11 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
     }
   }
 
-  const getGreeting = () => {
+  const getGreetingKey = (): TranslationKey => {
     const hour = new Date().getHours()
-    if (hour < 12) return 'Good Morning'
-    if (hour < 17) return 'Good Afternoon'
-    return 'Good Evening'
+    if (hour < 12) return 'greeting.morning'
+    if (hour < 17) return 'greeting.afternoon'
+    return 'greeting.evening'
   }
 
   const displayName = user.name || user.email.split('@')[0]
@@ -326,7 +330,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                             exit={{ opacity: 0 }}
                             className="truncate"
                           >
-                            {item.label}
+                            {t(item.labelKey)}
                           </motion.span>
                         )}
                       </AnimatePresence>
@@ -346,7 +350,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                   </TooltipTrigger>
                   {!sidebarOpen && (
                     <TooltipContent side="right" className="font-medium">
-                      {item.label}
+                      {t(item.labelKey)}
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -365,7 +369,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                 <Smartphone className="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
                 {sidebarOpen && (
                   <span className="flex items-center gap-1.5">
-                    Install app
+                    {t('nav.install')}
                     <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-primary/10 text-primary border-0">PWA</Badge>
                   </span>
                 )}
@@ -378,7 +382,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
               className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <HelpCircle className="h-5 w-5 shrink-0" />
-              {sidebarOpen && <span>Take Tour</span>}
+              {sidebarOpen && <span>{t('nav.tour')}</span>}
             </button>
             <button
               onClick={() => handleNavClick('premium')}
@@ -389,7 +393,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
               <Crown className="h-5 w-5 shrink-0 relative" />
               {sidebarOpen && (
                 <span className="flex items-center gap-1.5 relative">
-                  Go Premium
+                  {t('nav.premium')}
                   <Badge variant="secondary" className="text-[9px] h-4 px-1.5 bg-white/25 text-white border-0">PRO</Badge>
                 </span>
               )}
@@ -399,7 +403,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
               className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
             >
               <Settings className="h-5 w-5 shrink-0" />
-              {sidebarOpen && <span>Settings</span>}
+              {sidebarOpen && <span>{t('nav.settings')}</span>}
             </button>
           </div>
         </aside>
@@ -422,10 +426,10 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
               </Button>
               <div className="flex items-center gap-2 min-w-0">
                 {/* Compact greeting on lg, full greeting on xl */}
-                <span className="text-sm font-medium truncate hidden xl:inline">{getGreeting()}, {firstName}</span>
-                <span className="text-sm font-medium truncate xl:hidden">Hi, {firstName}</span>
+                <span className="text-sm font-medium truncate hidden xl:inline">{t(getGreetingKey())}, {firstName}</span>
+                <span className="text-sm font-medium truncate xl:hidden">{t('greeting.hi')}, {firstName}</span>
                 <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0 hidden xl:inline" />
-                <span className="text-sm text-muted-foreground truncate hidden xl:inline">{activeItem?.label}</span>
+                <span className="text-sm text-muted-foreground truncate hidden xl:inline">{activeItem ? t(activeItem.labelKey) : ''}</span>
               </div>
             </div>
 
@@ -440,6 +444,9 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                 />
               </div>
               <span className="text-xs text-muted-foreground hidden 2xl:block tabular-nums">{currentTime}</span>
+
+              {/* Language quick-switch */}
+              <LanguageSwitcher />
 
               {/* Active notification bar */}
               <NotificationPanel userId={user.id} />
@@ -504,7 +511,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                   <div className="p-1.5">
                     <DropdownMenuItem onClick={() => handleNavClick('settings')} className="rounded-lg py-2">
                       <Settings className="mr-2.5 h-4 w-4" />
-                      <span>Settings & Preferences</span>
+                      <span>{t('nav.settings')} & Preferences</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('premium')} className="rounded-lg py-2">
                       <Crown className="mr-2.5 h-4 w-4 text-amber-500" />
@@ -515,7 +522,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                   <div className="p-1.5">
                     <DropdownMenuItem onClick={onLogout} className="rounded-lg py-2 text-destructive focus:text-destructive">
                       <LogOut className="mr-2.5 h-4 w-4" />
-                      <span>Sign out</span>
+                      <span>{t('common.signOut')}</span>
                     </DropdownMenuItem>
                   </div>
                 </DropdownMenuContent>

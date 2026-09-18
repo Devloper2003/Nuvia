@@ -66,6 +66,7 @@ import {
   Utensils,
   HandHeart,
   Crosshair,
+  FlaskConical,
   ExternalLink,
   Globe,
   ChevronRight,
@@ -410,6 +411,7 @@ export default function DoctorFinderModule() {
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [searchError, setSearchError] = useState<string | null>(null)
   const [searchSource, setSearchSource] = useState<'google' | 'simulated' | null>(null)
+  const [demoNoticeDismissed, setDemoNoticeDismissed] = useState(false)
   const [searchedLocation, setSearchedLocation] = useState('')
 
   // Autocomplete state
@@ -532,6 +534,7 @@ export default function DoctorFinderModule() {
       if (!data.ok) throw new Error(data.error || 'Search failed')
       setDoctors(data.doctors || [])
       setSearchSource(data.source || null)
+      setDemoNoticeDismissed(false)
       setHasSearched(true)
     } catch (e: any) {
       setSearchError(e?.message || 'Something went wrong. Please try again.')
@@ -1081,6 +1084,45 @@ export default function DoctorFinderModule() {
             transition={{ duration: 0.3 }}
             className="space-y-4"
           >
+            {/* Visible demo-directory notice (simulated source) */}
+            <AnimatePresence>
+              {searchSource === 'simulated' && !demoNoticeDismissed && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  className="relative overflow-hidden rounded-xl border border-amber-300/70 dark:border-amber-800 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent dark:from-amber-950/30 dark:via-amber-950/20 px-4 py-3"
+                  role="note"
+                  aria-label="Demo directory notice"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                      <FlaskConical className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                        Demo directory
+                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+                          Sample data
+                        </span>
+                      </p>
+                      <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5 leading-relaxed">
+                        Google Places isn&apos;t configured, so these are sample listings shown for
+                        demonstration. Always verify a doctor&apos;s credentials independently before booking.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setDemoNoticeDismissed(true)}
+                      aria-label="Dismiss demo notice"
+                      className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded-md text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Filter & Sort Bar */}
             <Card className="bg-card/80 backdrop-blur-sm">
               <CardContent className="p-4 space-y-3">

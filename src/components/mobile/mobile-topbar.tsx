@@ -7,6 +7,9 @@ import { useAppStore, ActiveModule } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import NotificationPanel from '@/components/notifications/notification-panel'
+import { useLanguage } from '@/components/language-provider'
+import { LanguageSwitcher } from '@/components/language-switcher'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 interface MobileTopbarProps {
   onTakeTour?: () => void
@@ -14,37 +17,38 @@ interface MobileTopbarProps {
   displayName?: string
 }
 
-/* ─── Module labels map (kept in sync with page.tsx navItems) ─────────────── */
+/* ─── Module label keys (kept in sync with app-shell navItems) ───────────── */
 
-const MODULE_LABELS: Record<ActiveModule, string> = {
-  dashboard: 'Dashboard',
-  period: 'Period Tracker',
-  hormone: 'Hormone IQ',
-  symptoms: 'Symptoms',
-  pcos: 'PCOS Care',
-  fertility: 'Fertility',
-  pregnancy: 'Pregnancy',
-  menopause: 'Menopause',
-  coach: 'AI Coach',
-  diet: 'Diet Advisor',
-  doctors: 'Find Doctor',
-  mental: 'Mind & Soul',
-  fitness: 'Move & Flow',
-  beauty: 'Skin & Beauty',
-  community: 'Community',
-  reports: 'Reports',
-  marketplace: 'Wellness Market',
-  'ai-insights': 'AI Insights',
-  premium: 'ChandraCycle Premium',
-  settings: 'Settings',
+const MODULE_LABELS: Record<ActiveModule, TranslationKey> = {
+  dashboard: 'nav.dashboard',
+  period: 'nav.period',
+  hormone: 'nav.hormone',
+  symptoms: 'nav.symptoms',
+  pcos: 'nav.pcos',
+  fertility: 'nav.fertility',
+  pregnancy: 'nav.pregnancy',
+  menopause: 'nav.menopause',
+  coach: 'nav.coach',
+  diet: 'nav.diet',
+  doctors: 'nav.doctors',
+  mental: 'nav.mental',
+  fitness: 'nav.fitness',
+  beauty: 'nav.beauty',
+  community: 'nav.community',
+  reports: 'nav.reports',
+  marketplace: 'nav.marketplace',
+  'ai-insights': 'nav.insights',
+  premium: 'nav.premium',
+  settings: 'nav.settings',
 }
 
 export default function MobileTopbar({ onTakeTour, userId, displayName }: MobileTopbarProps) {
   const activeModule = useAppStore((s) => s.activeModule)
   const setActiveModule = useAppStore((s) => s.setActiveModule)
   const hasPremium = useAppStore((s) => s.hasPremium())
+  const { t } = useLanguage()
 
-  const label = MODULE_LABELS[activeModule] ?? 'ChandraCycle'
+  const label = t(MODULE_LABELS[activeModule] ?? 'nav.dashboard')
 
   return (
     <header
@@ -66,12 +70,14 @@ export default function MobileTopbar({ onTakeTour, userId, displayName }: Mobile
           </div>
           <div className="flex flex-col min-w-0 leading-tight">
             <span className="text-[10px] font-medium text-muted-foreground -mb-0.5">ChandraCycle</span>
-            <span className="text-sm font-semibold truncate max-w-[44vw]">{label}</span>
+            <span className="text-sm font-semibold truncate max-w-[38vw]">{label}</span>
           </div>
         </motion.button>
 
-        {/* Right: bell + premium crown + avatar */}
-        <div className="flex items-center gap-1">
+        {/* Right: language + bell + premium crown + avatar */}
+        <div className="flex items-center gap-0.5">
+          <LanguageSwitcher className="h-10 w-10" />
+
           {hasPremium ? (
             <motion.button
               type="button"

@@ -29,6 +29,11 @@ model User {
   lastPeriodStart String?
   onboardingComplete Boolean @default(false)
 
+  // Reminder preferences (period reminder engine)
+  remindersEnabled Boolean @default(true)
+  quietStart Int? // quiet-hours start hour (0-23) — no reminders during this window
+  quietEnd   Int? // quiet-hours end hour (0-23, exclusive end); null on both = 24/7
+
   // Location
   city         String?
   country      String?
@@ -101,6 +106,8 @@ model AdminSession {
   createdAt DateTime @default(now())
   expiresAt DateTime
   revoked   Boolean  @default(false)
+  revokedAt DateTime?
+  revokedReason String?
   ipAddress String?
 
   admin AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)

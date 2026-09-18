@@ -38,61 +38,63 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { useLanguage } from '@/components/language-provider'
+import type { TranslationKey } from '@/lib/i18n/translations'
 
 /* ─── Module metadata (kept in sync with page.tsx navItems) ──────────────── */
 
 type ModuleMeta = {
   id: ActiveModule
-  label: string
+  labelKey: TranslationKey
   icon: LucideIcon
   color: string
   badge?: string
 }
 
 type ModuleGroup = {
-  title: string
+  titleKey: TranslationKey
   items: ModuleMeta[]
 }
 
 const ALL_MODULES: ModuleGroup[] = [
   {
-    title: 'Health Tracking',
+    titleKey: 'group.health',
     items: [
-      { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-primary' },
-      { id: 'period', label: 'Period Tracker', icon: CalendarDays, color: 'text-rose-500' },
-      { id: 'hormone', label: 'Hormone IQ', icon: Brain, color: 'text-purple-500' },
-      { id: 'symptoms', label: 'Symptoms', icon: HeartPulse, color: 'text-pink-500' },
-      { id: 'pcos', label: 'PCOS Care', icon: Flower2, color: 'text-amber-600' },
-      { id: 'fertility', label: 'Fertility', icon: Baby, color: 'text-orange-500' },
-      { id: 'pregnancy', label: 'Pregnancy', icon: Stethoscope, color: 'text-purple-600' },
-      { id: 'menopause', label: 'Menopause', icon: SunDim, color: 'text-red-400' },
+      { id: 'dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard, color: 'text-primary' },
+      { id: 'period', labelKey: 'nav.period', icon: CalendarDays, color: 'text-rose-500' },
+      { id: 'hormone', labelKey: 'nav.hormone', icon: Brain, color: 'text-purple-500' },
+      { id: 'symptoms', labelKey: 'nav.symptoms', icon: HeartPulse, color: 'text-pink-500' },
+      { id: 'pcos', labelKey: 'nav.pcos', icon: Flower2, color: 'text-amber-600' },
+      { id: 'fertility', labelKey: 'nav.fertility', icon: Baby, color: 'text-orange-500' },
+      { id: 'pregnancy', labelKey: 'nav.pregnancy', icon: Stethoscope, color: 'text-purple-600' },
+      { id: 'menopause', labelKey: 'nav.menopause', icon: SunDim, color: 'text-red-400' },
     ],
   },
   {
-    title: 'AI Tools',
+    titleKey: 'group.ai',
     items: [
-      { id: 'coach', label: 'AI Coach', icon: MessageCircle, color: 'text-emerald-500', badge: 'AI' },
-      { id: 'diet', label: 'Diet Advisor', icon: Salad, color: 'text-emerald-600', badge: 'AI' },
-      { id: 'doctors', label: 'Find Doctor', icon: MapPin, color: 'text-teal-600' },
-      { id: 'ai-insights', label: 'AI Insights', icon: BrainCircuit, color: 'text-violet-500', badge: 'PRO' },
+      { id: 'coach', labelKey: 'nav.coach', icon: MessageCircle, color: 'text-emerald-500', badge: 'AI' },
+      { id: 'diet', labelKey: 'nav.diet', icon: Salad, color: 'text-emerald-600', badge: 'AI' },
+      { id: 'doctors', labelKey: 'nav.doctors', icon: MapPin, color: 'text-teal-600' },
+      { id: 'ai-insights', labelKey: 'nav.insights', icon: BrainCircuit, color: 'text-violet-500', badge: 'PRO' },
     ],
   },
   {
-    title: 'Wellness',
+    titleKey: 'group.wellness',
     items: [
-      { id: 'mental', label: 'Mind & Soul', icon: Sparkles, color: 'text-violet-500', badge: 'NEW' },
-      { id: 'fitness', label: 'Move & Flow', icon: Dumbbell, color: 'text-orange-500', badge: 'NEW' },
-      { id: 'beauty', label: 'Skin & Beauty', icon: Sparkles, color: 'text-fuchsia-500' },
-      { id: 'community', label: 'Community', icon: Users, color: 'text-sky-500' },
-      { id: 'marketplace', label: 'Wellness Market', icon: ShoppingBag, color: 'text-rose-500', badge: 'NEW' },
-      { id: 'reports', label: 'Reports', icon: FileBarChart, color: 'text-teal-500' },
+      { id: 'mental', labelKey: 'nav.mental', icon: Sparkles, color: 'text-violet-500', badge: 'NEW' },
+      { id: 'fitness', labelKey: 'nav.fitness', icon: Dumbbell, color: 'text-orange-500', badge: 'NEW' },
+      { id: 'beauty', labelKey: 'nav.beauty', icon: Sparkles, color: 'text-fuchsia-500' },
+      { id: 'community', labelKey: 'nav.community', icon: Users, color: 'text-sky-500' },
+      { id: 'marketplace', labelKey: 'nav.marketplace', icon: ShoppingBag, color: 'text-rose-500', badge: 'NEW' },
+      { id: 'reports', labelKey: 'nav.reports', icon: FileBarChart, color: 'text-teal-500' },
     ],
   },
   {
-    title: 'Account',
+    titleKey: 'group.account',
     items: [
-      { id: 'premium', label: 'Go Premium', icon: Crown, color: 'text-amber-500', badge: 'PRO' },
-      { id: 'settings', label: 'Settings', icon: SettingsIcon, color: 'text-muted-foreground' },
+      { id: 'premium', labelKey: 'nav.premium', icon: Crown, color: 'text-amber-500', badge: 'PRO' },
+      { id: 'settings', labelKey: 'nav.settings', icon: SettingsIcon, color: 'text-muted-foreground' },
     ],
   },
 ]
@@ -101,16 +103,16 @@ const ALL_MODULES: ModuleGroup[] = [
 
 type TabDef = {
   id: ActiveModule
-  label: string
+  labelKey: TranslationKey
   icon: LucideIcon
   premium?: boolean
 }
 
 const PRIMARY_TABS: TabDef[] = [
-  { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
-  { id: 'period', label: 'Period', icon: CalendarDays },
-  { id: 'coach', label: 'AI Coach', icon: MessageCircle, premium: true },
-  { id: 'ai-insights', label: 'Insights', icon: BrainCircuit, premium: true },
+  { id: 'dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
+  { id: 'period', labelKey: 'nav.period', icon: CalendarDays },
+  { id: 'coach', labelKey: 'nav.coach', icon: MessageCircle, premium: true },
+  { id: 'ai-insights', labelKey: 'nav.insights', icon: BrainCircuit, premium: true },
 ]
 
 /* ─── Component ──────────────────────────────────────────────────────────── */
@@ -120,6 +122,7 @@ export default function MobileBottomNav() {
   const setActiveModule = useAppStore((s) => s.setActiveModule)
   const hasPremium = useAppStore((s) => s.hasPremium())
   const openPaywall = useAppStore((s) => s.openPaywall)
+  const { t } = useLanguage()
 
   const [moreOpen, setMoreOpen] = React.useState(false)
 
@@ -186,7 +189,7 @@ export default function MobileBottomNav() {
 
           {/* More button */}
           <TabButton
-            tab={{ id: 'settings', label: 'More', icon: Grid }}
+            tab={{ id: 'settings', labelKey: 'nav.more', icon: Grid }}
             active={moreActive}
             premium={false}
             onClick={() => setMoreOpen(true)}
@@ -204,9 +207,9 @@ export default function MobileBottomNav() {
           <SheetHeader className="px-5 pt-4 pb-3 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <SheetTitle className="text-lg">All Modules</SheetTitle>
+                <SheetTitle className="text-lg">{t('nav.allModules')}</SheetTitle>
                 <SheetDescription className="text-xs">
-                  Tap a module to jump straight to it
+                  {t('nav.allModulesHint')}
                 </SheetDescription>
               </div>
               <Badge variant="secondary" className="bg-primary/10 text-primary">
@@ -225,7 +228,7 @@ export default function MobileBottomNav() {
                   transition={{ duration: 0.25 }}
                 >
                   <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
-                    {group.title}
+                    {t(group.titleKey)}
                   </h3>
                   <div className="grid grid-cols-3 gap-2.5">
                     {group.items.map((item) => {
@@ -261,7 +264,7 @@ export default function MobileBottomNav() {
                               isActive ? 'text-foreground' : 'text-muted-foreground'
                             )}
                           >
-                            {item.label}
+                            {t(item.labelKey)}
                           </span>
                           {item.badge && (
                             <Badge
@@ -323,6 +326,8 @@ function TabButton({
   onClick: () => void
   dataTour?: string
 }) {
+  const { t } = useLanguage()
+  const label = t(tab.labelKey)
   return (
     <motion.button
       type="button"
@@ -330,7 +335,7 @@ function TabButton({
       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      aria-label={tab.label}
+      aria-label={label}
       data-tour={dataTour}
       className="relative flex flex-1 flex-col items-center justify-center gap-1 py-1.5"
     >
@@ -367,7 +372,7 @@ function TabButton({
           active ? 'text-primary' : 'text-muted-foreground'
         )}
       >
-        {tab.label}
+        {label}
       </span>
     </motion.button>
   )
@@ -384,6 +389,7 @@ function CenterFab({
   onClick: () => void
   dataTour?: string
 }) {
+  const { t } = useLanguage()
   return (
     <motion.button
       type="button"
@@ -432,7 +438,7 @@ function CenterFab({
           active ? 'text-primary' : 'text-muted-foreground'
         )}
       >
-        AI Coach
+        {t('nav.coach')}
       </span>
     </motion.button>
   )

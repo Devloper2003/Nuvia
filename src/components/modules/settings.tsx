@@ -52,6 +52,7 @@ import {
   EyeOff,
   MessageSquare,
   TrendingUp,
+  Languages,
 } from 'lucide-react'
 import {
   Card,
@@ -104,6 +105,9 @@ import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
 import { toast } from 'sonner'
+import ReminderPreferences from '@/components/settings/reminder-preferences'
+import { LanguageSegmented } from '@/components/language-switcher'
+import { useLanguage } from '@/components/language-provider'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -168,6 +172,27 @@ function SettingsSection({
         <CardContent className="pt-0">{children}</CardContent>
       </Card>
     </motion.div>
+  )
+}
+
+// ─── Language & Region Section (uses live translation for its own copy) ─────
+
+function LanguageSection({ delay = 0 }: { delay?: number }) {
+  const { t } = useLanguage()
+  return (
+    <SettingsSection
+      title={t('language.title')}
+      description={t('language.description')}
+      icon={Languages}
+      iconColor="bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400"
+      delay={delay}
+    >
+      <LanguageSegmented />
+      <p className="text-xs text-muted-foreground mt-3 leading-relaxed flex items-start gap-2">
+        <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0 text-amber-400" />
+        <span>{t('language.moreComing')}</span>
+      </p>
+    </SettingsSection>
   )
 }
 
@@ -464,6 +489,7 @@ export default function SettingsModule() {
   const [deleteCommentId, setDeleteCommentId] = useState<string | null>(null)
   // Bulk selection on the post queue
   const [selectedPostIds, setSelectedPostIds] = useState<Set<string>>(new Set())
+  const [selectedCommentIds, setSelectedCommentIds] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
 
   const loadModQueue = useCallback(async (token: string) => {
@@ -619,6 +645,39 @@ export default function SettingsModule() {
     })
   }
 
+  // Bulk moderation on the selected COMMENT queue items (mirrors posts).
+  const handleBulkCommentAction = async (action: 'restore' | 'dismiss' | 'delete') => {
+    if (!adminToken || selectedCommentIds.size === 0) return
+    setBulkBusy(true)
+    try {
+      const res = await fetch('/api/admin/moderation', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ targetType: 'comment', ids: Array.from(selectedCommentIds), action }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Bulk action failed')
+      toast.success(data.message || 'Bulk action done')
+      loadModQueue(adminToken)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Bulk action failed')
+    } finally {
+      setBulkBusy(false)
+    }
+  }
+
+  const toggleCommentSelection = (commentId: string) => {
+    setSelectedCommentIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(commentId)) next.delete(commentId)
+      else next.add(commentId)
+      return next
+    })
+  }
+
   const themeOptions = [
     { id: 'light', label: 'Light', icon: Sun },
     { id: 'dark', label: 'Dark', icon: Moon },
@@ -648,15 +707,31 @@ export default function SettingsModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.05 }}
       >
-        <Card className="overflow-hidden border-primary/20">
-          <div className="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-purple-500 h-20" />
+        <Card className="overflow-hidden border-primary/20 group/banner">
+          {/* Branded banner — crescent moon + dotted texture + shimmer */}
+          <div className="relative bg-gradient-to-r from-rose-500 via-fuchsia-500 to-purple-500 h-24 sm:h-28 overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.14] [background-image:radial-gradient(circle_at_center,white_1.2px,transparent_1.2px)] [background-size:16px_16px]" />
+            <div className="absolute -top-10 -right-8 h-32 w-32 rounded-full bg-white/15 blur-2xl transition-transform duration-700 group-hover/banner:scale-125" />
+            <div className="absolute top-4 right-24 h-10 w-10 rounded-full bg-white/10" />
+            {/* Crescent: two overlapping circles */}
+            <div className="absolute right-8 top-1/2 -translate-y-1/2 h-9 w-9">
+              <div className="absolute inset-0 rounded-full bg-white/25" />
+              <div className="absolute inset-0 rounded-full bg-fuchsia-500/90 translate-x-2.5 -translate-y-1.5" />
+            </div>
+            <div className="absolute left-1/4 -bottom-6 h-16 w-16 rounded-full bg-white/10 blur-lg" />
+            {/* Shimmer sweep */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/15 to-white/0 -translate-x-full group-hover/banner:translate-x-full transition-transform duration-1000" />
+          </div>
           <CardContent className="p-5 -mt-10">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              <Avatar className="h-20 w-20 border-4 border-card shadow-lg">
-                <AvatarFallback className="bg-gradient-to-br from-rose-400 to-fuchsia-500 text-white text-xl font-bold">
-                  {formData.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-20 w-20 border-4 border-card shadow-lg ring-2 ring-fuchsia-300/60 ring-offset-0">
+                  <AvatarFallback className="bg-gradient-to-br from-rose-400 to-fuchsia-500 text-white text-xl font-bold">
+                    {formData.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-card" title="Account active" />
+              </div>
               <div className="flex-1 min-w-0 pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-lg font-bold">{formData.name}</h2>
@@ -880,7 +955,14 @@ export default function SettingsModule() {
             </div>
           ))}
         </div>
+
+        {/* ─── Period reminders + quiet hours (persisted) ────────────── */}
+        <Separator className="my-4" />
+        <ReminderPreferences />
       </SettingsSection>
+
+      {/* ─── Language & Region ─────────────────────────────────────── */}
+      <LanguageSection delay={0.22} />
 
       {/* ─── Privacy & Security ────────────────────────────────────── */}
       <SettingsSection
@@ -1276,6 +1358,40 @@ export default function SettingsModule() {
                   </div>
                 ))}
 
+                {/* Bulk action bar — comments */}
+                {selectedCommentIds.size > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 dark:border-sky-900 bg-sky-50/60 dark:bg-sky-950/20 px-3 py-2">
+                    <Badge className="bg-sky-600 text-white border-0 text-[10px] h-5">
+                      {selectedCommentIds.size} comment{selectedCommentIds.size === 1 ? '' : 's'} selected
+                    </Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
+                      disabled={bulkBusy}
+                      onClick={() => handleBulkCommentAction('restore')}
+                    >
+                      {bulkBusy ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />}
+                      Restore selected
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs" disabled={bulkBusy} onClick={() => handleBulkCommentAction('dismiss')}>
+                      Dismiss reports
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs border-rose-300 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                      disabled={bulkBusy}
+                      onClick={() => handleBulkCommentAction('delete')}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Delete selected
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs ml-auto" disabled={bulkBusy} onClick={() => setSelectedCommentIds(new Set())}>
+                      Clear selection
+                    </Button>
+                  </div>
+                )}
+
                 {/* Reported & hidden comments queue */}
                 {modComments.map((comment) => (
                   <div
@@ -1287,6 +1403,19 @@ export default function SettingsModule() {
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
+                      <button
+                        type="button"
+                        aria-label={selectedCommentIds.has(comment.id) ? 'Deselect comment' : 'Select comment'}
+                        onClick={() => toggleCommentSelection(comment.id)}
+                        className={cn(
+                          'mt-0.5 h-4 w-4 shrink-0 rounded border flex items-center justify-center transition-colors',
+                          selectedCommentIds.has(comment.id)
+                            ? 'bg-sky-600 border-sky-600 text-white'
+                            : 'border-muted-foreground/40 hover:border-sky-500'
+                        )}
+                      >
+                        {selectedCommentIds.has(comment.id) && <Check className="h-3 w-3" />}
+                      </button>
                       <div className={`mt-0.5 flex h-4 w-4 items-center justify-center ${comment.hidden ? 'text-orange-500' : 'text-amber-500'}`}>
                         <MessageSquare className="h-3.5 w-3.5" />
                       </div>

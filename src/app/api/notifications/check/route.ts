@@ -40,6 +40,20 @@ export async function POST(request: NextRequest) {
           message: 'Log a period to unlock reminders',
         })
       }
+      if (outcome.reason === 'quiet-hours') {
+        return NextResponse.json({
+          triggered: false,
+          reason: 'quiet-hours',
+          message: 'Reminders are paused during your quiet hours',
+        })
+      }
+      if (outcome.reason === 'disabled') {
+        return NextResponse.json({
+          triggered: false,
+          reason: 'disabled',
+          message: 'Period reminders are turned off',
+        })
+      }
       return NextResponse.json({
         triggered: false,
         reason: outcome.reason,

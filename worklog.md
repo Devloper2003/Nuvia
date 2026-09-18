@@ -714,3 +714,105 @@ Stage Summary:
   6. KNOWN: dev server keeps getting reaped between rounds — check `curl localhost:3000` first and
      restart with setsid double-fork before QA. Mini-service scheduler must be restarted separately
      if the whole sandbox recycles (cd mini-services/reminder-scheduler && setsid bun run dev &).
+
+---
+Task ID: 10
+Agent: Z.ai Code (webDevReview round 10)
+Task: Cron QA + development round — i18n foundation (EN/HI/TA), per-user reminder quiet hours,
+Doctor Finder demo-directory notice, admin comment queue bulk actions, admin logout bugfix,
+mandatory styling round.
+
+Work Log:
+- QA BASELINE (all green before changes): fresh throwaway user r10qa@test.com signed up via real
+  API, completed 3-step onboarding in headless browser (note: onboarding date-picker gridcells are
+  a11y-visible but hard to click headlessly — setting the native input[type=date] via JS setter +
+  input/change events works), dashboard rendered Day 15/Ovulation, Settings/Community/Find Doctor
+  all loaded, 0 console errors. Scheduler healthy on :3031.
+- I18N FOUNDATION (backlog #1 closed — app chrome now speaks Hindi & Tamil):
+  - NEW src/lib/i18n/translations.ts: ~90 keys × en/hi/ta with {var} interpolation
+    (translate(lang, key, vars)); English is source of truth, per-language fallback to en.
+  - NEW src/components/language-provider.tsx: LanguageProvider + useLanguage(). State lives in
+    localStorage ('chandracycle_lang') read via useSyncExternalStore → server snapshot 'en', zero
+    hydration mismatch, zero set-state-in-effect lint issues (same canonical pattern as offline
+    banner), BONUS: 'storage' event gives free cross-tab sync. document.documentElement.lang kept
+    in sync via effect (DOM write only).
+  - NEW src/components/language-switcher.tsx: (a) globe dropdown for topbars (native-script badge
+    EN/हिं/தமி, check on active), (b) LanguageSegmented radiogroup for Settings (gradient active
+    card).
+  - WIRED INTO: app-shell sidebar nav labels + bottom section (install/tour/premium/settings),
+    desktop topbar greeting + active-module breadcrumb + LanguageSwitcher, mobile topbar (module
+    title translated + switcher added), mobile bottom nav (primary tabs + all-modules sheet group
+    titles/labels, 'More' tab), dashboard (greeting, date now localized hi-IN/ta-IN, day-of-cycle
+    badge, phase hero + legend via PHASE_META[].key, quick stats titles/subtitles incl. fertility
+    Peak/Rising/Low, quick-log buttons, CycleProgressRing ofDaysLabel), settings (new Language &
+    Region card whose own title is translated live).
+  - VERIFIED: desktop live-switch to हिन्दी (nav/topbar instant), full reload shows fully Hindi
+    dashboard (सुप्रभात / चक्र का दिन 15 / ओवुलेशन चरण / phase legend / quick stats), mobile 390×844
+    live-switch verified, console clean. NOTE: one stale-chunk HMR artifact after a server reap made
+    the dashboard lag a live switch once; fresh browser showed instant switching — not a code bug.
+- PER-USER REMINDER QUIET HOURS (backlog: user-configurable reminders — closed):
+  - Schema: User.remindersEnabled (default true), User.quietStart/quietEnd (Int?, hour 0-23,
+    window [start,end) wrap-around safe; null pair = 24/7). db:push OK.
+  - src/lib/reminders.ts: new isQuietHour() (pure) + maybeCreatePeriodReminder now returns
+    'quiet-hours' (defer — reminder delivered by next evaluation after window ends) and 'disabled'
+    (kill-switch) BEFORE cooldown evaluation.
+  - /api/cron/reminders selects the new fields; tally extended with quietHours/disabled buckets.
+  - /api/notifications/check returns friendly messages for both new reasons.
+  - NEW /api/user/preferences: GET (current prefs + quietNow flag) / PATCH (session-token auth,
+    validates hour ints 0-23 or null, clears window when either end nulled).
+  - NEW src/components/settings/reminder-preferences.tsx (in Settings → Notification Preferences):
+    master Switch, preset chips (Off 24/7 · 22:00→07:00 · 23:00→08:00 · 21:00→06:00), custom
+    from/to hour selects, optimistic save + revert, live status footer ("Reminders pause 22:00 →
+    07:00"), "Quiet now" pulse chip when inside the window.
+  - notification-panel.tsx: indigo "🌙 Quiet" chip in the panel header while quietNow.
+  - E2E VERIFIED via API: window covering current hour → per-user check returned
+    {"reason":"quiet-hours"} AND sweep tally counted quietHours:1; clearing window → reminder
+    triggered immediately (🌸 Period expected in 2 days); remindersEnabled:false →
+    {"reason":"disabled"}. All test state restored afterwards.
+- DOCTOR FINDER DEMO NOTICE (backlog #3 closed): visible amber banner (FlaskConical icon, "Demo
+  directory" + SAMPLE DATA badge, verify-credentials safety note, dismissible, reappears per
+  search) above results when searchSource==='simulated'. VERIFIED in browser with a real search.
+- ADMIN COMMENT QUEUE BULK ACTIONS (backlog #2 closed — API already supported bulk comments):
+  - settings.tsx: selectedCommentIds state + toggle + handleBulkCommentAction
+    (targetType:'comment', ids[]), sky-accent bulk bar (Restore / Dismiss reports / Delete /
+    Clear selection) + checkbox on every comment card.
+  - E2E VERIFIED: test post + 2 comments created, reported by throwaway user → admin API bulk
+    dismiss {"processed":2} → reportedCounts reset to 0, two moderation:dismiss audit rows written;
+    UI verified in browser (checkbox select → bulk bar visible; report-reason chips render).
+- BUG FIX — ADMIN LOGOUT 500 (pre-existing, exposed by round-10 QA): /api/admin/logout wrote
+  revokedAt/revokedReason which did NOT exist on AdminSession (copy-paste from AuthSession) →
+  PrismaClientValidationError on every operator sign-out, session never actually revoked.
+  Added both fields to the model, db:push, full dev-server restart (needed for regenerated client),
+  then VERIFIED: logout returns {"success":true} and latest session row shows revoked:true +
+  revokedReason 'operator logout'.
+- STYLING ROUND (mandatory):
+  - Settings profile banner: dotted radial texture, crescent-moon mark (two-circle overlap), blur
+    orbs, hover shimmer sweep, avatar ring + emerald status dot (group/banner hover transforms).
+  - LanguageSegmented gradient active card + check bubble; quiet-hours card design (chips,
+    selects, status footer); demo-banner gradient design.
+- CLEANUP: r10qa + r10reporter users cascade-deleted (posts/comments/reports/preferences gone),
+  QA test reminder pruned, preferences reset, admin signed out in browser. The 1 remaining
+  period_reminder belongs to real preview user growthive9@gmail.com (legitimately 10 days late)
+  and stays. Final DB: 7 users, 0 reports, 0 test artifacts.
+- INFRA NOTE: dev server reaped 3× this round (curl 000 → setsid double-fork restart). Prisma
+  schema changes require a FULL dev-server restart (hot reload keeps the old client in memory) —
+  cost one confusing "logout still failing" cycle.
+
+Stage Summary:
+- ✅ Shipped & verified: i18n foundation with instant EN/HI/TA switching across nav, dashboard,
+  mobile chrome and settings (largest backlog item, closed); per-user reminder quiet hours enforced
+  end-to-end (settings UI → preferences API → reminder engine → sweep); Doctor Finder demo-directory
+  notice; admin comment-queue bulk moderation (UI + API verified); 1 real bug fixed (admin logout).
+- Lint: 0 errors 0 warnings. Fresh browser console: 0 errors. Scheduler: healthy (5 runs, 0 errors).
+- DB state changes: User +3 columns (remindersEnabled/quietStart/quietEnd), AdminSession +2 columns
+  (revokedAt/revokedReason); no data migrations needed; all test artifacts removed.
+- Remaining backlog (next round):
+  1. i18n depth: extend translations beyond app chrome into module interiors (period tracker,
+     coach empty-states, onboarding) + browser i18n of AI-generated content is out of scope.
+  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+  3. Reminder sweep: per-user local-timezone quiet hours (engine currently uses server clock;
+     fine in sandbox, consider storing tz or evaluating quiet hours against user's profile tz).
+  4. Doctor Finder: Google Places still unconfigured (demo notice now covers it gracefully).
+  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+  6. KNOWN: dev server reaping continues — always `curl localhost:3000` first; restart with
+     setsid double-fork; restart mini-services/reminder-scheduler separately after sandbox recycle.

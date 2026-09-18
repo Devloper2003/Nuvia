@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ChunkErrorRecovery } from "@/components/chunk-error-recovery";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/components/language-provider";
 import { PwaRegister } from "@/components/pwa-register";
 import OfflineBanner from "@/components/offline-banner";
 
@@ -67,11 +68,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${playfair.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <ChunkErrorRecovery />
-          <PwaRegister />
-          <OfflineBanner />
-          {children}
-          <Toaster richColors position="top-right" />
+          <LanguageProvider>
+            <ChunkErrorRecovery />
+            <PwaRegister />
+            <OfflineBanner />
+            {children}
+            <Toaster richColors position="top-right" />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

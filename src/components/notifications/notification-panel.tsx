@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, BellRing, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X, Loader2, HeartHandshake } from 'lucide-react'
+import { Bell, BellRing, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X, Loader2, HeartHandshake, MoonStar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -59,6 +59,7 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
   const [loading, setLoading] = useState(false)
   const [markingAll, setMarkingAll] = useState(false)
   const [pushState, setPushState] = useState<PushState>('checking')
+  const [quietNow, setQuietNow] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -121,6 +122,20 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
       cancelled = true
     }
   }, [userId, fetchNotifications])
+
+  // ─── Quiet-hours probe (shows a soft chip while the window is active) ──
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/user/preferences')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d && typeof d.quietNow === 'boolean') setQuietNow(d.quietNow)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   // ─── Push subscription status probe ─────────────────────────────
   useEffect(() => {
@@ -319,6 +334,15 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
+                  {quietNow && (
+                    <span
+                      className="text-[10px] font-medium text-indigo-600 dark:text-indigo-300 flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-1"
+                      title="Quiet hours are active — reminders pause until the window ends"
+                    >
+                      <MoonStar className="h-3 w-3" />
+                      Quiet
+                    </span>
+                  )}
                   {pushState === 'prompt' && (
                     <button
                       onClick={enableReminders}

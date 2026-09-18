@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
+import { useLanguage } from '@/components/language-provider'
+import type { TranslationKey } from '@/lib/i18n/translations'
 import {
   BarChart,
   Bar,
@@ -106,10 +108,10 @@ function EmptyState({ icon: Icon, title, description, ctaLabel, onCta, className
 // ─── Phase metadata (configuration — not user data) ──────────────────────────
 
 const PHASE_META = [
-  { name: 'Menstrual', days: '1-5', color: '#e11d48' },
-  { name: 'Follicular', days: '6-13', color: '#8b5cf6' },
-  { name: 'Ovulation', days: '14-16', color: '#f97316' },
-  { name: 'Luteal', days: '17-28', color: '#06b6d4' },
+  { name: 'Menstrual', key: 'phase.menstrual' as TranslationKey, days: '1-5', color: '#e11d48' },
+  { name: 'Follicular', key: 'phase.follicular' as TranslationKey, days: '6-13', color: '#8b5cf6' },
+  { name: 'Ovulation', key: 'phase.ovulation' as TranslationKey, days: '14-16', color: '#f97316' },
+  { name: 'Luteal', key: 'phase.luteal' as TranslationKey, days: '17-28', color: '#06b6d4' },
 ]
 
 function getPhaseForCycleDay(cycleDay: number, cycleLength: number, periodLength: number) {
@@ -216,6 +218,7 @@ export default function DashboardModule() {
   const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false)
   const userProfile = useAppStore((s) => s.userProfile)
   const setActiveModule = useAppStore((s) => s.setActiveModule)
+  const { t, lang } = useLanguage()
   const displayName = userProfile?.name?.trim() || 'there'
 
   const [cycles, setCycles] = useState<CycleEntry[]>([])
@@ -483,19 +486,20 @@ export default function DashboardModule() {
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours()
-    if (hour < 12) return 'Good Morning'
-    if (hour < 17) return 'Good Afternoon'
-    return 'Good Evening'
-  }, [])
+    if (hour < 12) return t('greeting.morning')
+    if (hour < 17) return t('greeting.afternoon')
+    return t('greeting.evening')
+  }, [t])
 
+  const localeMap: Record<string, string> = { en: 'en-US', hi: 'hi-IN', ta: 'ta-IN' }
   const formattedDate = useMemo(() => {
-    return new Date().toLocaleDateString('en-US', {
+    return new Date().toLocaleDateString(localeMap[lang] ?? 'en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     })
-  }, [])
+  }, [lang])
 
   const greetingIcon = useMemo(() => {
     const hour = new Date().getHours()
@@ -556,35 +560,35 @@ export default function DashboardModule() {
   const quickLogButtons = [
     {
       icon: Droplets,
-      label: 'Log Period',
+      labelKey: 'quicklog.period' as TranslationKey,
       color: 'bg-rose-500 hover:bg-rose-600',
       textColor: 'text-white',
       module: 'period' as const,
     },
     {
       icon: Sparkles,
-      label: 'Log Mood',
+      labelKey: 'quicklog.mood' as TranslationKey,
       color: 'bg-purple-500 hover:bg-purple-600',
       textColor: 'text-white',
       module: 'mental' as const,
     },
     {
       icon: HeartPulse,
-      label: 'Log Symptoms',
+      labelKey: 'quicklog.symptoms' as TranslationKey,
       color: 'bg-pink-500 hover:bg-pink-600',
       textColor: 'text-white',
       module: 'symptoms' as const,
     },
     {
       icon: GlassWater,
-      label: 'Log Water',
+      labelKey: 'quicklog.water' as TranslationKey,
       color: 'bg-sky-500 hover:bg-sky-600',
       textColor: 'text-white',
       module: 'fitness' as const,
     },
     {
       icon: Moon,
-      label: 'Log Sleep',
+      labelKey: 'quicklog.sleep' as TranslationKey,
       color: 'bg-indigo-500 hover:bg-indigo-600',
       textColor: 'text-white',
       module: 'fitness' as const,
@@ -630,14 +634,14 @@ export default function DashboardModule() {
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs font-medium">
               <Droplets className="h-3 w-3 text-rose-500" />
-              Day {cycleInfo.cycleDay} of Cycle
+              {t('dashboard.dayOfCycle', { day: cycleInfo.cycleDay })}
             </Badge>
             <Badge
               className="gap-1.5 px-3 py-1 text-xs font-semibold text-white border-0"
               style={{ backgroundColor: cycleInfo.phase.color }}
             >
               <Sparkles className="h-3 w-3" />
-              {cycleInfo.phase.name} Phase
+              {t('dashboard.phaseBadge', { phase: t(cycleInfo.phase.key) })}
             </Badge>
           </div>
         )}
@@ -656,7 +660,8 @@ export default function DashboardModule() {
                     cycleLength={cycleInfo.cycleLength}
                     periodLength={cycleInfo.periodLength}
                     phaseColor={cycleInfo.phase.color}
-                    phaseName={cycleInfo.phase.name}
+                    phaseName={t(cycleInfo.phase.key)}
+                    ofDaysLabel={t('dashboard.ofDays', { n: cycleInfo.cycleLength })}
                   />
                 </div>
 
@@ -664,14 +669,14 @@ export default function DashboardModule() {
                 <div className="flex-1 text-center lg:text-left space-y-4 w-full">
                   <div>
                     <h2 className="text-xl font-bold mb-1">
-                      You&apos;re in your{' '}
+                      {t('dashboard.inYourPhase')}{' '}
                       <span style={{ color: cycleInfo.phase.color }} className="font-extrabold">
-                        {cycleInfo.phase.name}
+                        {t(cycleInfo.phase.key)}
                       </span>{' '}
-                      phase
+                      {t('dashboard.phaseSuffix')}
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                      Log symptoms, mood, and sleep to learn how this phase affects you.
+                      {t('dashboard.phaseHint')}
                     </p>
                   </div>
 
@@ -680,7 +685,7 @@ export default function DashboardModule() {
                       <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
                         {cycleInfo.daysUntilPeriod}
                       </p>
-                      <p className="text-xs text-muted-foreground">Days until period</p>
+                      <p className="text-xs text-muted-foreground">{t('dashboard.daysUntilPeriod')}</p>
                     </div>
                     <div className="text-center px-4 py-2 rounded-xl bg-orange-50 dark:bg-orange-950/30">
                       <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
@@ -695,7 +700,7 @@ export default function DashboardModule() {
                           return Math.max(0, daysToOvulation)
                         })()}
                       </p>
-                      <p className="text-xs text-muted-foreground">Days to ovulation</p>
+                      <p className="text-xs text-muted-foreground">{t('dashboard.daysToOvulation')}</p>
                     </div>
                   </div>
 
@@ -708,7 +713,7 @@ export default function DashboardModule() {
                           style={{ backgroundColor: phase.color }}
                         />
                         <span className="text-muted-foreground">
-                          {phase.name} <span className="font-medium text-foreground">({phase.days})</span>
+                          {t(phase.key)} <span className="font-medium text-foreground">({phase.days})</span>
                         </span>
                       </div>
                     ))}
@@ -718,9 +723,9 @@ export default function DashboardModule() {
             ) : (
               <EmptyState
                 icon={Droplets}
-                title="No cycle logged yet"
+                title={t('dashboard.noCycleTitle')}
                 description="Log your first period start date to unlock cycle predictions, fertility windows, and phase insights."
-                ctaLabel="Log your first period"
+                ctaLabel={t('dashboard.logFirstPeriod')}
                 onCta={() => setActiveModule('period')}
               />
             )}
@@ -742,31 +747,31 @@ export default function DashboardModule() {
             const ovulationDate = new Date(Date.now() + daysToOvulation * 86_400_000)
             const fertility =
               cycleInfo.phase.name === 'Ovulation'
-                ? { value: 'Peak', subtitle: 'High chance' }
+                ? { value: t('fertility.peak'), subtitle: t('fertility.highChance') }
                 : cycleInfo.phase.name === 'Follicular'
-                  ? { value: 'Rising', subtitle: 'Fertility rising' }
-                  : { value: 'Low', subtitle: 'Low chance' }
+                  ? { value: t('fertility.rising'), subtitle: t('fertility.risingChance') }
+                  : { value: t('fertility.low'), subtitle: t('fertility.lowChance') }
             return [
               {
-                title: 'Cycle Day',
+                title: t('dashboard.cycleDay'),
                 value: cycleInfo.cycleDay,
-                subtitle: `of ${cycleInfo.cycleLength} days`,
+                subtitle: t('dashboard.ofDays', { n: cycleInfo.cycleLength }),
                 icon: CalendarDays,
                 color: 'text-rose-500',
                 bg: 'bg-rose-50 dark:bg-rose-950/30',
-                badge: { text: cycleInfo.phase.name, bg: cycleInfo.phase.color },
+                badge: { text: t(cycleInfo.phase.key), bg: cycleInfo.phase.color },
               },
               {
-                title: 'Days Until Period',
+                title: t('dashboard.daysUntilPeriodTitle'),
                 value: cycleInfo.daysUntilPeriod,
-                subtitle: 'countdown',
+                subtitle: t('dashboard.countdown'),
                 icon: Clock,
                 color: 'text-purple-500',
                 bg: 'bg-purple-50 dark:bg-purple-950/30',
                 badge: null,
               },
               {
-                title: 'Fertility Status',
+                title: t('dashboard.fertilityStatus'),
                 value: fertility.value,
                 subtitle: fertility.subtitle,
                 icon: Baby,
@@ -774,13 +779,13 @@ export default function DashboardModule() {
                 bg: 'bg-orange-50 dark:bg-orange-950/30',
                 badge:
                   cycleInfo.phase.name === 'Ovulation'
-                    ? { text: 'Peak', bg: '#e11d48' }
+                    ? { text: t('fertility.peak'), bg: '#e11d48' }
                     : null,
               },
               {
-                title: 'Next Ovulation',
+                title: t('dashboard.nextOvulation'),
                 value: daysToOvulation,
-                subtitle: `≈ ${ovulationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${cycleInfo.cycleLength}-day cycle`,
+                subtitle: `≈ ${ovulationDate.toLocaleDateString(localeMap[lang] ?? 'en-US', { month: 'short', day: 'numeric' })} · ${t('dashboard.dayCycle', { n: cycleInfo.cycleLength })}`,
                 icon: Flower2,
                 color: 'text-emerald-500',
                 bg: 'bg-emerald-50 dark:bg-emerald-950/30',
@@ -995,7 +1000,7 @@ export default function DashboardModule() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {quickLogButtons.map((btn, i) => (
                 <motion.button
-                  key={btn.label}
+                  key={btn.labelKey}
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                   initial={{ opacity: 0, y: 12 }}
@@ -1007,11 +1012,11 @@ export default function DashboardModule() {
                     damping: 20,
                   }}
                   className={`${btn.color} ${btn.textColor} rounded-xl p-4 flex flex-col items-center justify-center gap-2 shadow-md hover:shadow-lg transition-shadow cursor-pointer`}
-                  aria-label={btn.label}
+                  aria-label={t(btn.labelKey)}
                   onClick={() => setActiveModule(btn.module)}
                 >
                   <btn.icon className="h-6 w-6" />
-                  <span className="text-xs font-semibold">{btn.label}</span>
+                  <span className="text-xs font-semibold">{t(btn.labelKey)}</span>
                 </motion.button>
               ))}
             </div>
@@ -1394,12 +1399,14 @@ function CycleProgressRing({
   periodLength,
   phaseColor,
   phaseName,
+  ofDaysLabel,
 }: {
   cycleDay: number
   cycleLength: number
   periodLength: number
   phaseColor: string
   phaseName: string
+  ofDaysLabel: string
 }) {
   const radius = 90
   const strokeWidth = 10
@@ -1500,7 +1507,7 @@ function CycleProgressRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-4xl font-bold gradient-text">{cycleDay}</span>
-        <span className="text-xs text-muted-foreground mt-0.5">of {cycleLength} days</span>
+        <span className="text-xs text-muted-foreground mt-0.5">{ofDaysLabel}</span>
         <Badge
           className="mt-2 border-0 text-white font-semibold text-xs px-3 py-1"
           style={{ backgroundColor: phaseColor }}

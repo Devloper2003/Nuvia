@@ -1,0 +1,402 @@
+     1→     1→---
+     2→     2→Task ID: 1
+     3→     3→Agent: Z.ai Code (main)
+     4→     4→Task: Analyse https://github.com/Devloper2003/Chandracycle.git and execute (run) it in this sandbox.
+     5→     5→
+     6→     6→Work Log:
+     7→     7→- Cloned the repo to /tmp/chandracycle-analysis and performed a full analysis.
+     8→     8→  - ChandraCycle = AI Women's Health Companion (Next.js 16 + TS + Tailwind 4 + shadcn + Prisma).
+     9→     9→  - 20 modules: Dashboard, Period Tracker, Hormone IQ, Symptoms, PCOS Care, Fertility, Pregnancy,
+    10→    10→    Menopause, AI Coach, Diet Advisor, Find Doctor, Mind & Soul, Move & Flow, Skin & Beauty,
+    11→    11→    Wellness Market, Community, Reports, AI Insights, Premium (PayPal), Settings.
+    12→    12→  - 20+ API routes under src/app/api (auth, cycles, mood, sleep, water, chat, diet-chat, community, etc.).
+    13→    13→  - Auth: custom JWT (HMAC) + Google OAuth (google-auth-library) + modal fallback; token in
+    14→    14→    localStorage `chandracycle_token` + cookie.
+    15→    15→  - AI chat uses z-ai-web-dev-sdk (works in this sandbox).
+    16→    16→  - Original DB = PostgreSQL (Neon); .env.example pointed at Postgres + admin-sync/PayPal/Google vars.
+    17→    17→- Migration to sandbox:
+    18→    18→  - Copied src/, public/, next.config.ts, prisma/schema.prisma from repo into /home/z/my-project.
+    19→    19→  - Changed prisma provider postgresql -> sqlite (schema is SQLite-safe: no enums/Json/@db attrs).
+    20→    20→  - Installed missing dependency: google-auth-library@11.
+    21→    21→  - .env: kept DATABASE_URL=file:/home/z/my-project/db/custom.db, added JWT_SECRET.
+    22→    22→  - `bun run db:push` → schema synced, Prisma Client generated.
+    23→    23→- Dev server was already running on port 3000; Next hot-reloaded the new source. Verified via curl:
+    24→    24→  GET /api/auth/config → {"google":{"configured":false}} and / renders ChandraCycle auth screen.
+    25→    25→- End-to-end verification with agent-browser:
+    26→    26→  - Signup flow: created user priya.sharma@test.com (Priya Sharma) → success.
+    27→    27→  - Onboarding: 3 steps (welcome → last period date (2026-09-09) → goal "Track my period") → done.
+    28→    28→  - Dashboard renders: "Good Morning, Priya", Day 10 of Cycle, Follicular Phase ring, quick-log cards,
+    29→    29→    18-module sidebar, welcome tour.
+    30→    30→  - Period Tracker: logged period (medium flow + notes) via Log tab → POST /api/cycles 201;
+    31→    31→    cycle calendar shows Menstrual/Follicular/Ovulation/Luteal phases.
+    32→    32→  - AI Coach: asked nutrition question → full streamed AI answer (POST /api/chat 200, ~7s).
+    33→    33→  - Symptoms & Mood: selected Happy + sliders → POST /api/mood 201, /api/sleep 201, /api/water 201.
+    34→    34→  - Notifications panel: seeded items render (POST /api/notifications/seed 200).
+    35→    35→  - Community: created post via dialog (renders in feed; note: component uses local state — see below).
+    36→    36→  - Mobile (390×844): mobile topbar + bottom nav (Home/Period/AI Coach/Insights/More) all render.
+    37→    37→  - Browser console: no page errors; only React DevTools info + HMR logs.
+    38→    38→- DB check via Prisma: 2 users (test user + growthive9@gmail.com "Shivam" who signed up through the
+    39→    39→  public preview — proves the app is reachable), 1 cycle, 1 mood entry.
+    40→    40→
+    41→    41→Stage Summary:
+    42→    42→- ✅ ChandraCycle is fully migrated to SQLite and RUNNING on port 3000 (served through preview panel).
+    43→    43→- ✅ Verified flows: signup → onboarding → dashboard → period logging → AI Coach (live AI) →
+    44→    44→  mood/sleep/water logging → notifications → community UI → mobile layout.
+    45→    45→- Graceful degradation confirmed: Google OAuth falls back to modal flow (not configured),
+    46→    46→  PayPal degrades via isPaypalConfigured(), admin-sync is best-effort.
+    47→    47→- Known gaps / next-phase opportunities (priority order):
+    48→    48→  1. Community component keeps posts in local state; wire it to /api/community (GET/POST) + comments.
+    49→    49→  2. Chat history is not persisted to ChatMessage table; add persistence per user.
+    50→    50→  3. Premium module: PayPal keys not set — consider a mock/demo checkout mode.
+    51→    51→  4. Doctor Finder / geocode rely on external services — verify and add graceful fallbacks.
+    52→    52→  5. Add demo seed data (cycles, symptoms history) so dashboards/charts look alive for first-time users.
+    53→    53→- External services intentionally left unconfigured: GOOGLE_CLIENT_ID, PAYPAL_CLIENT_ID/SECRET,
+    54→    54→  ADMIN_SYNC_URL (all degrade safely).
+    55→    55→
+    56→    56→---
+    57→    57→Task ID: 2
+    58→    58→Agent: Z.ai Code (webDevReview round 2)
+    59→    59→Task: Cron QA + development round — assess status, fix bugs, add features (community persistence, chat history, seed data, dashboard wiring).
+    60→    60→
+    61→    61→Work Log:
+    62→    62→- Reviewed worklog.md; QA baseline via agent-browser: app healthy, session persisted, no console errors.
+    63→    63→- FOUND & FIXED latent bug: src/components/modules/ai-coach.tsx shipped with corrupted syntax
+    64→    64→  (`const essages, setMessages]` / `}, essages])`) from the original repo commit. It "worked" only
+    65→    65→  because the dev server was serving a stale compiled bundle. Verified current file parses; lint passes.
+    66→    66→  (File later appeared restored — sandbox file-sync artifact — but the broken state was real and confirmed
+    67→    67→  via sed/grep/cat -A. Watch for transient file corruption in this environment.)
+    68→    68→- Community module wired to backend (was local-state only):
+    69→    69→  - GET /api/community on mount (loading state + error toast), mapped API→UI model.
+    70→    70→  - POST create → persists to DB; category mapping UI↔API (General↔general, Mental Health↔mental_health).
+    71→    71→  - Likes persist via NEW PATCH /api/community (optimistic UI + revert on failure).
+    72→    72→  - Comments: NEW /api/community/comments route (GET ?postId / POST); comments dialog with avatar list,
+    73→    73→    add-comment input, counts update in feed. Verified post + like + comment all SURVIVE page reloads.
+    74→    74→  - Live trending topics computed from real posts; gamification (level/score/badges) derived from real
+    75→    75→    activity; deterministic anonymous alias (flower_N) hashed from post/comment id.
+    76→    76→- AI Coach chat persistence:
+    77→    77→  - /api/chat now: GET ?userId= history (last 100), POST persists user+assistant messages to
+    78→    78→    ChatMessage (guarded by user-exists check to avoid FK errors), DELETE ?userId= clears history.
+    79→    79→  - ai-coach.tsx loads history on mount, passes userId on send, Reset clears server history.
+    80→    80→  - Verified: conversation survives full page reload.
+    81→    81→- Demo/seed data:
+    82→    82→  - NEW /api/seed-demo (POST {userId}): 6 past cycles + 21 days symptoms/mood/sleep/water,
+    83→    83→    idempotent (skips if user has ≥3 cycles). Seeded for both existing users.
+    84→    84→  - Sample gynecologist appointment created for both users.
+    85→    85→  - NEW "Load Demo History" button in Settings → Privacy & Security with result toasts.
+    86→    86→- Dashboard un-hardcoded (was 3 static empty states):
+    87→    87→  - Weekly Symptoms: REAL recharts BarChart (7-day counts, pink gradient bars) with empty-state fallback.
+    88→    88→  - Recent Activity: merged real feed from symptoms+mood+sleep+water APIs, color-coded icons,
+    89→    89→    Today/Yesterday formatting.
+    90→    90→  - Upcoming Reminders: wired to /api/appointments (upcoming, non-cancelled, top 3).
+    91→    91→- Verified in browser: seeded chart bars render; activity feed lists water/sleep/mood entries;
+    92→    92→  reminders show "Dr. Kavita Mehta — Gynecologist 2026-09-23 11:30 AM".
+    93→    93→
+    94→    94→Stage Summary:
+    95→    95→- ✅ All priority backlog items shipped & verified: community persistence, chat history, seed data,
+    96→    96→  dashboard real-data sections, plus repo-bug fix (ai-coach syntax).
+    97→    97→- DB now: 13 cycles, 43 mood/sleep/water each, 35 symptoms, 2 chat msgs, 1 post, 1 comment, 2 appointments.
+    98→    98→- Lint: 0 errors 0 warnings. Console: clean.
+    99→    99→- Risks/notes: (1) transient file-corruption observed once — future rounds should re-verify file integrity
+   100→   100→  before deep debugging; (2) PayPal/Google OAuth still unconfigured (graceful); (3) dev.log shows old
+   101→   101→  EADDRINUSE from duplicate start attempt — harmless.
+   102→   102→- Next-phase recommendations (priority):
+   103→   103→  1. Wire Upcoming Reminders deeper: appointments CRUD from Find Doctor module (book → appears in reminders).
+   104→   104→  2. Period Tracker timeline & Hormone IQ charts can now benefit from seeded history — verify + polish visuals.
+   105→   105→  3. Dark-mode pass on new components (activity icons/reminder cards use dark: variants — verify contrast).
+   106→   106→  4. Community: add "delete own post", report/flag flow; admin moderation later.
+   107→   107→  5. Consider pagination for community feed when posts grow.
+   108→   108→
+   109→   109→---
+   110→   110→Task ID: 3
+   111→   111→Agent: Z.ai Code (webDevReview round 3)
+   112→   112→Task: Cron QA + development round — bug fixes (file corruption, theme provider, Dr. prefix), doctor booking persistence, community delete-own-post, dark mode polish.
+   113→   113→
+   114→   114→Work Log:
+   115→   115→- QA baseline: server healthy (200), lint clean, session persisted.
+   116→   116→- TRANSIENT FILE CORRUPTION (2nd occurrence): doctor-finder.tsx briefly showed corrupted lines
+   117→   117→  (`const asSearched, setHasSearched]` / `}, asSearched, doctors, …])` — the literal "[h" substring
+   118→   118→  dropped, same class of corruption as ai-coach.tsx "[m" drop in round 2). Confirmed via grep+sed+cat -A;
+   119→   119→  the file SELF-HEALED between reads (sandbox file-sync race). Mitigation adopted: never trust a single
+   120→   120→  read — verify with lint as the final gate; re-read before editing; replace via exact unique strings.
+   121→   121→- Find Doctor → appointment booking PERSISTED (was client-only):
+   122→   122→  - confirmBooking now POSTs /api/appointments (userId, doctorName, specialty, date, time,
+   123→   123→    type video/in_person from doctor.videoConsult, notes=reason) with loading state ("Booking…"),
+   124→   124→    success toast, error toasts.
+   125→   125→  - Verified end-to-end in browser: search "Mumbai" → 12 demo doctors → Book → date 23 Sep + 11:00 AM
+   126→   126→    slot + reason → Confirm → success dialog → appointment appears in Dashboard Upcoming Reminders.
+   127→   127→- Doctor finder fallback (backlog #4) SHIPPED:
+   128→   128→  - Root cause: search route intentionally returned [] without GOOGLE_PLACES_API_KEY (module dead in
+   129→   129→    sandbox; generateSimulatedDoctors existed but was never called — dead code).
+   130→   130→  - Now: falls back to deterministic simulated listings (seeded RNG, Indian clinics/names) with
+   131→   131→    source:"simulated"; client badge shows "Demo listings" (was "Live results" for everything non-google).
+   132→   132→  - Real Google Places still used first when key present.
+   133→   133→- Community delete-own-post SHIPPED:
+   134→   134→  - NEW DELETE /api/community?postId&userId — ownership enforced server-side (403 for non-owner,
+   135→   135→    verified via cross-user curl test: non-owner→403, owner→200).
+   136→   136→  - UI: Trash icon on own posts only (isOwn mapped from API user.id), shadcn AlertDialog confirm,
+   137→   137→    optimistic removal + revert on failure.
+   138→   138→- Theme toggle FIXED (was non-functional):
+   139→   139→  - Settings used next-themes useTheme but NO ThemeProvider was mounted → setTheme was a no-op.
+   140→   140→  - Added src/components/theme-provider.tsx and wrapped layout (attribute="class", defaultTheme="light",
+   141→   141→    enableSystem). globals.css already had @custom-variant dark (.dark class) — now actually works.
+   142→   142→  - Verified in browser: Settings → Dark → whole app flips (dashboard cards/sidebar/chart); Light restores.
+   143→   143→- Styling polish:
+   144→   144→  - Weekly Symptoms chart now theme-aware: grid stroke var(--border), axis ticks var(--muted-foreground)
+   145→   145→    (were hardcoded light grays — glaring in dark mode).
+   146→   146→  - Fixed "Dr. Dr. Karthik Kapoor" double-prefix in dashboard reminders (startsWith('Dr.') guard).
+   147→   147→  - Mobile (390×844) verified: chart, reminders, activity feed all render cleanly.
+   148→   148→
+   149→   149→Stage Summary:
+   150→   150→- ✅ Shipped: booking persistence E2E, doctor-search demo fallback, community delete-own-post (+authz),
+   151→   151→  working dark mode via ThemeProvider, chart theming, Dr.-prefix fix.
+   152→   152→- Known environment risk: intermittent file corruption in sandbox sync (2 incidents, both self-healed);
+   153→   153→  always lint before finishing a round.
+   154→   154→- Remaining backlog (next round):
+   155→   155→  1. Delete/cancel appointment UI (settings or reminders) to complete the appointments CRUD.
+   156→   156→  2. Community feed pagination + report/flag flow.
+   157→   157→  3. Wire "Start Video Consult" to a room/flow (currently decorative) or hide without config.
+   158→   158→  4. Hormone IQ / Reports modules: verify with 7 seeded cycles, polish visuals.
+   159→   159→  5. Premium module: mock checkout mode (PayPal keys absent).
+   160→   160→
+   161→   161→---
+   162→   162→Task ID: 4
+   163→   163→Agent: Z.ai Code (webDevReview round 4)
+   164→   164→Task: Cron QA + development round — bring dead modules to life (Reports, Hormone Preview, AI Insights, Community content), appointments CRUD completion, community moderation, premium subscription persistence, styling details.
+   165→   165→
+   166→   166→Work Log:
+   167→   167→- QA baseline: server 200, lint clean. Browser QA found FOUR dead surfaces despite rich seeded data:
+   168→   168→  (1) Community feed empty (round-2 post lost in DB reset → brand-new users see "Be the first to post");
+   169→   169→  (2) Reports module permanently showed "No reports yet" (UI shell hardwired `periodData = null`, API never called);
+   170→   170→  (3) Dashboard "Hormone Preview" empty state claimed "no cycle data" with 13 cycles present;
+   171→   171→  (4) Dashboard "AI Insights" said "coming soon" despite logs.
+   172→   172→- DEAD MODULE REVIVED — Report Center now 100% real data:
+   173→   173→  - NEW GET /api/reports/summary?userId&period (daily|weekly|monthly|annual): aggregates real
+   174→   174→    symptoms/mood/sleep/water/cycles for current + previous equivalent window; computes wellnessScore
+   175→   175→    (weighted composite of mood/energy/stress/sleep/hydration/symptom-severity), cycleRegularity
+   176→   176→    (std-dev of cycle-start gaps), symptomSeverity, moodStability, sleepAvg, waterAvg, rule-based
+   177→   177→    insights (up to 6, with pct-change vs previous period), trendLine (7d daily / 4wk monthly / 12mo
+   178→   178→    annual), radarData (5-axis current-vs-previous), cycleSummary (period start/end, fertile window,
+   179→   179→    ovulation per overlapping cycle), counts. Mood labels normalized case-insensitively ("happy"→"Happy").
+   180→   180→  - report-center.tsx: fetches on mount + on period-tab change (deferred-microtask setState for lint),
+   181→   181→    loading skeletons (score cards + chart placeholders), period label + date range in header,
+   182→   182→    empty state only when the period genuinely has 0 entries.
+   183→   183→  - BONUS: Export CSV button now REALLY downloads a formatted report (summary metrics, trend series,
+   184→   184→    symptom + mood breakdowns → Blob download, verified file on disk chandracycle-monthly-report-*.csv);
+   185→   185→    PDF/Excel disabled with tooltips (honest UI).
+   186→   186→- Dashboard Hormone Preview REVIVED: educational estrogen + progesterone area curves generated from the
+   187→   187→  user's own cycle length (cosine-eased phases: follicular rise → ovulation peak → luteal progesterone
+   188→   188→  bump), "Today" ReferenceLine at current cycle day + dashed ovulation line, theme-aware grid/axis,
+   189→   189→  legend incl. ovulation day, honest caption "Typical pattern for your cycle length — real readings
+   190→   190→  need lab data", EDUCATIONAL badge. Empty state only when no cycles exist.
+   191→   191→- Dashboard AI Insights REVIVED: fetches /api/reports/summary weekly → "Wellness score 63/100" badge +
+   192→   192→  top-3 real insight cards (sparkle bullets, staggered fade-in).
+   193→   193→- Appointments CRUD COMPLETED:
+   194→   194→  - PATCH /api/appointments {id,userId,action:cancel} → status='cancelled' (ownership enforced, cross-user
+   195→   195→    curl → 403); DELETE /api/appointments?id&userId → hard delete.
+   196→   196→  - Dashboard reminder cards: hover-reveal X button → AlertDialog confirm ("Keep appointment"/"Cancel
+   197→   197→    appointment") → optimistic removal + revert on failure + toasts; verified E2E (DB status flipped,
+   198→   198→    card vanished).
+   199→   199→  - STYLING: dates now "Today"/"Tomorrow"/"Wed, 23 Sept" (were raw ISO), type icon+label map
+   200→   200→    (video→Video "Video consult", chat→MessageCircle, consultation/in_person→Stethoscope "In-person
+   201→   201→    visit", case-insensitive), "Today" amber badge + highlighted card, empty state now points to
+   202→   202→    Find Doctor ("Book an appointment … shows up here automatically").
+   203→   203→- Community REVIVED + moderation shipped:
+   204→   204→  - seed-demo now seeds shared community content via seedCommunityIfEmpty() (extracted; runs BEFORE the
+   205→   205→    has-cycles early return so it fires even for seeded users): 5 demo personas (provider:"demo") +
+   206→   206→    5 realistic posts (cramps relief, PCOS tracking habits, fertile window Q&A, sleep-cycle correlation,
+   207→   207→    doctor-visit checklist) + 10 comments, staggered timestamps + like counts. Feed verified alive:
+   208→   208→    personas with avatars, anon aliases (Iris_9), "5h ago", gamification jumped to Level 10 from real
+   209→   209→    activity.
+   210→   210→  - Report/flag flow: schema added CommunityPost.reportedCount + hidden (db:push ok); PATCH action
+   211→   211→    'report' increments and auto-hides at 3 reports; GET excludes hidden; UI: Flag icon on non-own
+   212→   212→    posts → reason dialog (5 reasons, selectable) → optimistic removal for reporter + informative
+   213→   213→    toasts ("Report recorded…"/"hidden pending moderator review"). Verified: reporter stops seeing post,
+   214→   214→    others still see it (correct semantics).
+   215→   215→- Premium subscription PERSISTENCE (was in-memory only):
+   216→   216→  - NEW /api/subscription: GET (active sub check w/ endDate), POST (validates plan/tier, replaces old
+   217→   217→    actives, endDate +30d/+365d, invoiceId CC-XXXX), DELETE (cancel). Subscription model existed but
+   218→   218→    was never used.
+   219→   219→  - Checkout E2E FIXED: modal previously dead-ended when PayPal keys absent (Smart Buttons never
+   220→   220→    rendered) — added config detection (GET /api/payment/paypal) + "🧪 Complete sandbox payment"
+   221→   221→    demo path → simulated processing → real sandbox receipt (SBX- txn id) → success step.
+   222→   222→  - onSuccess now carries transactionId → premium.tsx persists subscription (amount+18% GST, tier,
+   223→   223→    txn id) → app-shell restores premium on every load via GET → "Premium is active" banner w/ PAYPAL
+   224→   224→    SANDBOX chip in premium module, plan cards show "Current Plan", profile dropdown shows gradient
+   225→   225→    "Crown Premium" badge + "Manage Premium" label. Verified: subscription survives full reload
+   226→   226→    (active:true, invoice CC-MU6KF3M5).
+   227→   227→- Environment note: dev server had to be killed+restarted this round — Prisma Client regeneration is
+   228→   228→  NOT picked up by the running Next process (db:push generate alone insufficient for new fields).
+   229→   229→- Bug fixed during QA: reminders crashed with "Element type is invalid: got object" (I had assigned
+   230→   230→  the {icon,label} object itself as TypeIcon component) — destructured properly.
+   231→   231→- Learned: MultiEdit is NOT atomic in this environment (1 of 3 edits applied on failure) — prefer
+   232→   232→  python surgery or single Edits; always lint after every edit batch.
+   233→   233→- DB final: 7 users (2 real + 5 demo personas), 13 cycles, 35 symptoms, 43 moods/sleeps/waters,
+   234→   234→  3 appointments (1 upcoming), 5 community posts, 10 comments, 2 subscriptions (1 active).
+   235→   235→
+   236→   236→Stage Summary:
+   237→   237→- ✅ Shipped & verified in browser: Reports module fully real (all 4 periods, trends, radar, CSV export),
+   238→   238→  dashboard Hormone Preview chart + real AI Insights, appointment cancel E2E, community seeding +
+   239→   239→  report/moderation flow, premium sandbox checkout → persisted subscription → restore-on-reload.
+   240→   240→- All four previously-dead surfaces now live; app has NO "coming soon"/"empty" states despite data
+   241→   241→  existing (checked dashboard, community, reports, premium).
+   242→   242→- Lint: 0 errors. Console: clean. Dev.log: no errors.
+   243→   243→- Remaining backlog (next round):
+   244→   244→  1. Admin moderation surface for reported posts (list hidden posts, dismiss/restore) — data model ready.
+   245→   245→  2. PDF export for reports (CSV done) — could use browser print or pdf skill.
+   246→   246→  3. Community pagination when posts grow (>20).
+   247→   247→  4. Premium "Manage" panel: show subscription details/invoice + cancel flow in Settings.
+   248→   248→  5. Doctor Finder: de-dupe seeded appointments (2x Kavita Mehta rows exist from double-seed).
+   249→   249→  6. Consider wiring AI Insights section to LLM-generated narrative instead of rule-based strings.
+   250→   250→
+   251→   251→---
+   252→   252→Task ID: 5
+   253→   253→Agent: Z.ai Code (webDevReview round 5)
+   254→   254→Task: Cron QA + development round — admin moderation console (session auth + audit trail), LLM weekly narrative on dashboard, real premium management panel, community pagination, reports PDF export, styling polish.
+   255→   255→
+   256→   256→Work Log:
+   257→   257→- QA baseline: FOUND DEV SERVER DOWN on round start (port 3000 refused; the container does not
+   258→   258→  supervise the dev process — processes spawned from a tool-call shell get reaped when the call
+   259→   259→  ends). FIX that works: double-fork detach `(setsid bun run dev > /dev/null 2>&1 &)` from the
+   260→   260→  project dir — survives across tool calls. Server died once more mid-round (after next.config
+   261→   261→  edit restart) — same restart command fixed it. Future rounds: check `curl localhost:3000` first.
+   262→   262→- Agent-browser QA before changes: dashboard/community/reports all healthy, session persisted,
+   263→   263→  no real console errors.
+   264→   264→- ADMIN MODERATION CONSOLE (backlog #1) — full feature using previously-unused AdminUser,
+   265→   265→  AdminSession and AuditLog models:
+   266→   266→  - NEW /api/admin/login: verifies credentials against AdminUser (same HMAC password scheme as
+   267→   267→    user auth), issues DB-backed AdminSession token (24h TTL, randomBytes 32), auto-provisions a
+   268→   268→    default operator on first run (admin@chandracycle.app / chandra-admin) when table is empty,
+   269→   269→    housekeeps expired sessions, updates lastLoginAt.
+   270→   270→  - NEW /api/admin/logout: revokes the caller's session.
+   271→   271→  - NEW /api/admin/moderation: GET returns the queue (posts with reportedCount>0 OR hidden=true)
+   272→   272→    incl. author, comment count, plus community stats and the 8 most recent AuditLog entries.
+   273→   273→    PATCH {postId, action} with three moderator actions: 'restore' (unhide + clear reports),
+   274→   274→    'dismiss' (clear reports, KEEP hidden), 'delete' (remove post + comments). EVERY action writes
+   275→   275→    an AuditLog row (admin, action, target, details). 401 without valid Bearer session (verified
+   276→   276→    via curl).
+   277→   277→  - Settings UI: new "Content Moderation" section — login form (email pre-filled + password,
+   278→   278→    Enter-key submit), operator session persisted in sessionStorage (survives reloads), queue
+   279→   279→    cards (amber=reported-only, rose=hidden) with title/content/author/reports/comments/likes,
+   280→   280→    three action buttons with per-post busy spinners, delete confirm dialog, collapsible audit
+   281→   281→    trail with timestamps, empty state "Queue is clear".
+   282→   282→  - E2E VERIFIED IN BROWSER: report post 3x via API → auto-hidden → queue shows it → Refresh →
+   283→   283→    "Restore & clear reports" → success toast, post back in feed (5 visible), queue empty, audit
+   284→   284→    trail records the action. Also verified earlier curl restore appears in the trail.
+   285→   285→- LLM WEEKLY NARRATIVE (backlog #6) on dashboard AI Insights:
+   286→   286→  - NEW POST /api/insights/narrative: builds a 7-day digest straight from the DB (cycle day/phase,
+   287→   287→    sleep avg, hydration avg, mood distribution, energy/stress avgs, top symptoms with severity,
+   288→   288→    logged-days count), feeds it to z-ai-web-dev-sdk with a strict prompt (3–4 sentences + one
+   289→   289→    "Focus tip:" line, no invented numbers, no diagnosis). Cache: SiteSetting key-value row
+   290→   290→    `narrative:{userId}:{weekStart}` with 6h TTL; force flag bypasses (Regenerate button).
+   291→   291→    Returns {narrative:null, reason:'no-data'} for users who never logged.
+   292→   292→  - Dashboard: auto-loads with the wellness section (non-blocking), renders a "Weekly AI summary"
+   293→   293→    card — skeleton shimmer while loading, gradient container, "cached" chip when served from
+   294→   294→    cache, Regenerate with spinner, focus tip highlighted in its own box (robust split: handles
+   295→   295→    the tip inline OR on its own line), "Continue in AI Coach →" link. Verified live: first call
+   296→   296→    ~1.4s LLM generation, cached chip on reload, dark mode renders cleanly.
+   297→   297→- REAL PREMIUM MANAGEMENT (backlog #4) — Settings Subscription section rewritten (was fake local
+   298→   298→  toggle that also wrongly flipped premium state):
+   299→   299→  - Fetches GET /api/subscription on mount and syncs the store both ways.
+   300→   300→  - Active plan card: tier · plan, Active badge, payment method chip, real price breakdown
+   301→   301→    (₹amount + GST = total), Started / Renews-Ends / Invoice / Transaction grid.
+   302→   302→  - Cancel flow: AlertDialog with honest copy ("features remain active until {endDate}") →
+   303→   303→    DELETE /api/subscription → store + UI flip to Free plan. E2E VERIFIED: cancel in UI →
+   304→   304→    DB active:false → Free card + Upgrade CTA. Then re-subscribed via POST API (invoice
+   305→   305→    CC-MU6MAJZZ) → reload → profile dropdown shows Premium badge + Manage Premium again.
+   306→   306→  - Free plan: clear card + "Upgrade to Premium" → jumps to premium module.
+   307→   307→  - app-shell restore fixed to sync BOTH ways (setPremium(Boolean(d?.active))) so a cancellation
+   308→   308→    on another device is reflected after reload.
+   309→   309→- COMMUNITY FEED PAGINATION (backlog #3):
+   310→   310→  - GET /api/community now supports ?limit&offset → {posts, total, hasMore, nextOffset} envelope;
+   311→   311→  no params still returns the full array (back-compat verified).
+   312→   312→  - UI: 4 posts per page, "Load more posts (4 of 5)" dashed button at feed bottom with spinner,
+   313→   313→    "You're all caught up 🌙 N posts" footer when exhausted, total counter updates on new post.
+   314→   314→  - VERIFIED IN BROWSER: initial 4/5 → click → all 5 + caught-up footer.
+   315→   315→- REPORTS PDF EXPORT (backlog #2) + chart polish:
+   316→   316→  - PDF button ENABLED (was disabled "coming soon"): opens a print-ready HTML report in a new tab
+   317→   317→    (brand header, 4 score tiles, key metrics current-vs-previous table, symptom frequency with
+   318→   318→    ASCII bars, mood distribution, trend table, insights, cycle milestones, disclaimer footer) and
+   319→   319→    auto-triggers window.print() → user saves as PDF. Verified in browser: document opens with
+   320→   320→    correct real data ("Last 7 days · 2026-09-12 → 2026-09-18", wellness 63, etc.).
+   321→   321→  - Symptom Frequency chart: integer Y-axis ticks (allowDecimals=false), theme-aware grid/axis
+   322→   322→    colors (was hardcoded light gray — invisible in dark mode), hover Tooltip added.
+   323→   323→  - Trends chart grid/axis theme-aware too.
+   324→   324→- STYLING DETAILS (mandatory):
+   325→   325→  - next.config.ts: devIndicators.position="bottom-right" — the dev-tools "N" bubble no longer
+   326→   326→    overlaps the sidebar Settings button (visible in every screenshot before).
+   327→   327→  - Reports: chart tooltip + integer ticks + theme-aware grid (above).
+   328→   328→  - Community: pagination footer styled to match feed; post-count footer.
+   329→   329→  - Dashboard: narrative card gradient + shimmer skeleton + focus-tip box.
+   330→   330→  - Settings: moderation queue cards color-coded, subscription metric tiles, audit trail rows.
+   331→   331→- BUG FOUND & FIXED (mobile): topbar avatar was HARDCODED "U" for everyone — MobileTopbar now
+   332→   332→  takes displayName and renders the user's initial. Verified: shows "P" for Priya at 640px.
+   333→   333→- NOT A BUG (closed backlog item #5): the two "duplicate" Kavita Mehta appointments belong to two
+   334→   334→  DIFFERENT users (per-user seed data, correct). No de-dupe needed; dashboard only shows the
+   335→   335→  current user's rows anyway.
+   336→   336→- ENVIRONMENT: 3rd instance of transient file corruption observed — doctor-finder.tsx briefly had
+   337→   337→  DUPLICATE import identifiers (Sparkles/Zap/Siren twice → Turbopack "Ecmascript file had an
+   338→   338→  error" at 55:3/57:3). File self-healed between reads; md5 changed between checks; after self-
+   339→   339→  heal the module compiles, renders and search works. Mitigation unchanged: lint is the final
+   340→   340→  gate; re-read files before editing.
+   341→   341→- Theme restored to light after dark-mode verification; viewport restored to 1280×800.
+   342→   342→
+   343→   343→Stage Summary:
+   344→   344→- ✅ Shipped & browser-verified: admin moderation console (login/queue/restore/dismiss/delete +
+   345→   345→  audit trail), LLM weekly AI summary with caching + regenerate, real subscription management
+   346→   346→  (details/cancel/upgrade), community pagination, reports PDF export, mobile avatar fix, plus
+   347→   347→  mandatory styling details (dev indicator reposition, theme-aware charts, tooltips).
+   348→   348→- Lint: 0 errors 0 warnings. dev.log: clean (no errors). Browser console: clean.
+   349→   349→- Admin demo credentials (auto-provisioned on first login): admin@chandracycle.app / chandra-admin
+   350→   350→  — documented only here, session token is DB-backed and revocable.
+   351→   351→- DB state: 7 users (2 real + 5 demo personas), 13 cycles, wellness logs, 5 community posts,
+   352→   352→  10 comments, appointments (2 upcoming across users, 1 cancelled), 3 subscriptions (1 active),
+   353→   353→  AdminUser=1, narrative cache rows in SiteSetting.
+   354→   354→- Remaining backlog (next round):
+   355→   355→  1. Doctor booking de-dupe guard in doctor-finder (prevent double-click double-book, same slot).
+   356→   356→  2. Community pagination could become server-side category filtering (currently client-side on
+   357→   357→     loaded pages).
+   358→   358→  3. Excel export still honestly disabled; could add real XLSX via a sheet library.
+   359→   359→  4. Admin console: add comment moderation + user flagging (model fields exist), bulk actions.
+   360→   360→  5. Consider rendering the LLM narrative with a typewriter effect and per-week re-generation
+   361→   361→     notification ("Your weekly summary was updated").
+   362→   362→  6. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+   363→   363→
+   364→   364→---
+   365→   365→Task ID: 6
+   366→   366→Agent: Z.ai Code (webDevReview round 6)
+   367→   367→Task: Cron QA + development round — appointment double-booking guard, server-side community category filtering, real XLSX export, admin comment moderation + bulk actions, typewriter AI narrative, styling polish.
+   368→   368→
+   369→   369→Work Log:
+   370→   370→- QA baseline: dev server was DOWN again on round start (same reaping issue as round 5) — restarted with
+   371→   371→  `(setsid bun run dev > /dev/null 2>&1 &)` from project dir. Lint 0 errors, app healthy, session persisted.
+   372→   372→  Also died once mid-round after tool call ended; same restart command fixed it. FUTURE ROUNDS: check
+   373→   373→  `curl localhost:3000` FIRST, restart detached if refused.
+   374→   374→- APPOINTMENT DOUBLE-BOOKING GUARD (backlog #1):
+   375→   375→  - Server: POST /api/appointments now returns 409 + existing appointmentId when the same user already has a
+   376→   376→    non-cancelled appointment with the same doctorName+date+time.
+   377→   377→  - Client: booking dialog loads the user's appointments on open; booked slots render crossed-out, greyed,
+   378→   378→    disabled with tooltip + legend line ("Crossed-out slots are already booked by you."); confirmBooking has
+   379→   379→    a client-side guard AND handles 409 by syncing the booked set + clearing the selection + toast.
+   380→   380→  - E2E VERIFIED: curl duplicate → HTTP 409; browser: booked Dr. Vidya Sharma 2026-09-21 10:00 AM → reopened
+   381→   381→    dialog → 10:00 AM crossed-out and unclickable, other slots enabled (screenshot /tmp/booking2.png).
+   382→   382→    Test booking deleted afterwards to restore DB state.
+   383→   383→- COMMUNITY SERVER-SIDE CATEGORY FILTERING (backlog #2):
+   384→   384→  - UI now passes `&category=<api>` to /api/community when a filter is active; loadPosts(cat)/loadMorePosts
+   385→   385→    are category-aware; changing chip reloads page 1 from the server (with loading skeleton).
+   386→   386→  - New post only prepends when it matches the active filter, else toast suggests switching category.
+   387→   387→  - Fixed 2 real bugs while in there: (a) likedIds in loadPosts deps caused a FULL FEED RELOAD on every like —
+   388→   388→    now a ref mirror keeps mapping dependency-free; (b) gamification `myPosts` counted ALL non-anonymous posts
+   389→   389→    instead of the user's own — now uses p.isOwn against a full stats snapshot.
+   390→   390→  - Trending topics + chip counts now computed from a legacy full-feed stats fetch (accurate under pagination);
+   391→   391→    filter chips show live count badges ("All 5", "PCOS 1") in rounded-full pills.
+   392→   392→  - E2E VERIFIED: clicking PCOS → `GET /api/community?limit=4&offset=0&category=pcos` in dev.log, only the PCOS
+   393→   393→    post renders, caught-up footer shows category total ("1 post in the community").
+   394→   394→- REPORTS REAL XLSX EXPORT (backlog #3) — Excel button no longer disabled/"coming soon":
+   395→   395→  - Installed `xlsx` (SheetJS). handleExportExcel builds a 6-sheet workbook (Summary current-vs-previous,
+   396→   396→    Trends, Symptoms, Mood, Cycle Log, Insights) with column widths, downloads via XLSX.writeFile.
+   397→   397→  - E2E VERIFIED: browser click downloaded chandracycle-weekly-report-2026-09-18.xlsx (25.7KB); read back with
+   398→   398→    SheetJS: all 6 sheets present, Wellness 63 vs 54 in Summary, 7 trend rows, real mood/cycle/insight data.
+   399→   399→- ADMIN COMMENT MODERATION + BULK ACTIONS (backlog #4):
+   400→   400→  - Schema: Comment.hidden Boolean @default(false) added, db:push done.
+
+[showing lines 1-400 of 717; use offset=401 with limit to continue reading]

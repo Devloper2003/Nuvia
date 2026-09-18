@@ -17,14 +17,14 @@ import { maybeCreatePeriodReminder } from '@/lib/reminders'
 
 interface SweepUserOutcome {
   userId: string
-  outcome: 'triggered' | 'not-due' | 'no-cycle-data' | 'cooldown' | 'error'
+  outcome: 'triggered' | 'not-due' | 'no-cycle-data' | 'cooldown' | 'quiet-hours' | 'disabled' | 'error'
   daysUntilPeriod?: number
   title?: string
   pushSent?: number
 }
 
 // In-memory last-run summary (per server process; dev-only observability).
-let lastSweep: { at: string; swept: number; triggered: number; cooldown: number; notDue: number; noCycleData: number; errors: number; pushesSent: number } | null = null
+let lastSweep: { at: string; swept: number; triggered: number; cooldown: number; notDue: number; noCycleData: number; quietHours: number; disabled: number; errors: number; pushesSent: number } | null = null
 
 function authorized(request: NextRequest): boolean {
   const secret = process.env.CRON_SECRET
@@ -46,12 +46,15 @@ export async function POST(request: NextRequest) {
         id: true,
         cycleLength: true,
         lastPeriodStart: true,
+        remindersEnabled: true,
+        quietStart: true,
+        quietEnd: true,
         cycles: { orderBy: { startDate: 'desc' }, take: 1 },
       },
     })
 
     const results: SweepUserOutcome[] = []
-    const tally = { triggered: 0, cooldown: 0, notDue: 0, noCycleData: 0, errors: 0, pushesSent: 0 }
+    const tally = { triggered: 0, cooldown: 0, notDue: 0, noCycleData: 0, quietHours: 0, disabled: 0, errors: 0, pushesSent: 0 }
 
     // Small batches keep DB + push fan-out pressure low even as users grow.
     const BATCH = 20
@@ -77,6 +80,12 @@ export async function POST(request: NextRequest) {
             } else if (outcome.reason === 'no-cycle-data') {
               tally.noCycleData++
               results.push({ userId: user.id, outcome: 'no-cycle-data' })
+            } else if (outcome.reason === 'quiet-hours') {
+              tally.quietHours++
+              results.push({ userId: user.id, outcome: 'quiet-hours' })
+            } else if (outcome.reason === 'disabled') {
+              tally.disabled++
+              results.push({ userId: user.id, outcome: 'disabled' })
             } else {
               tally.notDue++
               results.push({ userId: user.id, outcome: 'not-due' })
@@ -97,6 +106,8 @@ export async function POST(request: NextRequest) {
       cooldown: tally.cooldown,
       notDue: tally.notDue,
       noCycleData: tally.noCycleData,
+      quietHours: tally.quietHours,
+      disabled: tally.disabled,
       errors: tally.errors,
       pushesSent: tally.pushesSent,
     }

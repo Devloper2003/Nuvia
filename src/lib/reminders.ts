@@ -26,7 +26,7 @@ export interface ReminderDecision {
   cycleLength: number
 }
 
-export type ReminderSkipReason = 'no-cycle-data' | 'not-due' | 'cooldown'
+export type ReminderSkipReason = 'no-cycle-data' | 'not-due' | 'cooldown' | 'quiet-hours' | 'disabled'
 
 export interface ReminderOutcome {
   triggered: boolean
@@ -46,6 +46,24 @@ interface UserLike {
   id: string
   cycleLength: number
   lastPeriodStart: Date | string | null
+  remindersEnabled?: boolean
+  quietStart?: number | null
+  quietEnd?: number | null
+}
+
+/**
+ * Is `date` (default now) inside the user's quiet-hours window?
+ * Window semantics: [start, end) in local server time, wrap-around safe
+ * (e.g. 22 → 7 covers 22:00–06:59). start===end (or either null) = no window.
+ */
+export function isQuietHour(date: Date, start?: number | null, end?: number | null): boolean {
+  if (start == null || end == null) return false
+  if (!Number.isInteger(start) || !Number.isInteger(end)) return false
+  if (start < 0 || start > 23 || end < 0 || end > 23) return false
+  if (start === end) return false
+  const h = date.getHours()
+  if (start < end) return h >= start && h < end
+  return h >= start || h < end
 }
 
 /** Decide whether a user is due a reminder right now (pure, no side effects). */
@@ -99,6 +117,17 @@ export async function maybeCreatePeriodReminder(
   latestCycle: CycleLike | null,
   opts: { sendPush?: boolean } = {}
 ): Promise<ReminderOutcome> {
+  // Global kill-switch: user turned reminders off entirely.
+  if (user.remindersEnabled === false) {
+    return { triggered: false, reason: 'disabled' }
+  }
+
+  // Quiet hours: the reminder is not lost — the next evaluation outside the
+  // window (per-user check on app open, or the 15-min sweep) will deliver it.
+  if (isQuietHour(new Date(), user.quietStart, user.quietEnd)) {
+    return { triggered: false, reason: 'quiet-hours' }
+  }
+
   const decision = evaluatePeriodReminder(user, latestCycle)
   if (!decision) {
     return { triggered: false, reason: user.lastPeriodStart || latestCycle ? 'not-due' : 'no-cycle-data' }
