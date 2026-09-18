@@ -14,6 +14,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  AreaChart,
+  Area,
+  ReferenceLine,
 } from 'recharts'
 import {
   Droplets,
@@ -32,7 +35,25 @@ import {
   Baby,
   Flower2,
   Clock,
+  Video,
+  MapPin,
+  MessageCircle,
+  Stethoscope,
+  X,
+  Loader2,
 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
 
 // ─── Animation Variants ──────────────────────────────────────────────────────
 
@@ -108,6 +129,74 @@ function getPhaseForCycleDay(cycleDay: number, cycleLength: number, periodLength
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
+// ─── Reminder helpers ────────────────────────────────────────────────────────
+
+function formatReminderDate(isoDate: string): string {
+  const todayIso = new Date().toISOString().split('T')[0]
+  const tomorrowIso = new Date(Date.now() + 86_400_000).toISOString().split('T')[0]
+  if (isoDate === todayIso) return 'Today'
+  if (isoDate === tomorrowIso) return 'Tomorrow'
+  const d = new Date(isoDate + 'T00:00:00')
+  return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+function appointmentTypeMeta(type: string): { icon: React.ElementType; label: string } {
+  switch (type.toLowerCase()) {
+    case 'video':
+      return { icon: Video, label: 'Video consult' }
+    case 'chat':
+      return { icon: MessageCircle, label: 'Chat consult' }
+    case 'in_person':
+    case 'in-person':
+    case 'consultation':
+      return { icon: Stethoscope, label: 'In-person visit' }
+    default:
+      return { icon: CalendarDays, label: 'Appointment' }
+  }
+}
+
+// ─── Hormone educational curves ────────────────────────────────────────────
+// Cosine easing over t∈[0,1]
+function ease(t: number): number {
+  const clamped = Math.max(0, Math.min(1, t))
+  return 0.5 - 0.5 * Math.cos(Math.PI * clamped)
+}
+
+function buildHormoneCurves(cycleLength: number) {
+  const ovul = Math.max(10, cycleLength - 14)
+  const points: Array<{ day: number; label: string; estrogen: number; progesterone: number }> = []
+  for (let d = 1; d <= cycleLength; d++) {
+    // Estrogen: low during period → follicular rise → ovulation peak → dip →
+    // secondary luteal bump → premenstrual fall
+    let estrogen: number
+    if (d <= ovul) {
+      estrogen = 15 + 75 * ease((d - 3) / (ovul - 3))
+    } else if (d <= ovul + 2) {
+      estrogen = 90 - 55 * ease((d - ovul) / 2)
+    } else if (d <= ovul + 8) {
+      estrogen = 35 + 22 * ease((d - ovul - 2) / 6)
+    } else {
+      estrogen = 57 - 40 * ease((d - ovul - 8) / Math.max(1, cycleLength - ovul - 8))
+    }
+    // Progesterone: flat low until ovulation → strong luteal rise → fall
+    let progesterone: number
+    if (d <= ovul) {
+      progesterone = 12
+    } else if (d <= ovul + 7) {
+      progesterone = 12 + 73 * ease((d - ovul) / 7)
+    } else {
+      progesterone = 85 - 70 * ease((d - ovul - 7) / Math.max(1, cycleLength - ovul - 7))
+    }
+    points.push({
+      day: d,
+      label: d === 1 || d % 7 === 0 || d === cycleLength ? `D${d}` : '',
+      estrogen: Math.round(estrogen),
+      progesterone: Math.round(progesterone),
+    })
+  }
+  return { points, ovul }
+}
+
 const emptySubscribe = () => () => {}
 
 interface CycleEntry {
@@ -139,6 +228,9 @@ export default function DashboardModule() {
   const [reminders, setReminders] = useState<
     Array<{ id: string; doctorName: string; specialty: string; date: string; time: string; type: string }>
   >([])
+  const [cancellingId, setCancellingId] = useState<string | null>(null)
+  const [weeklyInsights, setWeeklyInsights] = useState<string[]>([])
+  const [wellnessScore, setWellnessScore] = useState<number | null>(null)
 
   useEffect(() => {
     if (!userProfile?.id) {
@@ -212,6 +304,20 @@ export default function DashboardModule() {
           }
         } catch {
           // reminders are best-effort
+        }
+
+        // Weekly wellness insights (same aggregation the Reports module uses)
+        try {
+          const repRes = await fetch(
+            `/api/reports/summary?userId=${encodeURIComponent(userProfile.id)}&period=weekly`
+          )
+          if (!cancelled && repRes.ok) {
+            const rep = await repRes.json()
+            setWeeklyInsights(Array.isArray(rep.insights) ? rep.insights.slice(0, 3) : [])
+            setWellnessScore(typeof rep.wellnessScore === 'number' ? rep.wellnessScore : null)
+          }
+        } catch {
+          // insights are best-effort
         }
 
         // Weekly symptoms bar chart (last 7 days)
@@ -313,6 +419,29 @@ export default function DashboardModule() {
   }, [])
 
   const GreetingIcon = greetingIcon
+
+  // ─── Cancel an appointment (optimistic + revert on failure) ────────────────
+  const handleCancelAppointment = async (appointmentId: string) => {
+    if (!userProfile?.id) return
+    const prev = reminders
+    setCancellingId(appointmentId)
+    // optimistic removal
+    setReminders((rs) => rs.filter((r) => r.id !== appointmentId))
+    try {
+      const res = await fetch('/api/appointments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: appointmentId, userId: userProfile.id, action: 'cancel' }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      toast.success('Appointment cancelled')
+    } catch {
+      setReminders(prev)
+      toast.error('Could not cancel the appointment. Please try again.')
+    } finally {
+      setCancellingId(null)
+    }
+  }
 
   // Compute current cycle day from latest cycle (or user's lastPeriodStart)
   const cycleInfo = useMemo(() => {
@@ -586,26 +715,37 @@ export default function DashboardModule() {
         </motion.div>
       )}
 
-      {/* ─── 4. Hormone Preview — empty until user logs data ────────────────── */}
+      {/* ─── 4. Hormone Preview — educational curves from your cycle data ───── */}
       <motion.div variants={itemVariants}>
         <Card className="glass border-0 shadow-lg">
           <CardHeader className="pb-2">
-            <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-rose-500" />
-              <CardTitle className="text-base">Hormone Preview</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-rose-500" />
+                <CardTitle className="text-base">Hormone Preview</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                Educational
+              </Badge>
             </div>
             <CardDescription>
-              Your hormone patterns will appear here once you have cycle data.
+              {cycles.length > 0 && cycleInfo
+                ? `Estrogen & progesterone pattern for your ${cycleInfo.cycleLength}-day cycle`
+                : 'Your hormone patterns will appear here once you have cycle data.'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <EmptyState
-              icon={Activity}
-              title="No hormone insights yet"
-              description="Log a couple of cycles and ChandraCycle will visualize your estrogen and progesterone patterns across your cycle."
-              ctaLabel="Log your period"
-              onCta={() => setActiveModule('period')}
-            />
+            {cycles.length === 0 || !cycleInfo ? (
+              <EmptyState
+                icon={Activity}
+                title="No hormone insights yet"
+                description="Log a couple of cycles and ChandraCycle will visualize your estrogen and progesterone patterns across your cycle."
+                ctaLabel="Log your period"
+                onCta={() => setActiveModule('period')}
+              />
+            ) : (
+              <HormoneCurves cycleLength={cycleInfo.cycleLength} cycleDay={cycleInfo.cycleDay} />
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -621,13 +761,38 @@ export default function DashboardModule() {
         </div>
         <Card className="glass border-0 shadow-lg">
           <CardContent className="p-0">
-            <EmptyState
-              icon={Sparkles}
-              title="Personalized insights coming soon"
-              description="Once you start logging your cycle, mood, and symptoms, ChandraCycle's AI will surface personalized recommendations for your current phase."
-              ctaLabel="Start tracking"
-              onCta={() => setActiveModule('period')}
-            />
+            {weeklyInsights.length === 0 ? (
+              <EmptyState
+                icon={Sparkles}
+                title="Personalized insights coming soon"
+                description="Once you start logging your cycle, mood, and symptoms, ChandraCycle's AI will surface personalized recommendations for your current phase."
+                ctaLabel="Start tracking"
+                onCta={() => setActiveModule('period')}
+              />
+            ) : (
+              <div className="p-4 space-y-2.5">
+                {wellnessScore !== null && (
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-0 text-[11px] h-6">
+                      Wellness score {wellnessScore}/100
+                    </Badge>
+                    <span className="text-[10px] text-muted-foreground">this week</span>
+                  </div>
+                )}
+                {weeklyInsights.map((insight, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: i * 0.08 }}
+                    className="flex items-start gap-2.5 p-3 rounded-xl border bg-white/60 dark:bg-white/5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                    <p className="text-xs leading-relaxed text-foreground">{insight}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -748,32 +913,85 @@ export default function DashboardModule() {
               <EmptyState
                 icon={Bell}
                 title="No reminders set"
-                description="You haven't set any reminders yet. Add reminders for medications, hydration, or checkups in Settings."
-                ctaLabel="Go to Settings"
-                onCta={() => setActiveModule('settings')}
+                description="Book an appointment in Find Doctor and it will show up here automatically."
+                ctaLabel="Find a doctor"
+                onCta={() => setActiveModule('doctors')}
               />
             ) : (
               <div className="space-y-2">
-                {reminders.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex items-center gap-3 rounded-xl border bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2.5 hover:shadow-sm transition-shadow"
-                  >
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
-                      <Bell className="h-4 w-4" />
+                {reminders.map((r) => {
+                  const { icon: TypeIcon, label: typeLabel } = appointmentTypeMeta(r.type)
+                  const isToday = r.date === new Date().toISOString().split('T')[0]
+                  const isCancelling = cancellingId === r.id
+                  return (
+                    <div
+                      key={r.id}
+                      className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all hover:shadow-sm ${
+                        isToday
+                          ? 'bg-amber-100/70 dark:bg-amber-950/30 border-amber-300/70 dark:border-amber-800/60'
+                          : 'bg-amber-50/60 dark:bg-amber-950/20 hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+                        <TypeIcon className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate flex items-center gap-1.5">
+                          {r.doctorName.startsWith('Dr.') ? r.doctorName : `Dr. ${r.doctorName}`}
+                          <span className="text-muted-foreground">— {r.specialty}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          {typeLabel}
+                          {isToday && (
+                            <Badge className="bg-amber-500 text-white border-0 text-[9px] h-4 px-1.5 uppercase tracking-wide">
+                              Today
+                            </Badge>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                          {formatReminderDate(r.date)}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground tabular-nums">{r.time}</p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <button
+                            aria-label={`Cancel appointment with ${r.doctorName}`}
+                            disabled={isCancelling}
+                            className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted-foreground/50 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all disabled:cursor-not-allowed"
+                          >
+                            {isCancelling ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel this appointment?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {r.doctorName.startsWith('Dr.') ? r.doctorName : `Dr. ${r.doctorName}`} —{' '}
+                              {r.specialty} on {formatReminderDate(r.date)} at {r.time}. The slot will be
+                              released and the appointment removed from your reminders.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Keep appointment</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-white hover:bg-destructive/90"
+                              onClick={() => handleCancelAppointment(r.id)}
+                            >
+                              Cancel appointment
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {r.doctorName.startsWith('Dr.') ? r.doctorName : `Dr. ${r.doctorName}`} — {r.specialty}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{r.type} appointment</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">{r.date}</p>
-                      <p className="text-[10px] text-muted-foreground">{r.time}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
@@ -844,6 +1062,109 @@ export default function DashboardModule() {
       {/* ─── Bottom spacer for scroll ───────────────────────────────────────── */}
       <div className="h-4" />
     </motion.div>
+  )
+}
+
+// ─── Hormone Curves Chart (educational) ──────────────────────────────────────
+
+function HormoneCurves({ cycleLength, cycleDay }: { cycleLength: number; cycleDay: number }) {
+  const { points, ovul } = useMemo(() => buildHormoneCurves(cycleLength), [cycleLength])
+
+  return (
+    <div>
+      <div className="h-44 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={points} margin={{ top: 8, right: 8, left: -22, bottom: 0 }}>
+            <defs>
+              <linearGradient id="estrogenFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.28} />
+                <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.02} />
+              </linearGradient>
+              <linearGradient id="progesteroneFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.24} />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+            />
+            <YAxis
+              domain={[0, 100]}
+              tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip
+              labelFormatter={(l) => {
+                const p = points.find((pt) => pt.label === l)
+                return p ? `Day ${p.day}` : String(l)
+              }}
+              formatter={(value: number | string, name: string) => [
+                `${value}`, name === 'estrogen' ? 'Estrogen' : 'Progesterone',
+              ]}
+              contentStyle={{
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                fontSize: 12,
+              }}
+            />
+            <Area
+              type="monotone"
+              dataKey="estrogen"
+              stroke="#f43f5e"
+              strokeWidth={2}
+              fill="url(#estrogenFill)"
+              dot={false}
+              name="estrogen"
+            />
+            <Area
+              type="monotone"
+              dataKey="progesterone"
+              stroke="#06b6d4"
+              strokeWidth={2}
+              fill="url(#progesteroneFill)"
+              dot={false}
+              name="progesterone"
+            />
+            <ReferenceLine
+              x={`D${cycleDay}`}
+              stroke="var(--foreground)"
+              strokeDasharray="4 3"
+              label={{
+                value: 'Today',
+                position: 'top',
+                fontSize: 10,
+                fill: 'var(--muted-foreground)',
+              }}
+            />
+            <ReferenceLine x={`D${ovul}`} stroke="#f97316" strokeDasharray="2 3" strokeOpacity={0.6} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-rose-500" />
+          <span className="text-[10px] text-muted-foreground">Estrogen</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-cyan-500" />
+          <span className="text-[10px] text-muted-foreground">Progesterone</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-orange-400" />
+          <span className="text-[10px] text-muted-foreground">Ovulation (~D{ovul})</span>
+        </div>
+        <span className="text-[10px] text-muted-foreground/80 ml-auto">
+          Typical pattern for your cycle length — real readings need lab data
+        </span>
+      </div>
+    </div>
   )
 }
 

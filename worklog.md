@@ -157,3 +157,93 @@ Stage Summary:
   3. Wire "Start Video Consult" to a room/flow (currently decorative) or hide without config.
   4. Hormone IQ / Reports modules: verify with 7 seeded cycles, polish visuals.
   5. Premium module: mock checkout mode (PayPal keys absent).
+
+---
+Task ID: 4
+Agent: Z.ai Code (webDevReview round 4)
+Task: Cron QA + development round — bring dead modules to life (Reports, Hormone Preview, AI Insights, Community content), appointments CRUD completion, community moderation, premium subscription persistence, styling details.
+
+Work Log:
+- QA baseline: server 200, lint clean. Browser QA found FOUR dead surfaces despite rich seeded data:
+  (1) Community feed empty (round-2 post lost in DB reset → brand-new users see "Be the first to post");
+  (2) Reports module permanently showed "No reports yet" (UI shell hardwired `periodData = null`, API never called);
+  (3) Dashboard "Hormone Preview" empty state claimed "no cycle data" with 13 cycles present;
+  (4) Dashboard "AI Insights" said "coming soon" despite logs.
+- DEAD MODULE REVIVED — Report Center now 100% real data:
+  - NEW GET /api/reports/summary?userId&period (daily|weekly|monthly|annual): aggregates real
+    symptoms/mood/sleep/water/cycles for current + previous equivalent window; computes wellnessScore
+    (weighted composite of mood/energy/stress/sleep/hydration/symptom-severity), cycleRegularity
+    (std-dev of cycle-start gaps), symptomSeverity, moodStability, sleepAvg, waterAvg, rule-based
+    insights (up to 6, with pct-change vs previous period), trendLine (7d daily / 4wk monthly / 12mo
+    annual), radarData (5-axis current-vs-previous), cycleSummary (period start/end, fertile window,
+    ovulation per overlapping cycle), counts. Mood labels normalized case-insensitively ("happy"→"Happy").
+  - report-center.tsx: fetches on mount + on period-tab change (deferred-microtask setState for lint),
+    loading skeletons (score cards + chart placeholders), period label + date range in header,
+    empty state only when the period genuinely has 0 entries.
+  - BONUS: Export CSV button now REALLY downloads a formatted report (summary metrics, trend series,
+    symptom + mood breakdowns → Blob download, verified file on disk chandracycle-monthly-report-*.csv);
+    PDF/Excel disabled with tooltips (honest UI).
+- Dashboard Hormone Preview REVIVED: educational estrogen + progesterone area curves generated from the
+  user's own cycle length (cosine-eased phases: follicular rise → ovulation peak → luteal progesterone
+  bump), "Today" ReferenceLine at current cycle day + dashed ovulation line, theme-aware grid/axis,
+  legend incl. ovulation day, honest caption "Typical pattern for your cycle length — real readings
+  need lab data", EDUCATIONAL badge. Empty state only when no cycles exist.
+- Dashboard AI Insights REVIVED: fetches /api/reports/summary weekly → "Wellness score 63/100" badge +
+  top-3 real insight cards (sparkle bullets, staggered fade-in).
+- Appointments CRUD COMPLETED:
+  - PATCH /api/appointments {id,userId,action:cancel} → status='cancelled' (ownership enforced, cross-user
+    curl → 403); DELETE /api/appointments?id&userId → hard delete.
+  - Dashboard reminder cards: hover-reveal X button → AlertDialog confirm ("Keep appointment"/"Cancel
+    appointment") → optimistic removal + revert on failure + toasts; verified E2E (DB status flipped,
+    card vanished).
+  - STYLING: dates now "Today"/"Tomorrow"/"Wed, 23 Sept" (were raw ISO), type icon+label map
+    (video→Video "Video consult", chat→MessageCircle, consultation/in_person→Stethoscope "In-person
+    visit", case-insensitive), "Today" amber badge + highlighted card, empty state now points to
+    Find Doctor ("Book an appointment … shows up here automatically").
+- Community REVIVED + moderation shipped:
+  - seed-demo now seeds shared community content via seedCommunityIfEmpty() (extracted; runs BEFORE the
+    has-cycles early return so it fires even for seeded users): 5 demo personas (provider:"demo") +
+    5 realistic posts (cramps relief, PCOS tracking habits, fertile window Q&A, sleep-cycle correlation,
+    doctor-visit checklist) + 10 comments, staggered timestamps + like counts. Feed verified alive:
+    personas with avatars, anon aliases (Iris_9), "5h ago", gamification jumped to Level 10 from real
+    activity.
+  - Report/flag flow: schema added CommunityPost.reportedCount + hidden (db:push ok); PATCH action
+    'report' increments and auto-hides at 3 reports; GET excludes hidden; UI: Flag icon on non-own
+    posts → reason dialog (5 reasons, selectable) → optimistic removal for reporter + informative
+    toasts ("Report recorded…"/"hidden pending moderator review"). Verified: reporter stops seeing post,
+    others still see it (correct semantics).
+- Premium subscription PERSISTENCE (was in-memory only):
+  - NEW /api/subscription: GET (active sub check w/ endDate), POST (validates plan/tier, replaces old
+    actives, endDate +30d/+365d, invoiceId CC-XXXX), DELETE (cancel). Subscription model existed but
+    was never used.
+  - Checkout E2E FIXED: modal previously dead-ended when PayPal keys absent (Smart Buttons never
+    rendered) — added config detection (GET /api/payment/paypal) + "🧪 Complete sandbox payment"
+    demo path → simulated processing → real sandbox receipt (SBX- txn id) → success step.
+  - onSuccess now carries transactionId → premium.tsx persists subscription (amount+18% GST, tier,
+    txn id) → app-shell restores premium on every load via GET → "Premium is active" banner w/ PAYPAL
+    SANDBOX chip in premium module, plan cards show "Current Plan", profile dropdown shows gradient
+    "Crown Premium" badge + "Manage Premium" label. Verified: subscription survives full reload
+    (active:true, invoice CC-MU6KF3M5).
+- Environment note: dev server had to be killed+restarted this round — Prisma Client regeneration is
+  NOT picked up by the running Next process (db:push generate alone insufficient for new fields).
+- Bug fixed during QA: reminders crashed with "Element type is invalid: got object" (I had assigned
+  the {icon,label} object itself as TypeIcon component) — destructured properly.
+- Learned: MultiEdit is NOT atomic in this environment (1 of 3 edits applied on failure) — prefer
+  python surgery or single Edits; always lint after every edit batch.
+- DB final: 7 users (2 real + 5 demo personas), 13 cycles, 35 symptoms, 43 moods/sleeps/waters,
+  3 appointments (1 upcoming), 5 community posts, 10 comments, 2 subscriptions (1 active).
+
+Stage Summary:
+- ✅ Shipped & verified in browser: Reports module fully real (all 4 periods, trends, radar, CSV export),
+  dashboard Hormone Preview chart + real AI Insights, appointment cancel E2E, community seeding +
+  report/moderation flow, premium sandbox checkout → persisted subscription → restore-on-reload.
+- All four previously-dead surfaces now live; app has NO "coming soon"/"empty" states despite data
+  existing (checked dashboard, community, reports, premium).
+- Lint: 0 errors. Console: clean. Dev.log: no errors.
+- Remaining backlog (next round):
+  1. Admin moderation surface for reported posts (list hidden posts, dismiss/restore) — data model ready.
+  2. PDF export for reports (CSV done) — could use browser print or pdf skill.
+  3. Community pagination when posts grow (>20).
+  4. Premium "Manage" panel: show subscription details/invoice + cancel flow in Settings.
+  5. Doctor Finder: de-dupe seeded appointments (2x Kavita Mehta rows exist from double-seed).
+  6. Consider wiring AI Insights section to LLM-generated narrative instead of rule-based strings.

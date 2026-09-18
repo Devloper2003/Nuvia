@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { hidden: false };
     if (category) {
       where.category = category;
     }
@@ -138,15 +138,16 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// ─── PATCH: like / unlike a post (persists the like count) ──────────────────
-// Body: { postId: string, action: 'like' | 'unlike' }
+// ─── PATCH: like / unlike / report a post ───────────────────────────────────
+// Body: { postId: string, action: 'like' | 'unlike' | 'report', reason?: string }
+// 'report' increments reportedCount and auto-hides the post at 3 reports.
 export async function PATCH(request: NextRequest) {
   try {
     const { postId, action } = await request.json();
 
-    if (!postId || !['like', 'unlike'].includes(action)) {
+    if (!postId || !['like', 'unlike', 'report'].includes(action)) {
       return NextResponse.json(
-        { error: 'postId and action (like|unlike) are required' },
+        { error: 'postId and action (like|unlike|report) are required' },
         { status: 400 }
       );
     }
@@ -154,6 +155,28 @@ export async function PATCH(request: NextRequest) {
     const existing = await db.communityPost.findUnique({ where: { id: postId } });
     if (!existing) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    if (action === 'report') {
+      const nextReports = existing.reportedCount + 1;
+      const shouldHide = nextReports >= 3;
+      const post = await db.communityPost.update({
+        where: { id: postId },
+        data: { reportedCount: nextReports, hidden: shouldHide },
+        include: {
+          user: { select: { id: true, name: true, avatar: true } },
+          comments: {
+            include: { user: { select: { id: true, name: true, avatar: true } } },
+          },
+        },
+      });
+      return NextResponse.json({
+        post,
+        hidden: shouldHide,
+        message: shouldHide
+          ? 'Post has been hidden pending moderator review'
+          : 'Report recorded. Thank you for keeping the community safe.',
+      });
     }
 
     const nextLikes =

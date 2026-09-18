@@ -32,6 +32,7 @@ import {
   Hash,
   Loader2,
   Trash2,
+  Flag,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -166,6 +167,14 @@ const fromApiCategory: Record<string, Category> = {
   mental_health: 'Mental Health',
 }
 
+const REPORT_REASONS = [
+  'Spam or scam',
+  'Harassment or bullying',
+  'Inappropriate content',
+  'Misleading health information',
+  'Other',
+] as const
+
 // ─── Helpers ──────────────────────────────────────────────────────
 
 const FLOWERS = ['Lotus', 'Sakhi', 'Amber', 'River', 'Jasmine', 'Peony', 'Rose', 'Lily', 'Daisy', 'Iris']
@@ -273,6 +282,8 @@ export default function CommunityModule() {
   const [commentsLoading, setCommentsLoading] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [commentPosting, setCommentPosting] = useState(false)
+  const [reportPost, setReportPost] = useState<Post | null>(null)
+  const [reportReason, setReportReason] = useState<string>(REPORT_REASONS[0])
 
   // ─── Data loading ───────────────────────────────────────────────
   const loadPosts = useCallback(async () => {
@@ -428,6 +439,29 @@ export default function CommunityModule() {
     } catch (e) {
       setPosts(prevPosts)
       toast.error(e instanceof Error ? e.message : 'Could not delete post')
+    }
+  }
+
+  // ─── Report a post (moderation flow) ────────────────────────────────────
+  const handleReportPost = async (postId: string, reason: string) => {
+    const prevPosts = posts
+    // The reporter should not keep seeing the flagged post
+    setPosts(prev => prev.filter(p => p.id !== postId))
+    try {
+      const res = await fetch('/api/community', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, action: 'report', reason }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to report post')
+      }
+      const data = await res.json()
+      toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
+    } catch (e) {
+      setPosts(prevPosts)
+      toast.error(e instanceof Error ? e.message : 'Could not report post')
     }
   }
 
@@ -795,6 +829,19 @@ export default function CommunityModule() {
                                     <MessageCircle className="h-3.5 w-3.5" />
                                     {post.comments}
                                   </button>
+                                  {!post.isOwn && (
+                                    <button
+                                      onClick={() => {
+                                        setReportReason(REPORT_REASONS[0])
+                                        setReportPost(post)
+                                      }}
+                                      aria-label="Report post"
+                                      title="Report post"
+                                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors h-9 px-1 rounded-md ml-auto"
+                                    >
+                                      <Flag className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
                                   {post.isOwn && (
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
@@ -1141,6 +1188,55 @@ export default function CommunityModule() {
                 disabled={!newComment.trim() || commentPosting}
               >
                 {commentPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Post Dialog */}
+      <Dialog open={!!reportPost} onOpenChange={(open) => !open && setReportPost(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Flag className="h-4 w-4 text-orange-500" />
+              Report this post?
+            </DialogTitle>
+            <DialogDescription>
+              &quot;{reportPost?.title}&quot; — your report is anonymous and helps keep this space safe.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <div className="space-y-1.5">
+              {REPORT_REASONS.map(reason => (
+                <button
+                  key={reason}
+                  onClick={() => setReportReason(reason)}
+                  className={`w-full text-left text-xs rounded-lg border px-3 py-2.5 transition-colors ${
+                    reportReason === reason
+                      ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/30 text-foreground font-medium'
+                      : 'border-border hover:bg-accent text-muted-foreground'
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="ghost" size="sm" onClick={() => setReportPost(null)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => {
+                  const postId = reportPost?.id
+                  setReportPost(null)
+                  if (postId) void handleReportPost(postId, reportReason)
+                }}
+              >
+                <Flag className="h-3.5 w-3.5 mr-1.5" />
+                Submit report
               </Button>
             </div>
           </div>

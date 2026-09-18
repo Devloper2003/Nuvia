@@ -235,6 +235,33 @@ const TRUST_BADGES = [
   { id: 'b6', label: 'SOC 2 Type II', icon: Check, description: 'Audited security' },
 ]
 
+// ─── Active Subscription Banner ─────────────────────────────────────────────
+
+function PremiumActiveBanner() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-4 flex items-center gap-3 rounded-2xl border border-emerald-200/70 dark:border-emerald-900/50 bg-emerald-50/80 dark:bg-emerald-950/20 px-4 py-3"
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md shadow-emerald-500/30">
+        <Check className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+          Premium is active
+          <Badge className="bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white border-0 text-[9px] h-4 px-1.5">
+            PAYPAL SANDBOX
+          </Badge>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Your subscription was recorded successfully — premium features are unlocked on every device.
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
 // ─── Plan Card Component ────────────────────────────────────────────────────
 
 function PlanCard({ plan, billingCycle, onChoosePlan }: { plan: Plan; billingCycle: BillingCycle; onChoosePlan: (plan: Plan) => void }) {
@@ -386,9 +413,37 @@ export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
   const [checkoutPlan, setCheckoutPlan] = useState<Plan | null>(null)
   const premiumPlan = PLANS.find(p => p.id === 'premium')
+  const userProfile = useAppStore((s) => s.userProfile)
+  const hasPremium = useAppStore((s) => s.hasPremium())
+
+  // Persist the completed (sandbox) checkout so premium survives page reloads.
+  const persistSubscription = (plan: Plan, transactionId?: string) => {
+    if (!userProfile?.id) return
+    const amount = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
+    const gst = Math.round(amount * 0.18 * 100) / 100
+    void fetch('/api/subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userProfile.id,
+        plan: billingCycle,
+        tier: plan.id === 'plus' ? 'plus' : 'premium',
+        amount,
+        gst,
+        total: Math.round((amount + gst) * 100) / 100,
+        paymentMethod: 'paypal_sandbox',
+        transactionId,
+      }),
+    }).catch(() => {
+      // best-effort — the UI already granted premium
+    })
+  }
 
   return (
     <div className="min-h-screen">
+      {/* ─── Active subscription banner ────────────────────────────── */}
+      {hasPremium && <PremiumActiveBanner />}
+
       {/* ─── Hero ──────────────────────────────────────────────────── */}
       <motion.section
         initial={{ opacity: 0 }}
@@ -683,7 +738,8 @@ export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void
           plan={checkoutPlan}
           billingCycle={billingCycle}
           onClose={() => setCheckoutPlan(null)}
-          onSuccess={() => {
+          onSuccess={(txnId) => {
+            persistSubscription(checkoutPlan, txnId)
             onSubscribe()
             setCheckoutPlan(null)
           }}

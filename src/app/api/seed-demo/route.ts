@@ -31,6 +31,126 @@ const NOTES = [
   'Mild cramps before noon',
 ]
 
+// ─── seedCommunityIfEmpty ───────────────────────────────────────────────────
+// Community demo content lives on the SHARED feed (visible to every user), so it
+// is seeded once globally regardless of which user triggers the demo seed.
+async function seedCommunityIfEmpty(): Promise<{ personas: number; posts: number; comments: number }> {
+    const community = { personas: 0, posts: 0, comments: 0 }
+    try {
+      const existingPosts = await db.communityPost.count()
+      if (existingPosts === 0) {
+        const personaSpecs = [
+          { email: 'meera.iyer@demo.chandracycle.app', name: 'Meera Iyer' },
+          { email: 'ananya.rao@demo.chandracycle.app', name: 'Ananya Rao' },
+          { email: 'fatima.sheikh@demo.chandracycle.app', name: 'Fatima Sheikh' },
+          { email: 'sara.thomas@demo.chandracycle.app', name: 'Sara Thomas' },
+          { email: 'kavya.nair@demo.chandracycle.app', name: 'Kavya Nair' },
+        ]
+        const personas = []
+        for (const spec of personaSpecs) {
+          const persona = await db.user.upsert({
+            where: { email: spec.email },
+            update: {},
+            create: { email: spec.email, name: spec.name, provider: 'demo', onboardingComplete: true },
+          })
+          personas.push(persona)
+        }
+
+        const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000)
+        const postSpecs: Array<{
+          personaIdx: number; title: string; content: string; category: string;
+          likes: number; hours: number; isAnonymous: boolean;
+          comments: Array<{ personaIdx: number; content: string; hours: number; isAnonymous: boolean }>;
+        }> = [
+          {
+            personaIdx: 0,
+            title: 'Cramps relief that actually worked for me 🔥',
+            content: 'Tried the heating pad + gentle yoga combo the AI Coach suggested and my cramps went from 8/10 to 3/10 in two cycles. Anyone else found natural remedies that work?',
+            category: 'general', likes: 24, hours: 5, isAnonymous: false,
+            comments: [
+              { personaIdx: 1, content: 'Yes! Raspberry leaf tea in the luteal phase has been a game changer for me too.', hours: 4, isAnonymous: false },
+              { personaIdx: 2, content: 'Adding magnesium-rich foods (bananas, dark chocolate) helped mine a lot.', hours: 2, isAnonymous: true },
+            ],
+          },
+          {
+            personaIdx: 1,
+            title: 'How do you track PCOS symptoms consistently?',
+            content: 'I always start strong with logging and then fall off after a week. How do you all stay consistent with tracking? Any habits that stuck for you?',
+            category: 'pcos', likes: 18, hours: 26, isAnonymous: true,
+            comments: [
+              { personaIdx: 3, content: 'I log right after brushing my teeth in the morning — attaching it to an existing habit was the trick.', hours: 20, isAnonymous: false },
+              { personaIdx: 0, content: 'The daily reminders on this app helped me build a 30-day streak. Start with just mood + energy!', hours: 12, isAnonymous: false },
+            ],
+          },
+          {
+            personaIdx: 2,
+            title: 'First time tracking my fertile window — questions!',
+            content: 'Day 12 and my app says my fertile window opens tomorrow. For those TTC, do you rely on the predictions or do you also track BBT? Curious what worked for you.',
+            category: 'fertility', likes: 31, hours: 47, isAnonymous: false,
+            comments: [
+              { personaIdx: 4, content: 'BBT confirmed what the predictions showed for me — using both gave me so much confidence.', hours: 40, isAnonymous: true },
+              { personaIdx: 1, content: 'Cervical mucus tracking + the app window was my winning combo. Good luck! 🍀', hours: 33, isAnonymous: true },
+            ],
+          },
+          {
+            personaIdx: 3,
+            title: 'Sleep and my cycle — the correlation is wild',
+            content: 'I looked at my reports and my sleep quality drops 2 points in the luteal phase every single month. Finally makes sense why I feel wrecked before my period.',
+            category: 'mental_health', likes: 42, hours: 70, isAnonymous: true,
+            comments: [
+              { personaIdx: 2, content: 'Same! Magnesium before bed + no screens after 10pm helped me a lot in that phase.', hours: 65, isAnonymous: false },
+            ],
+          },
+          {
+            personaIdx: 4,
+            title: 'Doc appointment prep checklist — sharing what I learned',
+            content: 'After 3 wasted visits, I finally learned: bring your symptom log, cycle history, and write your top 3 questions beforehand. My last appointment was 10x more productive.',
+            category: 'general', likes: 57, hours: 96, isAnonymous: false,
+            comments: [
+              { personaIdx: 0, content: 'This is gold. The report export from this app is perfect for exactly this.', hours: 90, isAnonymous: true },
+              { personaIdx: 3, content: 'Saving this for my annual checkup next month. Thank you!', hours: 80, isAnonymous: true },
+              { personaIdx: 1, content: 'Also ask for your hormone panel numbers in writing — helped me get a second opinion later.', hours: 72, isAnonymous: false },
+            ],
+          },
+        ]
+
+        for (const spec of postSpecs) {
+          const persona = personas[spec.personaIdx]
+          const post = await db.communityPost.create({
+            data: {
+              userId: persona.id,
+              title: spec.title,
+              content: spec.content,
+              category: spec.category,
+              isAnonymous: spec.isAnonymous,
+              likes: spec.likes,
+              createdAt: hoursAgo(spec.hours),
+            },
+          })
+          for (const c of spec.comments) {
+            const cPersona = personas[c.personaIdx]
+            await db.comment.create({
+              data: {
+                postId: post.id,
+                userId: cPersona.id,
+                content: c.content,
+                isAnonymous: c.isAnonymous,
+                createdAt: hoursAgo(c.hours),
+              },
+            })
+            community.comments += 1
+          }
+          community.posts += 1
+        }
+        community.personas = personas.length
+      }
+    } catch (communityError) {
+      // Community seeding is best-effort — never fail the whole seed for it.
+      console.error('Community seed error:', communityError)
+    }
+  return community
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json()
@@ -44,10 +164,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Community demo content lives on the SHARED feed, so it must be seeded
+    // even when the user already has cycle data (early return below).
+    const community = await seedCommunityIfEmpty()
+
     const existingCycles = await db.cycle.count({ where: { userId } })
     if (existingCycles >= 3) {
       return NextResponse.json(
-        { success: true, message: 'Demo data already present', seeded: false },
+        { success: true, message: 'Demo data already present', seeded: false, community },
         { status: 200 }
       )
     }
@@ -176,6 +300,7 @@ export async function POST(request: NextRequest) {
     await db.sleepEntry.createMany({ data: sleepEntries })
     await db.waterEntry.createMany({ data: waterEntries })
 
+
     return NextResponse.json({
       success: true,
       seeded: true,
@@ -185,6 +310,7 @@ export async function POST(request: NextRequest) {
         moods: moodEntries.length,
         sleeps: sleepEntries.length,
         water: waterEntries.length,
+        ...community,
       },
     })
   } catch (error) {

@@ -73,7 +73,7 @@ interface PaypalCheckoutModalProps {
   plan: PaypalPlan
   billingCycle: BillingCycle
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (transactionId?: string) => void
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -308,6 +308,24 @@ export default function PaypalCheckoutModal({
   const [receipt, setReceipt] = useState<Receipt | null>(null)
   const [copied, setCopied] = useState(false)
   const [creatingOrder, setCreatingOrder] = useState(false)
+  const [paypalConfigured, setPaypalConfigured] = useState<boolean | null>(null)
+
+  // Detect server-side PayPal configuration so we can offer the sandbox demo
+  // checkout when live keys are absent (keeps the flow completable end-to-end).
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/payment/paypal')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled) setPaypalConfigured(!!d?.configured)
+      })
+      .catch(() => {
+        if (!cancelled) setPaypalConfigured(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // ─── Pricing (GST 18%) ─────────────────────────────────────────────────────
   const basePrice = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
@@ -340,7 +358,7 @@ export default function PaypalCheckoutModal({
       if (step === 'processing') return
       if (step === 'success') {
         // In success, any close should grant premium (payment succeeded)
-        onSuccess()
+        onSuccess(transactionId || undefined)
         return
       }
       onClose()
@@ -359,7 +377,7 @@ export default function PaypalCheckoutModal({
   const handleCloseButton = () => {
     if (step === 'processing') return
     if (step === 'success') {
-      onSuccess()
+      onSuccess(transactionId || undefined)
       return
     }
     onClose()
@@ -531,8 +549,42 @@ export default function PaypalCheckoutModal({
     }
   }
 
+  // ─── Sandbox demo payment (used only when PayPal keys are not configured) ──
+  // Simulates the PayPal authorization → capture round-trip locally and emits
+  // a clearly-labelled sandbox receipt. No real money moves.
+  const handleDemoPayment = async () => {
+    setPaying(true)
+    setStep('processing')
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+      const txnId = `SBX-${Date.now().toString(36).toUpperCase()}`
+      setTransactionId(txnId)
+      setReceipt({
+        transactionId: txnId,
+        merchant: 'ChandraCycle (PayPal Sandbox)',
+        planId: plan.id as 'premium' | 'plus',
+        planName: plan.name,
+        billingCycle,
+        subtotal,
+        gst,
+        total,
+        currency: 'INR',
+        paymentMethod: { type: 'card', brand: 'Visa', last4: '4242' },
+        timestamp: new Date().toISOString(),
+        status: 'COMPLETED',
+        note: 'PayPal sandbox demo payment — no real money was charged.',
+      })
+      setStep('success')
+      toast.success('Welcome to Premium! 🎉', {
+        description: `Sandbox demo payment completed — ${plan.name} activated.`,
+      })
+    } finally {
+      setPaying(false)
+    }
+  }
+
   const handleContinue = () => {
-    onSuccess()
+    onSuccess(transactionId || undefined)
   }
 
   const canClose = step === 'login' || step === 'review' || step === 'success'
@@ -659,6 +711,33 @@ export default function PaypalCheckoutModal({
                       height={45}
                     />
                   </div>
+
+                  {/* ─── Sandbox demo checkout (when PayPal keys are absent) ── */}
+                  {paypalConfigured === false && (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-[11px] font-semibold text-amber-700">
+                        🧪 Sandbox demo checkout
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-gray-600">
+                        Live PayPal keys aren&apos;t configured on this server, so the PayPal
+                        buttons are disabled. Complete this payment in sandbox mode instead —
+                        it records a real subscription and unlocks premium on every device.
+                      </p>
+                      <Button
+                        onClick={handleDemoPayment}
+                        disabled={paying || step === 'processing'}
+                        className="mt-3 w-full bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white hover:opacity-90 font-semibold"
+                      >
+                        {paying ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Processing…
+                          </>
+                        ) : (
+                          <>Complete sandbox payment</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Divider */}
                   <div className="my-4 flex items-center gap-3">

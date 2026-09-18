@@ -105,7 +105,7 @@ interface AppShellProps {
 }
 
 export default function AppShell({ user, onLogout }: AppShellProps) {
-  const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, setPremium, setUserProfile } = useAppStore()
+  const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, setPremium, setUserProfile, isPremium } = useAppStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [currentTime, setCurrentTime] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
@@ -123,6 +123,23 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
       provider: user.provider as 'email' | 'google' | 'apple',
     })
   }, [user, setUserProfile])
+
+  // ── Restore premium status from the server (survives reloads) ────────────
+  useEffect(() => {
+    if (!user.id) return
+    let cancelled = false
+    fetch(`/api/subscription?userId=${encodeURIComponent(user.id)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d?.active) setPremium(true)
+      })
+      .catch(() => {
+        // best-effort — offline users keep their in-session state
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [user.id, setPremium])
 
   // Clock
   useEffect(() => {
@@ -435,11 +452,16 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
                     </div>
-                    <div className="mt-2 flex items-center gap-1.5">
+                    <div className="mt-2 flex items-center gap-1.5 flex-wrap">
                       <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-0 text-[10px] h-5 gap-0.5">
                         {user.provider === 'google' ? <Gem className="h-2.5 w-2.5" /> : <ShieldCheck className="h-2.5 w-2.5" />}
                         {user.provider === 'google' ? 'Google' : user.provider === 'apple' ? 'Apple' : user.provider === 'mobile' ? 'Mobile' : 'Email'}
                       </Badge>
+                      {isPremium && (
+                        <Badge className="bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 text-white border-0 text-[10px] h-5 gap-0.5 shadow-sm">
+                          <Crown className="h-2.5 w-2.5" /> Premium
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
@@ -450,7 +472,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleNavClick('premium')} className="rounded-lg py-2">
                       <Crown className="mr-2.5 h-4 w-4 text-amber-500" />
-                      <span>Upgrade to Premium</span>
+                      <span>{isPremium ? 'Manage Premium' : 'Upgrade to Premium'}</span>
                     </DropdownMenuItem>
                   </div>
                   <DropdownMenuSeparator />

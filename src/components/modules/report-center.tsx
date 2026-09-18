@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAppStore } from '@/lib/store'
+import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BarChart,
@@ -36,6 +38,8 @@ import {
   BarChart3,
   Sparkles,
   ChevronRight,
+  RefreshCcw,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -65,16 +69,6 @@ interface PeriodData {
   trendLine: { label: string; wellness: number; symptoms: number }[]
   radarData: { subject: string; current: number; previous: number }[]
 }
-
-// ── Report Data ─────────────────────────────────────────────────────────────
-// NOTE: Demo / placeholder report data was removed so a brand-new user starts
-// with an empty state ("No reports yet"). When a real reporting backend is
-// wired up, fetch the PeriodData for the selected period from the API and
-// replace `periodData` below — the chart/UI shell below will render it as-is.
-
-// `periodData` stays null until a real backend supplies it. The component
-// gates its chart grid on `periodData === null` to render the empty state.
-const periodData: PeriodData | null = null
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function TrendIcon({ current, previous }: { current: number; previous: number }) {
@@ -148,12 +142,77 @@ function ScoreCard({
 
 // ── Main Component ──────────────────────────────────────────────────────────
 export default function ReportsModule() {
+  const userProfile = useAppStore((s) => s.userProfile)
   const [period, setPeriod] = useState<ReportPeriod>('weekly')
-  // `data` is null when no real report data has been fetched yet (the default
-  // for a brand-new user). The body renders an empty-state card in that case;
-  // replace this with a fetch from `/api/reports?period=...` when the backend
-  // is ready, and the existing chart UI below will render automatically.
-  const data: PeriodData | null = periodData
+  const [data, setData] = useState<(PeriodData & { period?: { label: string; startDate: string; endDate: string } }) | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // ── Fetch the real report for the selected period (and on period switch) ──
+  useEffect(() => {
+    if (!userProfile?.id) return
+    let cancelled = false
+    // Defer to a microtask so the effect body itself stays free of sync
+    // state updates (react-hooks/set-state-in-effect).
+    Promise.resolve().then(() => {
+      if (!cancelled) setLoading(true)
+    })
+    fetch(`/api/reports/summary?userId=${encodeURIComponent(userProfile.id)}&period=${period}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((rep) => {
+        if (cancelled) return
+        const counts = rep?.counts
+        const hasEntries =
+          counts && counts.symptoms + counts.moods + counts.sleeps + counts.waters > 0
+        setData(hasEntries ? rep : null)
+        setLoading(false)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setData(null)
+          setLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userProfile?.id, period])
+
+  // ── CSV export (real client-side download of the current report) ──────────
+  const handleExportCsv = () => {
+    if (!data) return
+    const rows: string[][] = []
+    rows.push(['ChandraCycle Report', data.period?.label ?? ''])
+    rows.push(['Window', `${data.period?.startDate ?? ''} → ${data.period?.endDate ?? ''}`])
+    rows.push([])
+    rows.push(['Metric', 'Current', 'Previous'])
+    rows.push(['Wellness Score', String(data.wellnessScore), String(data.prevWellnessScore)])
+    rows.push(['Cycle Regularity', String(data.cycleRegularity), String(data.prevCycleRegularity)])
+    rows.push(['Symptom Severity', String(data.symptomSeverity), String(data.prevSymptomSeverity)])
+    rows.push(['Mood Stability', String(data.moodStability), String(data.prevMoodStability)])
+    rows.push(['Sleep Average (h)', String(data.sleepAvg), ''])
+    rows.push(['Water Average (glasses)', String(data.waterAvg), ''])
+    rows.push([])
+    rows.push(['Trend', 'Wellness', 'Symptoms'])
+    for (const t of data.trendLine) rows.push([t.label, String(t.wellness), String(t.symptoms)])
+    rows.push([])
+    rows.push(['Symptom', 'Count'])
+    for (const s of data.symptomFrequency) rows.push([s.name, String(s.count)])
+    rows.push([])
+    rows.push(['Mood', 'Count'])
+    for (const m of data.moodDistribution) rows.push([m.name, String(m.value)])
+
+    const csv = rows
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('CSV report downloaded')
+  }
 
   const chartConfig = {
     wellness: { label: 'Wellness', color: '#14b8a6' },
@@ -176,7 +235,11 @@ export default function ReportsModule() {
           </div>
           <div>
             <h2 className="text-base font-semibold text-foreground">Report Center</h2>
-            <p className="text-xs text-muted-foreground">AI-powered health insights</p>
+            <p className="text-xs text-muted-foreground">
+              {data?.period?.label
+                ? `${data.period.label} · ${data.period.startDate} → ${data.period.endDate}`
+                : 'AI-powered health insights'}
+            </p>
           </div>
         </div>
 
@@ -201,7 +264,31 @@ export default function ReportsModule() {
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
-        {data === null ? (
+        {loading ? (
+          // ── Loading skeletons while the report is being computed ──
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="h-8 w-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+                    <div className="h-6 w-16 rounded bg-muted animate-pulse" />
+                    <div className="h-1.5 w-full rounded-full bg-teal-100 dark:bg-teal-900/40 animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Card key={i} className="border-teal-100 dark:border-teal-900/50">
+                  <CardContent className="p-4">
+                    <div className="h-[220px] rounded-lg bg-teal-50 dark:bg-teal-950/20 animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : data === null ? (
           // ── Empty state: no reports yet (brand-new user) ──
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -213,11 +300,11 @@ export default function ReportsModule() {
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
                   <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
                 </div>
-                <p className="text-sm font-medium text-foreground">No reports yet</p>
+                <p className="text-sm font-medium text-foreground">No data for this period yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  Start logging your cycle, mood, sleep, and symptoms across ChandraCycle.
-                  Once you have a few days of data, your {period} report — wellness score,
-                  symptom patterns, mood distribution, and AI insights — will appear here.
+                  Log your cycle, mood, sleep, water, or symptoms and your {period} report —
+                  wellness score, symptom patterns, mood distribution, and AI insights — will be
+                  generated here automatically.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
                   <Badge variant="secondary" className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-[10px] gap-1">
@@ -549,7 +636,10 @@ export default function ReportsModule() {
                 <Sparkles className="size-4 text-teal-500" />
                 <CardTitle className="text-sm font-semibold">AI Health Insights</CardTitle>
               </div>
-              <CardDescription className="text-xs">Generated based on your tracking data</CardDescription>
+              <CardDescription className="text-xs flex items-center gap-1.5">
+                Generated from your real tracking data
+                {loading && <Loader2 className="size-3 animate-spin" />}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2.5">
@@ -612,11 +702,23 @@ export default function ReportsModule() {
                   <p className="text-sm font-medium text-foreground">Export Report</p>
                   <p className="text-xs text-muted-foreground">Download your health data for sharing</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
+                    disabled={!data}
+                    onClick={handleExportCsv}
                     className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                  >
+                    <Download className="size-3.5 mr-1.5" />
+                    CSV
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled
+                    title="PDF export is coming soon"
+                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700/50 dark:text-teal-300/50"
                   >
                     <FileText className="size-3.5 mr-1.5" />
                     PDF
@@ -624,18 +726,12 @@ export default function ReportsModule() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+                    disabled
+                    title="Excel export is coming soon"
+                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700/50 dark:text-teal-300/50"
                   >
                     <FileSpreadsheet className="size-3.5 mr-1.5" />
                     Excel
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
-                  >
-                    <Download className="size-3.5 mr-1.5" />
-                    CSV
                   </Button>
                 </div>
               </div>

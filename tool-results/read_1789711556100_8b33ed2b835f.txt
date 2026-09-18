@@ -1,0 +1,651 @@
+     1→'use client'
+     2→
+     3→import { useState } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import {
+     6→  BarChart,
+     7→  Bar,
+     8→  PieChart,
+     9→  Pie,
+    10→  LineChart,
+    11→  Line,
+    12→  RadarChart,
+    13→  Radar,
+    14→  PolarGrid,
+    15→  PolarAngleAxis,
+    16→  PolarRadiusAxis,
+    17→  XAxis,
+    18→  YAxis,
+    19→  CartesianGrid,
+    20→  Cell,
+    21→  ResponsiveContainer,
+    22→  Legend,
+    23→} from 'recharts'
+    24→import {
+    25→  Download,
+    26→  FileSpreadsheet,
+    27→  FileText,
+    28→  TrendingUp,
+    29→  TrendingDown,
+    30→  Minus,
+    31→  Activity,
+    32→  Heart,
+    33→  Moon,
+    34→  Droplets,
+    35→  Brain,
+    36→  BarChart3,
+    37→  Sparkles,
+    38→  ChevronRight,
+    39→} from 'lucide-react'
+    40→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+    41→import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+    42→import { Button } from '@/components/ui/button'
+    43→import { Badge } from '@/components/ui/badge'
+    44→import { Progress } from '@/components/ui/progress'
+    45→import { Separator } from '@/components/ui/separator'
+    46→
+    47→// ── Types ───────────────────────────────────────────────────────────────────
+    48→type ReportPeriod = 'daily' | 'weekly' | 'monthly' | 'annual'
+    49→
+    50→interface PeriodData {
+    51→  cycleSummary: { day: number; phase: string; note: string }[]
+    52→  symptomFrequency: { name: string; count: number }[]
+    53→  moodDistribution: { name: string; value: number; color: string }[]
+    54→  sleepAvg: number
+    55→  waterAvg: number
+    56→  cycleRegularity: number
+    57→  symptomSeverity: number
+    58→  moodStability: number
+    59→  wellnessScore: number
+    60→  prevCycleRegularity: number
+    61→  prevSymptomSeverity: number
+    62→  prevMoodStability: number
+    63→  prevWellnessScore: number
+    64→  insights: string[]
+    65→  trendLine: { label: string; wellness: number; symptoms: number }[]
+    66→  radarData: { subject: string; current: number; previous: number }[]
+    67→}
+    68→
+    69→// ── Report Data ─────────────────────────────────────────────────────────────
+    70→// NOTE: Demo / placeholder report data was removed so a brand-new user starts
+    71→// with an empty state ("No reports yet"). When a real reporting backend is
+    72→// wired up, fetch the PeriodData for the selected period from the API and
+    73→// replace `periodData` below — the chart/UI shell below will render it as-is.
+    74→
+    75→// `periodData` stays null until a real backend supplies it. The component
+    76→// gates its chart grid on `periodData === null` to render the empty state.
+    77→const periodData: PeriodData | null = null
+    78→
+    79→// ── Helpers ─────────────────────────────────────────────────────────────────
+    80→function TrendIcon({ current, previous }: { current: number; previous: number }) {
+    81→  const diff = current - previous
+    82→  if (diff > 2) return <TrendingUp className="size-4 text-emerald-500" />
+    83→  if (diff < -2) return <TrendingDown className="size-4 text-red-400" />
+    84→  return <Minus className="size-4 text-muted-foreground" />
+    85→}
+    86→
+    87→function TrendLabel({ current, previous, suffix = '' }: { current: number; previous: number; suffix?: string }) {
+    88→  const diff = current - previous
+    89→  const pct = previous !== 0 ? Math.round((diff / previous) * 100) : 0
+    90→  if (diff > 2)
+    91→    return (
+    92→      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+    93→        +{pct}%{suffix}
+    94→      </span>
+    95→    )
+    96→  if (diff < -2)
+    97→    return (
+    98→      <span className="text-xs text-red-500 font-medium">
+    99→        {pct}%{suffix}
+   100→      </span>
+   101→    )
+   102→  return (
+   103→    <span className="text-xs text-muted-foreground font-medium">No change{suffix}</span>
+   104→  )
+   105→}
+   106→
+   107→// ── Score Card ──────────────────────────────────────────────────────────────
+   108→function ScoreCard({
+   109→  title,
+   110→  score,
+   111→  prevScore,
+   112→  icon: Icon,
+   113→  color,
+   114→  delay = 0,
+   115→}: {
+   116→  title: string
+   117→  score: number
+   118→  prevScore: number
+   119→  icon: React.ElementType
+   120→  color: string
+   121→  delay?: number
+   122→}) {
+   123→  return (
+   124→    <motion.div
+   125→      initial={{ opacity: 0, y: 20 }}
+   126→      animate={{ opacity: 1, y: 0 }}
+   127→      transition={{ duration: 0.4, delay }}
+   128→    >
+   129→      <Card className="relative overflow-hidden border-teal-100 dark:border-teal-900/50 hover:shadow-md transition-shadow">
+   130→        <CardContent className="p-4">
+   131→          <div className="flex items-start justify-between mb-3">
+   132→            <div className={`p-2 rounded-lg ${color}`}>
+   133→              <Icon className="size-4 text-white" />
+   134→            </div>
+   135→            <div className="flex items-center gap-1">
+   136→              <TrendIcon current={score} previous={prevScore} />
+   137→              <TrendLabel current={score} previous={prevScore} />
+   138→            </div>
+   139→          </div>
+   140→          <p className="text-2xl font-bold text-foreground">{score}</p>
+   141→          <p className="text-xs text-muted-foreground mt-0.5">{title}</p>
+   142→          <Progress value={score} className="mt-3 h-1.5 bg-teal-100 dark:bg-teal-900/50 [&>div]:bg-teal-500" />
+   143→        </CardContent>
+   144→      </Card>
+   145→    </motion.div>
+   146→  )
+   147→}
+   148→
+   149→// ── Main Component ──────────────────────────────────────────────────────────
+   150→export default function ReportsModule() {
+   151→  const [period, setPeriod] = useState<ReportPeriod>('weekly')
+   152→  // `data` is null when no real report data has been fetched yet (the default
+   153→  // for a brand-new user). The body renders an empty-state card in that case;
+   154→  // replace this with a fetch from `/api/reports?period=...` when the backend
+   155→  // is ready, and the existing chart UI below will render automatically.
+   156→  const data: PeriodData | null = periodData
+   157→
+   158→  const chartConfig = {
+   159→    wellness: { label: 'Wellness', color: '#14b8a6' },
+   160→    symptoms: { label: 'Symptoms', color: '#f59e0b' },
+   161→    count: { label: 'Count', color: '#14b8a6' },
+   162→  }
+   163→
+   164→  const radarChartConfig = {
+   165→    current: { label: 'Current', color: '#14b8a6' },
+   166→    previous: { label: 'Previous', color: '#99f6e4' },
+   167→  }
+   168→
+   169→  return (
+   170→    <div className="flex flex-col h-full bg-gradient-to-b from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background rounded-xl border border-teal-100 dark:border-teal-900/50">
+   171→      {/* Header */}
+   172→      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-teal-100 dark:border-teal-900/50 bg-white/80 dark:bg-background/80 backdrop-blur-sm rounded-t-xl">
+   173→        <div className="flex items-center gap-2.5">
+   174→          <div className="p-2 rounded-lg bg-teal-500 text-white">
+   175→            <BarChart3 className="size-5" />
+   176→          </div>
+   177→          <div>
+   178→            <h2 className="text-base font-semibold text-foreground">Report Center</h2>
+   179→            <p className="text-xs text-muted-foreground">AI-powered health insights</p>
+   180→          </div>
+   181→        </div>
+   182→
+   183→        {/* Period Selector */}
+   184→        <Tabs value={period} onValueChange={(v) => setPeriod(v as ReportPeriod)}>
+   185→          <TabsList className="bg-teal-50 dark:bg-teal-950/50">
+   186→            <TabsTrigger value="daily" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   187→              Daily
+   188→            </TabsTrigger>
+   189→            <TabsTrigger value="weekly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   190→              Weekly
+   191→            </TabsTrigger>
+   192→            <TabsTrigger value="monthly" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   193→              Monthly
+   194→            </TabsTrigger>
+   195→            <TabsTrigger value="annual" className="data-[state=active]:bg-teal-500 data-[state=active]:text-white text-xs px-3">
+   196→              Annual
+   197→            </TabsTrigger>
+   198→          </TabsList>
+   199→        </Tabs>
+   200→      </div>
+   201→
+   202→      {/* Scrollable Content */}
+   203→      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
+   204→        {data === null ? (
+   205→          // ── Empty state: no reports yet (brand-new user) ──
+   206→          <motion.div
+   207→            initial={{ opacity: 0, y: 10 }}
+   208→            animate={{ opacity: 1, y: 0 }}
+   209→            transition={{ duration: 0.35 }}
+   210→          >
+   211→            <Card className="border-dashed border-teal-200 dark:border-teal-900/50">
+   212→              <CardContent className="flex flex-col items-center justify-center py-16 px-4 text-center">
+   213→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
+   214→                  <BarChart3 className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+   215→                </div>
+   216→                <p className="text-sm font-medium text-foreground">No reports yet</p>
+   217→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+   218→                  Start logging your cycle, mood, sleep, and symptoms across ChandraCycle.
+   219→                  Once you have a few days of data, your {period} report — wellness score,
+   220→                  symptom patterns, mood distribution, and AI insights — will appear here.
+   221→                </p>
+   222→                <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+   223→                  <Badge variant="secondary" className="bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 text-[10px] gap-1">
+   224→                    <Activity className="h-3 w-3" /> Log cycle
+   225→                  </Badge>
+   226→                  <Badge variant="secondary" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-[10px] gap-1">
+   227→                    <Brain className="h-3 w-3" /> Log mood
+   228→                  </Badge>
+   229→                  <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 text-[10px] gap-1">
+   230→                    <Moon className="h-3 w-3" /> Log sleep
+   231→                  </Badge>
+   232→                </div>
+   233→              </CardContent>
+   234→            </Card>
+   235→          </motion.div>
+   236→        ) : (
+   237→          <>
+   238→        {/* Score Cards Row */}
+   239→        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+   240→          <ScoreCard
+   241→            title="Cycle Regularity"
+   242→            score={data.cycleRegularity}
+   243→            prevScore={data.prevCycleRegularity}
+   244→            icon={Activity}
+   245→            color="bg-teal-500"
+   246→            delay={0}
+   247→          />
+   248→          <ScoreCard
+   249→            title="Symptom Severity"
+   250→            score={100 - data.symptomSeverity}
+   251→            prevScore={100 - data.prevSymptomSeverity}
+   252→            icon={Heart}
+   253→            color="bg-rose-400"
+   254→            delay={0.05}
+   255→          />
+   256→          <ScoreCard
+   257→            title="Mood Stability"
+   258→            score={data.moodStability}
+   259→            prevScore={data.prevMoodStability}
+   260→            icon={Brain}
+   261→            color="bg-amber-400"
+   262→            delay={0.1}
+   263→          />
+   264→          <ScoreCard
+   265→            title="Wellness Score"
+   266→            score={data.wellnessScore}
+   267→            prevScore={data.prevWellnessScore}
+   268→            icon={Sparkles}
+   269→            color="bg-emerald-500"
+   270→            delay={0.15}
+   271→          />
+   272→        </div>
+   273→
+   274→        {/* Charts Row 1: Symptom Frequency + Mood Distribution */}
+   275→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   276→          {/* Symptom Frequency Bar Chart */}
+   277→          <motion.div
+   278→            initial={{ opacity: 0, y: 20 }}
+   279→            animate={{ opacity: 1, y: 0 }}
+   280→            transition={{ duration: 0.4, delay: 0.2 }}
+   281→          >
+   282→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   283→              <CardHeader className="pb-2">
+   284→                <CardTitle className="text-sm font-semibold">Symptom Frequency</CardTitle>
+   285→                <CardDescription className="text-xs">Most reported symptoms this period</CardDescription>
+   286→              </CardHeader>
+   287→              <CardContent>
+   288→                <div className="h-[220px]">
+   289→                  <ResponsiveContainer width="100%" height="100%">
+   290→                    <BarChart data={data.symptomFrequency} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   291→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+   292→                      <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+   293→                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+   294→                      <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+   295→                    </BarChart>
+   296→                  </ResponsiveContainer>
+   297→                </div>
+   298→              </CardContent>
+   299→            </Card>
+   300→          </motion.div>
+   301→
+   302→          {/* Mood Distribution Pie Chart */}
+   303→          <motion.div
+   304→            initial={{ opacity: 0, y: 20 }}
+   305→            animate={{ opacity: 1, y: 0 }}
+   306→            transition={{ duration: 0.4, delay: 0.25 }}
+   307→          >
+   308→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   309→              <CardHeader className="pb-2">
+   310→                <CardTitle className="text-sm font-semibold">Mood Distribution</CardTitle>
+   311→                <CardDescription className="text-xs">How your moods were distributed</CardDescription>
+   312→              </CardHeader>
+   313→              <CardContent>
+   314→                <div className="h-[220px]">
+   315→                  <ResponsiveContainer width="100%" height="100%">
+   316→                    <PieChart>
+   317→                      <Pie
+   318→                        data={data.moodDistribution}
+   319→                        cx="50%"
+   320→                        cy="50%"
+   321→                        innerRadius={55}
+   322→                        outerRadius={85}
+   323→                        paddingAngle={3}
+   324→                        dataKey="value"
+   325→                      >
+   326→                        {data.moodDistribution.map((entry, index) => (
+   327→                          <Cell key={`cell-${index}`} fill={entry.color} />
+   328→                        ))}
+   329→                      </Pie>
+   330→                      <Legend
+   331→                        iconType="circle"
+   332→                        iconSize={8}
+   333→                        wrapperStyle={{ fontSize: '11px' }}
+   334→                      />
+   335→                    </PieChart>
+   336→                  </ResponsiveContainer>
+   337→                </div>
+   338→              </CardContent>
+   339→            </Card>
+   340→          </motion.div>
+   341→        </div>
+   342→
+   343→        {/* Charts Row 2: Wellness Trend Line + Radar */}
+   344→        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+   345→          {/* Wellness & Symptom Trend */}
+   346→          <motion.div
+   347→            initial={{ opacity: 0, y: 20 }}
+   348→            animate={{ opacity: 1, y: 0 }}
+   349→            transition={{ duration: 0.4, delay: 0.3 }}
+   350→          >
+   351→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   352→              <CardHeader className="pb-2">
+   353→                <CardTitle className="text-sm font-semibold">Wellness & Symptom Trends</CardTitle>
+   354→                <CardDescription className="text-xs">Tracking over time</CardDescription>
+   355→              </CardHeader>
+   356→              <CardContent>
+   357→                <div className="h-[220px]">
+   358→                  <ResponsiveContainer width="100%" height="100%">
+   359→                    <LineChart data={data.trendLine} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+   360→                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+   361→                      <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+   362→                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} domain={[0, 100]} />
+   363→                      <Line
+   364→                        type="monotone"
+   365→                        dataKey="wellness"
+   366→                        stroke="#14b8a6"
+   367→                        strokeWidth={2.5}
+   368→                        dot={{ fill: '#14b8a6', r: 3 }}
+   369→                        activeDot={{ r: 5 }}
+   370→                      />
+   371→                      <Line
+   372→                        type="monotone"
+   373→                        dataKey="symptoms"
+   374→                        stroke="#f59e0b"
+   375→                        strokeWidth={2}
+   376→                        dot={{ fill: '#f59e0b', r: 3 }}
+   377→                        activeDot={{ r: 5 }}
+   378→                        strokeDasharray="5 5"
+   379→                      />
+   380→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+   381→                    </LineChart>
+   382→                  </ResponsiveContainer>
+   383→                </div>
+   384→              </CardContent>
+   385→            </Card>
+   386→          </motion.div>
+   387→
+   388→          {/* Radar: Current vs Previous */}
+   389→          <motion.div
+   390→            initial={{ opacity: 0, y: 20 }}
+   391→            animate={{ opacity: 1, y: 0 }}
+   392→            transition={{ duration: 0.4, delay: 0.35 }}
+   393→          >
+   394→            <Card className="border-teal-100 dark:border-teal-900/50 h-full">
+   395→              <CardHeader className="pb-2">
+   396→                <CardTitle className="text-sm font-semibold">Period Comparison</CardTitle>
+   397→                <CardDescription className="text-xs">Current vs previous period</CardDescription>
+   398→              </CardHeader>
+   399→              <CardContent>
+   400→                <div className="h-[220px]">
+   401→                  <ResponsiveContainer width="100%" height="100%">
+   402→                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={data.radarData}>
+   403→                      <PolarGrid stroke="#e5e7eb" />
+   404→                      <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+   405→                      <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 9 }} />
+   406→                      <Radar
+   407→                        name="Current"
+   408→                        dataKey="current"
+   409→                        stroke="#14b8a6"
+   410→                        fill="#14b8a6"
+   411→                        fillOpacity={0.25}
+   412→                        strokeWidth={2}
+   413→                      />
+   414→                      <Radar
+   415→                        name="Previous"
+   416→                        dataKey="previous"
+   417→                        stroke="#99f6e4"
+   418→                        fill="#99f6e4"
+   419→                        fillOpacity={0.15}
+   420→                        strokeWidth={1.5}
+   421→                        strokeDasharray="4 4"
+   422→                      />
+   423→                      <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px' }} />
+   424→                    </RadarChart>
+   425→                  </ResponsiveContainer>
+   426→                </div>
+   427→              </CardContent>
+   428→            </Card>
+   429→          </motion.div>
+   430→        </div>
+   431→
+   432→        {/* Key Metrics Row: Sleep + Water Averages */}
+   433→        <div className="grid grid-cols-2 gap-3">
+   434→          <motion.div
+   435→            initial={{ opacity: 0, y: 20 }}
+   436→            animate={{ opacity: 1, y: 0 }}
+   437→            transition={{ duration: 0.4, delay: 0.4 }}
+   438→          >
+   439→            <Card className="border-teal-100 dark:border-teal-900/50">
+   440→              <CardContent className="p-4 flex items-center gap-3">
+   441→                <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50">
+   442→                  <Moon className="size-5 text-indigo-500" />
+   443→                </div>
+   444→                <div className="flex-1 min-w-0">
+   445→                  <p className="text-xs text-muted-foreground">Sleep Average</p>
+   446→                  <p className="text-lg font-bold text-foreground">{data.sleepAvg}h</p>
+   447→                </div>
+   448→                <Badge variant="secondary" className="text-[10px] shrink-0">
+   449→                  {data.sleepAvg >= 7 ? 'Good' : data.sleepAvg >= 6 ? 'Fair' : 'Low'}
+   450→                </Badge>
+   451→              </CardContent>
+   452→            </Card>
+   453→          </motion.div>
+   454→
+   455→          <motion.div
+   456→            initial={{ opacity: 0, y: 20 }}
+   457→            animate={{ opacity: 1, y: 0 }}
+   458→            transition={{ duration: 0.4, delay: 0.45 }}
+   459→          >
+   460→            <Card className="border-teal-100 dark:border-teal-900/50">
+   461→              <CardContent className="p-4 flex items-center gap-3">
+   462→                <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/50">
+   463→                  <Droplets className="size-5 text-sky-500" />
+   464→                </div>
+   465→                <div className="flex-1 min-w-0">
+   466→                  <p className="text-xs text-muted-foreground">Water Average</p>
+   467→                  <p className="text-lg font-bold text-foreground">{data.waterAvg} glasses</p>
+   468→                </div>
+   469→                <Badge variant="secondary" className="text-[10px] shrink-0">
+   470→                  {data.waterAvg >= 8 ? 'On Target' : data.waterAvg >= 6 ? 'Fair' : 'Low'}
+   471→                </Badge>
+   472→              </CardContent>
+   473→            </Card>
+   474→          </motion.div>
+   475→        </div>
+   476→
+   477→        {/* Trend Comparison Table */}
+   478→        <motion.div
+   479→          initial={{ opacity: 0, y: 20 }}
+   480→          animate={{ opacity: 1, y: 0 }}
+   481→          transition={{ duration: 0.4, delay: 0.5 }}
+   482→        >
+   483→          <Card className="border-teal-100 dark:border-teal-900/50">
+   484→            <CardHeader className="pb-2">
+   485→              <CardTitle className="text-sm font-semibold">Trend Comparison</CardTitle>
+   486→              <CardDescription className="text-xs">Current vs previous period metrics</CardDescription>
+   487→            </CardHeader>
+   488→            <CardContent>
+   489→              <div className="space-y-3">
+   490→                {[
+   491→                  { label: 'Cycle Regularity', current: data.cycleRegularity, previous: data.prevCycleRegularity, higher: true },
+   492→                  { label: 'Symptom Severity (inverted)', current: 100 - data.symptomSeverity, previous: 100 - data.prevSymptomSeverity, higher: true },
+   493→                  { label: 'Mood Stability', current: data.moodStability, previous: data.prevMoodStability, higher: true },
+   494→                  { label: 'Overall Wellness', current: data.wellnessScore, previous: data.prevWellnessScore, higher: true },
+   495→                  { label: 'Sleep Quality', current: Math.round(data.sleepAvg * 10), previous: Math.round((data.sleepAvg - 0.3) * 10), higher: true },
+   496→                  { label: 'Hydration', current: Math.round(data.waterAvg * 10), previous: Math.round((data.waterAvg - 0.5) * 10), higher: true },
+   497→                ].map((item, i) => (
+   498→                  <div key={item.label} className="flex items-center gap-3">
+   499→                    <p className="text-xs text-muted-foreground w-36 shrink-0 truncate">{item.label}</p>
+   500→                    <div className="flex-1 flex items-center gap-2">
+   501→                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+   502→                        <motion.div
+   503→                          className="h-full rounded-full bg-teal-400"
+   504→                          initial={{ width: 0 }}
+   505→                          animate={{ width: `${item.previous}%` }}
+   506→                          transition={{ duration: 0.8, delay: 0.1 * i }}
+   507→                        />
+   508→                      </div>
+   509→                      <span className="text-[10px] text-muted-foreground w-7 text-right">{item.previous}</span>
+   510→                    </div>
+   511→                    <ChevronRight className="size-3 text-muted-foreground shrink-0" />
+   512→                    <div className="flex-1 flex items-center gap-2">
+   513→                      <div className="flex-1 h-2 rounded-full bg-teal-100 dark:bg-teal-900/50 overflow-hidden">
+   514→                        <motion.div
+   515→                          className="h-full rounded-full bg-teal-600"
+   516→                          initial={{ width: 0 }}
+   517→                          animate={{ width: `${item.current}%` }}
+   518→                          transition={{ duration: 0.8, delay: 0.1 * i + 0.3 }}
+   519→                        />
+   520→                      </div>
+   521→                      <span className="text-[10px] font-medium text-foreground w-7 text-right">{item.current}</span>
+   522→                    </div>
+   523→                  </div>
+   524→                ))}
+   525→                <div className="flex items-center gap-4 pt-1">
+   526→                  <div className="flex items-center gap-1.5">
+   527→                    <div className="size-2.5 rounded-full bg-teal-400" />
+   528→                    <span className="text-[10px] text-muted-foreground">Previous</span>
+   529→                  </div>
+   530→                  <div className="flex items-center gap-1.5">
+   531→                    <div className="size-2.5 rounded-full bg-teal-600" />
+   532→                    <span className="text-[10px] text-muted-foreground">Current</span>
+   533→                  </div>
+   534→                </div>
+   535→              </div>
+   536→            </CardContent>
+   537→          </Card>
+   538→        </motion.div>
+   539→
+   540→        {/* AI Health Insights */}
+   541→        <motion.div
+   542→          initial={{ opacity: 0, y: 20 }}
+   543→          animate={{ opacity: 1, y: 0 }}
+   544→          transition={{ duration: 0.4, delay: 0.55 }}
+   545→        >
+   546→          <Card className="border-teal-100 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/50 to-white dark:from-teal-950/20 dark:to-background">
+   547→            <CardHeader className="pb-2">
+   548→              <div className="flex items-center gap-2">
+   549→                <Sparkles className="size-4 text-teal-500" />
+   550→                <CardTitle className="text-sm font-semibold">AI Health Insights</CardTitle>
+   551→              </div>
+   552→              <CardDescription className="text-xs">Generated based on your tracking data</CardDescription>
+   553→            </CardHeader>
+   554→            <CardContent>
+   555→              <div className="space-y-2.5">
+   556→                {data.insights.map((insight, i) => (
+   557→                  <motion.div
+   558→                    key={i}
+   559→                    initial={{ opacity: 0, x: -10 }}
+   560→                    animate={{ opacity: 1, x: 0 }}
+   561→                    transition={{ duration: 0.3, delay: 0.6 + i * 0.08 }}
+   562→                    className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/80 dark:bg-background/80 border border-teal-100 dark:border-teal-900/30"
+   563→                  >
+   564→                    <div className="mt-0.5 size-1.5 rounded-full bg-teal-500 shrink-0" />
+   565→                    <p className="text-xs text-foreground leading-relaxed">{insight}</p>
+   566→                  </motion.div>
+   567→                ))}
+   568→              </div>
+   569→            </CardContent>
+   570→          </Card>
+   571→        </motion.div>
+   572→
+   573→        {/* Cycle Summary */}
+   574→        <motion.div
+   575→          initial={{ opacity: 0, y: 20 }}
+   576→          animate={{ opacity: 1, y: 0 }}
+   577→          transition={{ duration: 0.4, delay: 0.6 }}
+   578→        >
+   579→          <Card className="border-teal-100 dark:border-teal-900/50">
+   580→            <CardHeader className="pb-2">
+   581→              <CardTitle className="text-sm font-semibold">Cycle Summary</CardTitle>
+   582→              <CardDescription className="text-xs">Key phase milestones this period</CardDescription>
+   583→            </CardHeader>
+   584→            <CardContent>
+   585→              <div className="space-y-2">
+   586→                {data.cycleSummary.map((item, i) => (
+   587→                  <div key={i} className="flex items-center gap-3 text-xs">
+   588→                    <div className="flex items-center justify-center size-7 rounded-full bg-teal-100 dark:bg-teal-900/50 text-teal-700 dark:text-teal-300 font-medium shrink-0">
+   589→                      {item.day}
+   590→                    </div>
+   591→                    <Badge variant="outline" className="text-[10px] border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 shrink-0">
+   592→                      {item.phase}
+   593→                    </Badge>
+   594→                    <span className="text-muted-foreground truncate">{item.note}</span>
+   595→                  </div>
+   596→                ))}
+   597→              </div>
+   598→            </CardContent>
+   599→          </Card>
+   600→        </motion.div>
+   601→
+   602→        {/* Export Options */}
+   603→        <motion.div
+   604→          initial={{ opacity: 0, y: 20 }}
+   605→          animate={{ opacity: 1, y: 0 }}
+   606→          transition={{ duration: 0.4, delay: 0.65 }}
+   607→        >
+   608→          <Card className="border-teal-100 dark:border-teal-900/50">
+   609→            <CardContent className="p-4">
+   610→              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+   611→                <div>
+   612→                  <p className="text-sm font-medium text-foreground">Export Report</p>
+   613→                  <p className="text-xs text-muted-foreground">Download your health data for sharing</p>
+   614→                </div>
+   615→                <div className="flex gap-2">
+   616→                  <Button
+   617→                    variant="outline"
+   618→                    size="sm"
+   619→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   620→                  >
+   621→                    <FileText className="size-3.5 mr-1.5" />
+   622→                    PDF
+   623→                  </Button>
+   624→                  <Button
+   625→                    variant="outline"
+   626→                    size="sm"
+   627→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   628→                  >
+   629→                    <FileSpreadsheet className="size-3.5 mr-1.5" />
+   630→                    Excel
+   631→                  </Button>
+   632→                  <Button
+   633→                    variant="outline"
+   634→                    size="sm"
+   635→                    className="text-xs border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/50"
+   636→                  >
+   637→                    <Download className="size-3.5 mr-1.5" />
+   638→                    CSV
+   639→                  </Button>
+   640→                </div>
+   641→              </div>
+   642→            </CardContent>
+   643→          </Card>
+   644→        </motion.div>
+   645→          </>
+   646→        )}
+   647→      </div>
+   648→    </div>
+   649→  )
+   650→}
+   651→
