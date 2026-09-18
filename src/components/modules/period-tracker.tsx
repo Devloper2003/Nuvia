@@ -123,9 +123,9 @@ const PHASES: CyclePhase[] = [
     name: 'Menstrual',
     startDay: 1,
     endDay: 5,
-    color: '#e11d48',
-    bgColor: 'rgba(225, 29, 72, 0.15)',
-    lightColor: '#fecdd3',
+    color: 'oklch(0.62 0.22 355)',
+    bgColor: 'oklch(0.62 0.22 355 / 0.12)',
+    lightColor: 'oklch(0.9 0.06 355)',
     description: 'Uterine lining sheds. Estrogen and progesterone are at their lowest.',
     hormones: { estrogen: 15, progesterone: 5, lh: 10, fsh: 20 },
     icon: <Droplets className="h-4 w-4" />,
@@ -134,9 +134,9 @@ const PHASES: CyclePhase[] = [
     name: 'Follicular',
     startDay: 6,
     endDay: 12,
-    color: '#ec4899',
-    bgColor: 'rgba(236, 72, 153, 0.15)',
-    lightColor: '#fbcfe8',
+    color: 'oklch(0.62 0.19 305)',
+    bgColor: 'oklch(0.62 0.19 305 / 0.12)',
+    lightColor: 'oklch(0.9 0.06 305)',
     description: 'Estrogen rises as follicles develop. Energy and mood improve.',
     hormones: { estrogen: 65, progesterone: 15, lh: 20, fsh: 50 },
     icon: <Sparkles className="h-4 w-4" />,
@@ -145,9 +145,9 @@ const PHASES: CyclePhase[] = [
     name: 'Ovulation',
     startDay: 13,
     endDay: 15,
-    color: '#f97316',
-    bgColor: 'rgba(249, 115, 22, 0.15)',
-    lightColor: '#fed7aa',
+    color: 'oklch(0.72 0.15 55)',
+    bgColor: 'oklch(0.72 0.15 55 / 0.14)',
+    lightColor: 'oklch(0.9 0.06 55)',
     description: 'LH surges, egg is released. Peak fertility window.',
     hormones: { estrogen: 90, progesterone: 25, lh: 95, fsh: 40 },
     icon: <Sun className="h-4 w-4" />,
@@ -156,9 +156,9 @@ const PHASES: CyclePhase[] = [
     name: 'Luteal',
     startDay: 16,
     endDay: 28,
-    color: '#a855f7',
-    bgColor: 'rgba(168, 85, 247, 0.15)',
-    lightColor: '#e9d5ff',
+    color: 'oklch(0.68 0.12 200)',
+    bgColor: 'oklch(0.68 0.12 200 / 0.12)',
+    lightColor: 'oklch(0.9 0.06 200)',
     description: 'Progesterone peaks. PMS symptoms may appear.',
     hormones: { estrogen: 45, progesterone: 80, lh: 10, fsh: 10 },
     icon: <Moon className="h-4 w-4" />,
@@ -277,14 +277,14 @@ function CycleWheel({
                 endAngle={-270}
                 dataKey="value"
                 stroke="none"
-                cornerRadius={4}
-                paddingAngle={2}
+                cornerRadius={8}
+                paddingAngle={3}
               >
                 {wheelData.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.color}
-                    opacity={PHASES[index].name === currentPhase.name ? 1 : 0.5}
+                    opacity={PHASES[index].name === currentPhase.name ? 1 : 0.55}
                   />
                 ))}
               </Pie>
@@ -294,7 +294,7 @@ function CycleWheel({
                     const data = payload[0].payload
                     const phase = PHASES.find((p) => p.name === data.name)
                     return (
-                      <div className="rounded-xl bg-white/90 backdrop-blur-md border border-pink-100 px-3 py-2 shadow-lg">
+                      <div className="rounded-xl bg-card/95 backdrop-blur-md border border-border/60 px-3 py-2 shadow-lg">
                         <p className="font-semibold text-sm" style={{ color: phase?.color }}>{data.name}</p>
                         <p className="text-xs text-muted-foreground">Days {phase?.startDay}–{phase?.endDay}</p>
                       </div>
@@ -322,13 +322,12 @@ function CycleWheel({
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.4, type: 'spring', stiffness: 200 }}
-              className="text-5xl sm:text-6xl font-bold"
-              style={{ color: currentPhase.color }}
+              className="font-serif text-5xl sm:text-6xl font-bold text-foreground"
             >
               {cycleDay}
             </motion.p>
             <Badge
-              className="mt-2 px-3 py-1 text-xs font-medium border-0"
+              className="mt-3 px-3.5 py-1.5 text-xs font-semibold border-0 shadow-sm"
               style={{ backgroundColor: currentPhase.bgColor, color: currentPhase.color }}
             >
               {currentPhase.icon}
@@ -350,23 +349,18 @@ function CycleWheel({
         </svg>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-3 mt-4">
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
         {PHASES.map((phase) => (
           <motion.div
             key={phase.name}
-            whileHover={{ scale: 1.05 }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              phase.name === currentPhase.name ? 'shadow-md' : 'opacity-60'
+            whileHover={{ scale: 1.04 }}
+            className={`chip-soft flex items-center gap-2 px-3 py-1.5 text-xs font-medium ${
+              phase.name === currentPhase.name ? 'opacity-100 shadow-sm' : 'opacity-70'
             }`}
-            style={{
-              backgroundColor: phase.bgColor,
-              color: phase.color,
-              border: `1px solid ${phase.name === currentPhase.name ? phase.color : 'transparent'}`,
-            }}
           >
-            {phase.icon}
-            <span>{phase.name}</span>
-            <span className="opacity-70">D{phase.startDay}–D{phase.endDay}</span>
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: phase.color }} />
+            <span className="text-foreground">{phase.name}</span>
+            <span className="text-muted-foreground">D{phase.startDay}–D{phase.endDay}</span>
           </motion.div>
         ))}
       </div>
@@ -459,6 +453,7 @@ function CycleCalendar({
           const isToday = isSameDay(d, new Date())
 
           let bgClass = ''
+          let borderClass = 'border border-transparent'
           let textClass = ''
           let dotColor = ''
           let label = ''
@@ -466,32 +461,33 @@ function CycleCalendar({
           if (!inMonth) {
             textClass = 'text-muted-foreground opacity-30'
           } else if (periodDay) {
-            bgClass = 'bg-rose-500/20'
+            bgClass = 'bg-rose-500/15'
             textClass = 'text-rose-700 dark:text-rose-300 font-semibold'
-            dotColor = '#e11d48'
+            dotColor = 'oklch(0.62 0.22 355)'
             label = '🩸'
           } else if (ovDay) {
-            bgClass = 'bg-orange-400/20'
-            textClass = 'text-orange-700 dark:text-orange-300 font-semibold'
-            dotColor = '#f97316'
+            bgClass = 'bg-amber-400/20'
+            textClass = 'text-amber-700 dark:text-amber-300 font-semibold'
+            dotColor = 'oklch(0.72 0.15 55)'
             label = '🥚'
           } else if (fertile) {
-            bgClass = 'bg-orange-300/10'
-            textClass = 'text-orange-600 dark:text-orange-400'
-            dotColor = '#fb923c'
+            bgClass = 'bg-violet-400/15'
+            textClass = 'text-violet-700 dark:text-violet-300'
+            dotColor = 'oklch(0.62 0.19 305)'
           } else if (predicted) {
-            bgClass = 'bg-rose-300/10'
+            bgClass = 'bg-rose-400/5'
             textClass = 'text-rose-500 dark:text-rose-400'
-            dotColor = '#fb7185'
+            dotColor = 'oklch(0.7 0.18 350)'
+            borderClass = 'border border-dashed border-rose-400/60 dark:border-rose-400/40'
             label = '✦'
           }
 
           return (
             <motion.div
               key={i}
-              whileHover={{ scale: 1.1 }}
-              className={`relative flex flex-col items-center justify-center h-9 sm:h-10 rounded-lg text-xs transition-all cursor-default ${bgClass} ${textClass} ${
-                isToday ? 'ring-2 ring-rose-400 ring-offset-1 ring-offset-white dark:ring-offset-gray-950' : ''
+              whileHover={{ scale: 1.08 }}
+              className={`relative flex flex-col items-center justify-center h-9 sm:h-10 rounded-xl text-xs transition-all duration-200 cursor-default ${borderClass} ${bgClass} ${textClass} ${
+                isToday ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-background' : ''
               }`}
             >
               <span>{format(d, 'd')}</span>
@@ -506,23 +502,23 @@ function CycleCalendar({
         })}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-rose-500/20 border border-rose-400/40" />
+      <div className="flex flex-wrap gap-2 mt-4 text-xs">
+        <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1">
+          <span className="w-2.5 h-2.5 rounded bg-rose-500/20 border border-rose-500/50" />
           <span className="text-muted-foreground">Period</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-orange-400/20 border border-orange-400/40" />
+        </span>
+        <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1">
+          <span className="w-2.5 h-2.5 rounded bg-amber-400/25 border border-amber-500/50" />
           <span className="text-muted-foreground">Ovulation</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-orange-300/10 border border-orange-300/30" />
+        </span>
+        <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1">
+          <span className="w-2.5 h-2.5 rounded bg-violet-400/20 border border-violet-500/50" />
           <span className="text-muted-foreground">Fertile Window</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded bg-rose-300/10 border border-rose-300/30" />
+        </span>
+        <span className="chip-soft inline-flex items-center gap-1.5 px-2.5 py-1">
+          <span className="w-2.5 h-2.5 rounded border border-dashed border-rose-400/70" />
           <span className="text-muted-foreground">Predicted Period</span>
-        </div>
+        </span>
       </div>
     </motion.div>
   )
@@ -1126,34 +1122,34 @@ function PeriodPredictions({
       transition={{ duration: 0.5, delay: 0.25 }}
       className="space-y-4"
     >
-      <div className="text-center p-4 rounded-xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border border-rose-100 dark:border-rose-900/40">
+      <div className="text-center p-5 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 dark:from-rose-950/30 dark:to-pink-950/30 border border-rose-100 dark:border-rose-900/40">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Next Period In</p>
         <motion.p
           initial={{ scale: 0.5 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
-          className="text-4xl font-bold text-rose-600"
+          className="font-serif text-5xl font-bold text-rose-600 dark:text-rose-300"
         >
           {Math.max(0, daysUntilNext)}
         </motion.p>
         <p className="text-sm text-muted-foreground">days</p>
-        <p className="text-xs text-rose-500 font-medium mt-1">{format(nextPeriodStart, 'EEEE, MMMM d')}</p>
+        <p className="text-xs text-rose-500 dark:text-rose-400 font-medium mt-1">{format(nextPeriodStart, 'EEEE, MMMM d')}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="text-center p-3 rounded-xl bg-black/5 dark:bg-white/5">
+        <div className="text-center p-3 rounded-2xl bg-blush">
           <CalendarDays className="h-4 w-4 mx-auto mb-1 text-rose-500" />
-          <p className="text-lg font-bold text-rose-600">{cycleLength}</p>
+          <p className="text-lg font-bold text-rose-600 dark:text-rose-300">{cycleLength}</p>
           <p className="text-[10px] text-muted-foreground">Cycle Length</p>
         </div>
-        <div className="text-center p-3 rounded-xl bg-black/5 dark:bg-white/5">
-          <Droplets className="h-4 w-4 mx-auto mb-1 text-pink-500" />
-          <p className="text-lg font-bold text-pink-600">{periodLength}</p>
+        <div className="text-center p-3 rounded-2xl bg-peach-soft">
+          <Droplets className="h-4 w-4 mx-auto mb-1 text-amber-500" />
+          <p className="text-lg font-bold text-amber-600 dark:text-amber-300">{periodLength}</p>
           <p className="text-[10px] text-muted-foreground">Period Length</p>
         </div>
-        <div className="text-center p-3 rounded-xl bg-black/5 dark:bg-white/5">
-          <TrendingUp className="h-4 w-4 mx-auto mb-1 text-emerald-500" />
-          <p className="text-lg font-bold text-emerald-600">{confidence}%</p>
+        <div className="text-center p-3 rounded-2xl bg-medical-soft">
+          <TrendingUp className="h-4 w-4 mx-auto mb-1 text-teal-600 dark:text-teal-300" />
+          <p className="text-lg font-bold text-teal-700 dark:text-teal-300">{confidence}%</p>
           <p className="text-[10px] text-muted-foreground">Confidence</p>
         </div>
       </div>
@@ -1517,7 +1513,7 @@ function HistoricalCyclesTable({
 function EmptyStateHero({ onLogClick }: { onLogClick: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 dark:bg-rose-950/40 mb-4">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blush mb-4">
         <Droplets className="h-7 w-7 text-rose-500" />
       </div>
       <h3 className="text-lg font-semibold">Welcome to your Cycle Tracker</h3>
@@ -1589,7 +1585,7 @@ export default function PeriodModule() {
   return (
     <div className="w-full space-y-6 pb-4">
       {/* Hero: Cycle Wheel */}
-      <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg overflow-hidden">
+      <Card className="card-blush overflow-hidden border-0">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <div>
@@ -1603,7 +1599,7 @@ export default function PeriodModule() {
               </CardDescription>
             </div>
             {cycleDay && (
-              <Badge className="bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0">
+              <Badge className="rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300 border-0">
                 <Clock className="h-3 w-3 mr-1" />
                 {Math.max(0, cycleLength - cycleDay)} days left
               </Badge>
@@ -1626,20 +1622,33 @@ export default function PeriodModule() {
 
       {/* Main content tabs */}
       <Tabs defaultValue="calendar" className="w-full">
-        <TabsList className="w-full grid grid-cols-4 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl h-10">
-          <TabsTrigger value="calendar" className="text-xs gap-1 data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700">
+        <TabsList className="w-full grid grid-cols-4 rounded-full bg-secondary p-1 h-auto">
+          <TabsTrigger
+            value="calendar"
+            className="min-h-11 rounded-full text-xs gap-1.5 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_6px_18px_-6px_rgba(244,63,94,0.55)] dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-white dark:data-[state=active]:border-transparent"
+          >
             <CalendarDays className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Calendar</span>
           </TabsTrigger>
-          <TabsTrigger value="timeline" className="text-xs gap-1 data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700">
+          <TabsTrigger
+            value="timeline"
+            className="min-h-11 rounded-full text-xs gap-1.5 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_6px_18px_-6px_rgba(244,63,94,0.55)] dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-white dark:data-[state=active]:border-transparent"
+          >
             <Activity className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Timeline</span>
           </TabsTrigger>
-          <TabsTrigger value="log" data-log-tab="true" className="text-xs gap-1 data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700">
+          <TabsTrigger
+            value="log"
+            data-log-tab="true"
+            className="min-h-11 rounded-full text-xs gap-1.5 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_6px_18px_-6px_rgba(244,63,94,0.55)] dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-white dark:data-[state=active]:border-transparent"
+          >
             <FileText className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Log</span>
           </TabsTrigger>
-          <TabsTrigger value="symptoms" className="text-xs gap-1 data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700">
+          <TabsTrigger
+            value="symptoms"
+            className="min-h-11 rounded-full text-xs gap-1.5 data-[state=inactive]:text-muted-foreground data-[state=active]:bg-gradient-to-r data-[state=active]:from-rose-500 data-[state=active]:to-pink-500 data-[state=active]:text-white data-[state=active]:shadow-[0_6px_18px_-6px_rgba(244,63,94,0.55)] dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-white dark:data-[state=active]:border-transparent"
+          >
             <Heart className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Symptoms</span>
           </TabsTrigger>
@@ -1647,7 +1656,7 @@ export default function PeriodModule() {
 
         {/* Calendar Tab */}
         <TabsContent value="calendar">
-          <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+          <Card className="glass border-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-rose-500" />
@@ -1676,7 +1685,7 @@ export default function PeriodModule() {
 
         {/* Timeline Tab */}
         <TabsContent value="timeline">
-          <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+          <Card className="glass border-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Activity className="h-4 w-4 text-rose-500" />
@@ -1699,7 +1708,7 @@ export default function PeriodModule() {
 
         {/* Log Tab */}
         <TabsContent value="log">
-          <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+          <Card className="glass border-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <FileText className="h-4 w-4 text-rose-500" />
@@ -1720,7 +1729,7 @@ export default function PeriodModule() {
 
         {/* Symptoms Tab */}
         <TabsContent value="symptoms">
-          <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+          <Card className="glass border-0">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Heart className="h-4 w-4 text-rose-500" />
@@ -1739,7 +1748,7 @@ export default function PeriodModule() {
 
       {/* Bottom row: Predictions + History */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+        <Card className="glass border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-rose-500" />
@@ -1769,7 +1778,7 @@ export default function PeriodModule() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-lg">
+        <Card className="glass border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Clock className="h-4 w-4 text-rose-500" />

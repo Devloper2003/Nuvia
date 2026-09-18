@@ -70,7 +70,11 @@ const containerVariants = {
 
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+  },
 }
 
 // ─── Empty State Component ───────────────────────────────────────────────────
@@ -107,11 +111,14 @@ function EmptyState({ icon: Icon, title, description, ctaLabel, onCta, className
 
 // ─── Phase metadata (configuration — not user data) ──────────────────────────
 
+// Crisp REF-A cycle palette (mirrors the period-tracker wheel so both pages
+// read as one system): menstrual rose · follicular violet · ovulation peach ·
+// luteal soft teal.
 const PHASE_META = [
-  { name: 'Menstrual', key: 'phase.menstrual' as TranslationKey, days: '1-5', color: '#e11d48' },
-  { name: 'Follicular', key: 'phase.follicular' as TranslationKey, days: '6-13', color: '#8b5cf6' },
-  { name: 'Ovulation', key: 'phase.ovulation' as TranslationKey, days: '14-16', color: '#f97316' },
-  { name: 'Luteal', key: 'phase.luteal' as TranslationKey, days: '17-28', color: '#06b6d4' },
+  { name: 'Menstrual', key: 'phase.menstrual' as TranslationKey, days: '1-5', color: 'oklch(0.62 0.22 355)' },
+  { name: 'Follicular', key: 'phase.follicular' as TranslationKey, days: '6-13', color: 'oklch(0.62 0.19 305)' },
+  { name: 'Ovulation', key: 'phase.ovulation' as TranslationKey, days: '14-16', color: 'oklch(0.72 0.15 55)' },
+  { name: 'Luteal', key: 'phase.luteal' as TranslationKey, days: '17-28', color: 'oklch(0.68 0.12 200)' },
 ]
 
 function getPhaseForCycleDay(cycleDay: number, cycleLength: number, periodLength: number) {
@@ -557,6 +564,27 @@ export default function DashboardModule() {
     }
   }, [cycles, userProfile])
 
+  // ─── Fertile window (presentation-only derivation for the quick-action card)
+  // Uses the same cycle math the tracker calendar uses: window = ovulation −4d
+  // … ovulation +2d, i.e. cycle days [L−18, L−12] of an L-day cycle. If this
+  // cycle's window has already passed, it rolls forward to the next cycle.
+  const fertileWindow = useMemo(() => {
+    if (!cycleInfo) return null
+    const len = cycleInfo.cycleLength
+    const winStartDay = Math.max(1, len - 18)
+    const winEndDay = Math.min(len, len - 12)
+    let startOffset = winStartDay - cycleInfo.cycleDay // days from today → window start
+    if (startOffset < -(winEndDay - winStartDay)) startOffset += len // passed → next cycle
+    const endOffset = startOffset + (winEndDay - winStartDay) // days from today → window end (≥0)
+    const fmt = (d: Date) =>
+      d.toLocaleDateString(localeMap[lang] ?? 'en-US', { month: 'short', day: 'numeric' })
+    const start = new Date()
+    start.setDate(start.getDate() + Math.max(0, startOffset))
+    const end = new Date()
+    end.setDate(end.getDate() + endOffset)
+    return { rangeLabel: `${fmt(start)} – ${fmt(end)}`, daysLeft: Math.max(0, endOffset) }
+  }, [cycleInfo, lang])
+
   const quickLogButtons = [
     {
       icon: Droplets,
@@ -649,8 +677,8 @@ export default function DashboardModule() {
 
       {/* ─── 2. Cycle Status Hero Card ──────────────────────────────────────── */}
       <motion.div variants={itemVariants}>
-        <Card className="glass overflow-hidden border-0 shadow-lg">
-          <CardContent className="p-6">
+        <Card className="card-blush overflow-hidden border-0">
+          <CardContent className="p-6 sm:p-8">
             {cycleInfo ? (
               <div className="flex flex-col lg:flex-row items-center gap-4 lg:gap-8">
                 {/* Circular Progress Ring */}
@@ -681,14 +709,14 @@ export default function DashboardModule() {
                   </div>
 
                   <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                    <div className="text-center px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30">
-                      <p className="text-2xl font-bold text-rose-600 dark:text-rose-400">
+                    <div className="text-center px-4 py-2.5 rounded-2xl bg-blush">
+                      <p className="text-2xl font-bold text-rose-600 dark:text-rose-300">
                         {cycleInfo.daysUntilPeriod}
                       </p>
                       <p className="text-xs text-muted-foreground">{t('dashboard.daysUntilPeriod')}</p>
                     </div>
-                    <div className="text-center px-4 py-2 rounded-xl bg-orange-50 dark:bg-orange-950/30">
-                      <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    <div className="text-center px-4 py-2.5 rounded-2xl bg-peach-soft">
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">
                         {(() => {
                           // Ovulation typically occurs 14 days before the next period.
                           const ovulationDay = cycleInfo.cycleLength - 14
@@ -704,18 +732,20 @@ export default function DashboardModule() {
                     </div>
                   </div>
 
-                  {/* Phase Breakdown Legend */}
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-3">
+                  {/* Phase Breakdown Legend — REF-A pill chips */}
+                  <div className="flex flex-wrap justify-center lg:justify-start gap-2">
                     {PHASE_META.map((phase) => (
-                      <div key={phase.name} className="flex items-center gap-1.5 text-xs">
+                      <span
+                        key={phase.name}
+                        className="chip-soft inline-flex items-center gap-2 px-3 py-1.5 text-xs"
+                      >
                         <span
-                          className="inline-block h-2.5 w-2.5 rounded-full"
+                          className="inline-block h-2 w-2 rounded-full"
                           style={{ backgroundColor: phase.color }}
                         />
-                        <span className="text-muted-foreground">
-                          {t(phase.key)} <span className="font-medium text-foreground">({phase.days})</span>
-                        </span>
-                      </div>
+                        <span className="font-medium text-foreground">{t(phase.key)}</span>
+                        <span className="text-muted-foreground">{phase.days}</span>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -757,8 +787,8 @@ export default function DashboardModule() {
                 value: cycleInfo.cycleDay,
                 subtitle: t('dashboard.ofDays', { n: cycleInfo.cycleLength }),
                 icon: CalendarDays,
-                color: 'text-rose-500',
-                bg: 'bg-rose-50 dark:bg-rose-950/30',
+                color: 'text-teal-600 dark:text-teal-300',
+                bg: 'bg-medical-soft',
                 badge: { text: t(cycleInfo.phase.key), bg: cycleInfo.phase.color },
               },
               {
@@ -766,8 +796,8 @@ export default function DashboardModule() {
                 value: cycleInfo.daysUntilPeriod,
                 subtitle: t('dashboard.countdown'),
                 icon: Clock,
-                color: 'text-purple-500',
-                bg: 'bg-purple-50 dark:bg-purple-950/30',
+                color: 'text-rose-600 dark:text-rose-300',
+                bg: 'bg-blush',
                 badge: null,
               },
               {
@@ -775,11 +805,11 @@ export default function DashboardModule() {
                 value: fertility.value,
                 subtitle: fertility.subtitle,
                 icon: Baby,
-                color: 'text-orange-500',
-                bg: 'bg-orange-50 dark:bg-orange-950/30',
+                color: 'text-violet-600 dark:text-violet-300',
+                bg: 'bg-lilac',
                 badge:
                   cycleInfo.phase.name === 'Ovulation'
-                    ? { text: t('fertility.peak'), bg: '#e11d48' }
+                    ? { text: t('fertility.peak'), bg: 'oklch(0.62 0.22 355)' }
                     : null,
               },
               {
@@ -787,19 +817,19 @@ export default function DashboardModule() {
                 value: daysToOvulation,
                 subtitle: `≈ ${ovulationDate.toLocaleDateString(localeMap[lang] ?? 'en-US', { month: 'short', day: 'numeric' })} · ${t('dashboard.dayCycle', { n: cycleInfo.cycleLength })}`,
                 icon: Flower2,
-                color: 'text-emerald-500',
-                bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+                color: 'text-amber-600 dark:text-amber-300',
+                bg: 'bg-peach-soft',
                 badge: null,
               },
             ].map((stat) => (
-              <Card
+              <div
                 key={stat.title}
-                className="glass border-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group/card"
+                className={`${stat.bg} rounded-2xl border border-white/40 p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group/card dark:border-white/5`}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-0">
                   <div className="flex items-center justify-between mb-3">
-                    <div className={`p-2 rounded-lg ${stat.bg} transition-transform duration-200 group-hover/card:scale-110`}>
-                      <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/70 shadow-sm transition-transform duration-200 group-hover/card:scale-110 dark:bg-white/10">
+                      <stat.icon className={`h-5 w-5 ${stat.color}`} />
                     </div>
                     {stat.badge && (
                       <Badge
@@ -810,16 +840,68 @@ export default function DashboardModule() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-2xl font-bold tabular-nums">
+                  <p className="text-2xl font-bold tabular-nums text-foreground">
                     {typeof stat.value === 'number' ? <AnimatedNumber value={stat.value} /> : stat.value}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">{stat.subtitle}</p>
                 </CardContent>
-              </Card>
+              </div>
             ))
           })()}
         </motion.div>
       )}
+
+      {/* ─── 3.5 Quick Actions — REF-A style duo (log symptoms / fertile days) ─ */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Log your symptoms — dashed REF-A card with dashed-circle plus icon */}
+        <motion.button
+          type="button"
+          onClick={() => setActiveModule('symptoms')}
+          whileHover={{ y: -3 }}
+          whileTap={{ scale: 0.985 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] }}
+          className="group flex min-h-24 items-center gap-4 rounded-3xl border-2 border-dashed border-rose-300/80 bg-rose-50/40 p-5 text-left transition-colors hover:border-rose-400/90 hover:bg-rose-50/70 dark:border-rose-400/25 dark:bg-rose-950/20 dark:hover:border-rose-400/45 dark:hover:bg-rose-950/35 focus-visible:outline-none"
+          aria-label="Log your symptoms"
+        >
+          <span
+            aria-hidden
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-rose-400/80 bg-white/60 text-rose-500 transition-transform duration-200 group-hover:rotate-90 group-hover:scale-110 dark:border-rose-300/50 dark:bg-white/5 dark:text-rose-300"
+          >
+            <Plus className="h-5 w-5" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-foreground">Log your symptoms</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Cramps, mood, energy — a 10-second check-in
+            </span>
+          </span>
+        </motion.button>
+
+        {/* Fertile Days — peach card with window range + days left */}
+        <div className="card-peach group flex min-h-24 items-center gap-4 p-5">
+          <span
+            aria-hidden
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-amber-600 shadow-sm transition-transform duration-200 group-hover:scale-110 dark:bg-white/10 dark:text-amber-300"
+          >
+            <Flower2 className="h-5 w-5" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Fertile Days</p>
+            {fertileWindow ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {fertileWindow.rangeLabel} ·{' '}
+                <span className="font-semibold text-amber-700 dark:text-amber-300">
+                  {fertileWindow.daysLeft} {fertileWindow.daysLeft === 1 ? 'day' : 'days'} left
+                </span>
+              </p>
+            ) : (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Log a cycle to unlock your fertility window
+              </p>
+            )}
+          </div>
+        </div>
+      </motion.div>
 
       {/* ─── 4. Hormone Preview — educational curves from your cycle data ───── */}
       <motion.div variants={itemVariants}>
@@ -1421,6 +1503,21 @@ function CycleProgressRing({
   const follicularPct = (cycleLength - 14 - 1 - periodLength) / cycleLength
   const lutealPct = 1 - menstrualPct - ovulationPct - follicularPct
 
+  // Crisp REF-A segment palette (solid colors, identical to the tracker wheel)
+  const segmentColors = {
+    menstrual: 'oklch(0.62 0.22 355)',
+    follicular: 'oklch(0.62 0.19 305)',
+    ovulation: 'oklch(0.72 0.15 55)',
+    luteal: 'oklch(0.68 0.12 200)',
+  }
+
+  // "Today" marker dot sits on the ring at the current cycle position.
+  // The main SVG is rotated -90° so its 0° starts at 12 o'clock; the overlay
+  // below is un-rotated and maps the fraction to a clockwise-from-top angle.
+  const markerAngle = progress * 2 * Math.PI
+  const markerX = radius + normalizedRadius * Math.sin(markerAngle)
+  const markerY = radius - normalizedRadius * Math.cos(markerAngle)
+
   return (
     <div className="relative flex items-center justify-center">
       <svg
@@ -1431,7 +1528,7 @@ function CycleProgressRing({
         aria-label={`Cycle day ${cycleDay} of ${cycleLength}`}
       >
         <circle
-          stroke="oklch(0.91 0.02 325)"
+          stroke="oklch(0.62 0.08 355 / 16%)"
           fill="transparent"
           strokeWidth={strokeWidth}
           r={normalizedRadius}
@@ -1440,7 +1537,7 @@ function CycleProgressRing({
         />
         {/* Menstrual */}
         <circle
-          stroke="#e11d48"
+          stroke={segmentColors.menstrual}
           fill="transparent"
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference * menstrualPct} ${circumference}`}
@@ -1448,12 +1545,11 @@ function CycleProgressRing({
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          opacity={0.3}
           strokeLinecap="round"
         />
         {/* Follicular */}
         <circle
-          stroke="#8b5cf6"
+          stroke={segmentColors.follicular}
           fill="transparent"
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference * follicularPct} ${circumference}`}
@@ -1461,12 +1557,11 @@ function CycleProgressRing({
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          opacity={0.3}
           strokeLinecap="round"
         />
         {/* Ovulation */}
         <circle
-          stroke="#f97316"
+          stroke={segmentColors.ovulation}
           fill="transparent"
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference * ovulationPct} ${circumference}`}
@@ -1474,12 +1569,11 @@ function CycleProgressRing({
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          opacity={0.3}
           strokeLinecap="round"
         />
         {/* Luteal */}
         <circle
-          stroke="#06b6d4"
+          stroke={segmentColors.luteal}
           fill="transparent"
           strokeWidth={strokeWidth}
           strokeDasharray={`${circumference * lutealPct} ${circumference}`}
@@ -1487,10 +1581,9 @@ function CycleProgressRing({
           r={normalizedRadius}
           cx={radius}
           cy={radius}
-          opacity={0.3}
           strokeLinecap="round"
         />
-        {/* Active progress arc */}
+        {/* Active progress arc — current phase, slightly thicker on top */}
         <circle
           stroke={phaseColor}
           fill="transparent"
@@ -1505,15 +1598,41 @@ function CycleProgressRing({
           className="drop-shadow-lg"
         />
       </svg>
+      {/* Today marker dot (un-rotated overlay) */}
+      <svg
+        height={radius * 2}
+        width={radius * 2}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 top-0"
+      >
+        <circle
+          cx={markerX}
+          cy={markerY}
+          r="6"
+          fill="oklch(0.99 0.005 355)"
+          stroke={phaseColor}
+          strokeWidth="3"
+          className="animate-pulse-soft"
+        />
+      </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-4xl font-bold gradient-text">{cycleDay}</span>
-        <span className="text-xs text-muted-foreground mt-0.5">{ofDaysLabel}</span>
-        <Badge
-          className="mt-2 border-0 text-white font-semibold text-xs px-3 py-1"
-          style={{ backgroundColor: phaseColor }}
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          Day
+        </span>
+        <span className="font-serif text-5xl font-bold leading-none text-foreground">
+          {cycleDay}
+        </span>
+        <span className="text-[11px] text-muted-foreground mt-1">{ofDaysLabel}</span>
+        <span
+          className="mt-2.5 inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold shadow-sm"
+          style={{
+            backgroundColor: `color-mix(in oklab, ${phaseColor} 14%, transparent)`,
+            borderColor: `color-mix(in oklab, ${phaseColor} 38%, transparent)`,
+            color: phaseColor,
+          }}
         >
           {phaseName}
-        </Badge>
+        </span>
       </div>
     </div>
   )

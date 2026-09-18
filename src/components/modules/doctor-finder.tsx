@@ -71,6 +71,7 @@ import {
   Globe,
   ChevronRight,
   MapPinned,
+  MessageCircle,
 } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -308,6 +309,14 @@ const RED_FLAG_SYMPTOMS = [
   { text: 'Vision changes, blurriness, or flashing lights', icon: Eye },
 ]
 
+// ─── Hero Stat Chips (derived from module data — hydration-safe constants) ────
+
+const HERO_STATS: { icon: React.ElementType; value: string; label: string }[] = [
+  { icon: CheckCircle2, value: String(SPECIALTIES.length), label: 'Specialities' },
+  { icon: HandHeart, value: String(SPECIALTY_GUIDE.length), label: 'Care guides' },
+  { icon: Stethoscope, value: 'Trusted', label: 'Specialists' },
+]
+
 // ─── Time Slots for Booking ───────────────────────────────────────────────────
 
 const TIME_SLOTS = [
@@ -370,32 +379,6 @@ function getAvatarGradient(name: string): string {
 function getInitials(name: string): string {
   const parts = name.replace(/^Dr\.\s*/i, '').split(' ')
   return (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
-}
-
-// ─── Sub-component: Star Rating ───────────────────────────────────────────────
-
-function StarRating({ rating }: { rating: number }) {
-  const full = Math.floor(rating)
-  const hasHalf = rating - full >= 0.5
-  return (
-    <div className="flex items-center gap-0.5" aria-label={`Rating ${rating} out of 5`}>
-      {Array.from({ length: 5 }).map((_, i) => {
-        const isFull = i < full
-        const isHalf = i === full && hasHalf
-        return (
-          <Star
-            key={i}
-            className={cn(
-              'h-3.5 w-3.5',
-              isFull || isHalf
-                ? 'fill-amber-400 text-amber-400'
-                : 'fill-muted text-muted-foreground/40'
-            )}
-          />
-        )
-      })}
-    </div>
-  )
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -702,38 +685,79 @@ export default function DoctorFinderModule() {
 
   return (
     <div className="space-y-6 pb-4">
-      {/* ═══ 1. HEADER ═══ */}
+      {/* ═══ 1. HERO BAND ═══ */}
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="space-y-3"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/20">
-            <Stethoscope className="h-6 w-6" />
+        <div className="relative overflow-hidden rounded-3xl bg-[linear-gradient(135deg,oklch(0.45_0.09_205)_0%,oklch(0.55_0.11_205)_100%)] p-4 text-white shadow-xl shadow-medical/30 sm:p-6 dark:bg-[linear-gradient(135deg,oklch(0.30_0.06_205)_0%,oklch(0.42_0.09_205)_100%)]">
+          {/* Decorative light blooms */}
+          <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-10 h-48 w-48 rounded-full bg-white/5 blur-3xl" />
+
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            {/* Title cluster */}
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 shadow-inner backdrop-blur-md">
+                <Stethoscope aria-hidden="true" className="h-7 w-7" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl md:text-4xl">
+                  Find Your Doctor
+                </h1>
+                <p className="mt-1 text-sm text-white/80 md:text-base">
+                  Connect with trusted healthcare specialists near you
+                </p>
+                {/* Floating quick-action orbs (decorative, per reference) */}
+                <div aria-hidden="true" className="mt-4 hidden items-center gap-2.5 sm:flex">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 backdrop-blur-md">
+                    <MessageCircle className="h-4.5 w-4.5 text-white/90" />
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 backdrop-blur-md">
+                    <Phone className="h-4.5 w-4.5 text-white/90" />
+                  </span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 backdrop-blur-md">
+                    <Video className="h-4.5 w-4.5 text-white/90" />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Frosted glass stat chips */}
+            <div className="flex flex-wrap gap-2.5 md:flex-col lg:flex-row">
+              {HERO_STATS.map((stat) => {
+                const StatIcon = stat.icon
+                return (
+                  <div
+                    key={stat.label}
+                    className="flex items-center gap-2.5 rounded-full border border-white/20 bg-white/10 py-1.5 pl-1.5 pr-4 backdrop-blur-md"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+                      <StatIcon aria-hidden="true" className="h-4.5 w-4.5" />
+                    </span>
+                    <span className="leading-tight">
+                      <span className="block text-sm font-bold text-white">{stat.value}</span>
+                      <span className="block text-[10px] font-medium uppercase tracking-wide text-white/70">
+                        {stat.label}
+                      </span>
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              <span className="bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
-                Find Your Doctor
+
+          {/* Emergency notice — frosted pill row inside the hero (safety copy unchanged) */}
+          <div className="relative mt-5 flex items-start gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md">
+            <Siren aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-rose-200" />
+            <p className="text-sm font-medium text-white">
+              🚨 For medical emergencies, call your local emergency number immediately
+              <span className="mt-0.5 block text-xs font-normal text-white/75">
+                India: 108 / 112 · US: 911 · UK: 999 · EU: 112
               </span>
-            </h1>
-            <p className="text-sm md:text-base text-muted-foreground mt-0.5">
-              Connect with trusted healthcare specialists near you
             </p>
           </div>
-        </div>
-
-        {/* Emergency banner */}
-        <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-3">
-          <Siren className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
-          <p className="text-sm text-rose-800 dark:text-rose-200 font-medium">
-            🚨 For medical emergencies, call your local emergency number immediately
-            <span className="block text-xs font-normal text-rose-700/80 dark:text-rose-300/80 mt-0.5">
-              India: 108 / 112 · US: 911 · UK: 999 · EU: 112
-            </span>
-          </p>
         </div>
       </motion.header>
 
@@ -743,10 +767,12 @@ export default function DoctorFinderModule() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.05 }}
       >
-        <Card className="border-teal-100 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/40 via-white to-cyan-50/30 dark:from-teal-950/20 dark:via-card dark:to-cyan-950/20 backdrop-blur-sm">
+        <Card className="card-medical">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Search className="h-5 w-5 text-teal-600" />
+            <CardTitle className="flex items-center gap-2.5 text-lg">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-medical text-medical-foreground shadow-md shadow-medical/25">
+                <Search className="h-4 w-4" />
+              </span>
               Search Healthcare Providers
             </CardTitle>
             <CardDescription>
@@ -756,16 +782,16 @@ export default function DoctorFinderModule() {
           <CardContent className="space-y-5">
             {/* Location input with autocomplete + use my location */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-teal-600" />
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor="location" className="flex items-center gap-1.5 text-sm font-medium">
+                  <MapPin className="h-3.5 w-3.5 text-medical" />
                   Your Location
                 </Label>
                 <button
                   type="button"
                   onClick={useMyLocation}
                   disabled={locating}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 disabled:opacity-50 transition-colors"
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full bg-medical-soft px-3.5 py-1.5 text-xs font-semibold text-medical transition-all hover:bg-medical hover:text-medical-foreground disabled:opacity-50"
                 >
                   {locating ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -776,7 +802,7 @@ export default function DoctorFinderModule() {
                 </button>
               </div>
               <div className="relative" ref={suggestionsRef}>
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                <MapPin className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-medical" />
                 <Input
                   id="location"
                   placeholder="Enter your area or city (works for any location in India)"
@@ -789,13 +815,13 @@ export default function DoctorFinderModule() {
                       handleSearch()
                     }
                   }}
-                  className="pl-9 pr-9 h-11 bg-background/70"
+                  className="h-12 rounded-full border-medical/30 bg-card/80 pl-11 pr-12 shadow-sm focus-visible:border-medical focus-visible:ring-medical/25"
                 />
                 {location && (
                   <button
                     type="button"
                     onClick={() => { setLocation(''); setSuggestions([]); }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-medical-soft hover:text-foreground"
                     aria-label="Clear location"
                   >
                     ×
@@ -809,9 +835,9 @@ export default function DoctorFinderModule() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute z-30 mt-1 w-full rounded-xl border border-teal-100 dark:border-teal-900/50 bg-white dark:bg-card shadow-xl overflow-hidden"
+                      className="absolute z-30 mt-1 w-full overflow-hidden rounded-2xl border border-medical/25 bg-popover shadow-xl"
                     >
-                      <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-teal-50/50 dark:bg-teal-950/30 border-b border-teal-100 dark:border-teal-900/50 flex items-center gap-1">
+                      <div className="flex items-center gap-1 border-b border-medical/20 bg-medical-soft/60 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-medical">
                         <MapPinned className="h-3 w-3" /> Powered by Google Places
                       </div>
                       <ul className="max-h-64 overflow-y-auto chandracycle-scroll">
@@ -820,9 +846,9 @@ export default function DoctorFinderModule() {
                             <button
                               type="button"
                               onClick={() => selectSuggestion(s)}
-                              className="w-full text-left px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors flex items-start gap-2"
+                              className="flex w-full items-start gap-2 px-3 py-2.5 text-left transition-colors hover:bg-medical-soft/70"
                             >
-                              <MapPin className="h-4 w-4 text-teal-500 shrink-0 mt-0.5" />
+                              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-medical" />
                               <div className="min-w-0">
                                 <p className="text-sm font-medium truncate">{s.mainText}</p>
                                 {s.secondaryText && (
@@ -846,11 +872,11 @@ export default function DoctorFinderModule() {
 
             {/* Specialty selector grid */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Stethoscope className="h-3.5 w-3.5 text-teal-600" />
+              <Label className="flex items-center gap-1.5 text-sm font-medium">
+                <Stethoscope className="h-3.5 w-3.5 text-medical" />
                 Health Concern
               </Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
                 {SPECIALTIES.map((s) => {
                   const Icon = s.icon
                   const isSelected = selectedSpecialty === s.id
@@ -859,28 +885,29 @@ export default function DoctorFinderModule() {
                       key={s.id}
                       type="button"
                       onClick={() => handleSelectSpecialty(s.id)}
+                      aria-pressed={isSelected}
                       className={cn(
-                        'group flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all duration-200',
+                        'flex flex-col items-start gap-1 rounded-2xl border p-3 text-left transition-all duration-200',
                         isSelected
-                          ? cn(s.bgColor, s.borderColor, 'shadow-md ring-2', s.ring, 'ring-offset-0')
-                          : 'border-border bg-background/60 hover:bg-accent/50 hover:border-teal-200 dark:hover:border-teal-800'
+                          ? 'border-transparent bg-medical text-medical-foreground shadow-lg shadow-medical/30'
+                          : 'border-transparent bg-medical-soft text-foreground hover:-translate-y-0.5 hover:shadow-md'
                       )}
                     >
-                      <div className="flex items-center gap-2 w-full">
+                      <div className="flex w-full items-center gap-2">
                         <span
                           className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
-                            isSelected ? cn(s.bgColor, s.textColor) : 'bg-muted text-muted-foreground'
+                            'flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+                            isSelected ? 'bg-white/20 text-medical-foreground' : 'bg-card text-medical shadow-sm'
                           )}
                         >
                           <Icon className="h-4 w-4" />
                         </span>
                         {isSelected && (
-                          <CheckCircle2 className="h-4 w-4 ml-auto text-teal-600" />
+                          <CheckCircle2 className="ml-auto h-4 w-4 text-medical-foreground" />
                         )}
                       </div>
                       <span className="text-xs font-semibold leading-tight">{s.shortLabel}</span>
-                      <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">
+                      <span className={cn('text-[10px] leading-tight line-clamp-2', isSelected ? 'text-medical-foreground/80' : 'text-muted-foreground')}>
                         {s.description}
                       </span>
                     </button>
@@ -891,8 +918,8 @@ export default function DoctorFinderModule() {
 
             {/* Severity level */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <Activity className="h-3.5 w-3.5 text-teal-600" />
+              <Label className="flex items-center gap-1.5 text-sm font-medium">
+                <Activity className="h-3.5 w-3.5 text-medical" />
                 Severity Level
               </Label>
               <div className="grid grid-cols-3 gap-2">
@@ -904,11 +931,12 @@ export default function DoctorFinderModule() {
                       key={sev}
                       type="button"
                       onClick={() => setSeverity((cur) => (cur === sev ? null : sev))}
+                      aria-pressed={isSelected}
                       className={cn(
-                        'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all',
+                        'flex min-h-11 items-center justify-center gap-2 rounded-full px-3 py-2.5 text-sm font-semibold transition-all',
                         isSelected
-                          ? cn(cfg.bg, cfg.border, cfg.color, 'shadow-md ring-2', cfg.ring)
-                          : 'border-border bg-background/60 hover:bg-accent/50'
+                          ? 'bg-medical text-medical-foreground shadow-lg shadow-medical/30'
+                          : 'bg-medical-soft text-foreground hover:bg-medical-soft/70'
                       )}
                     >
                       <span className={cn('h-2 w-2 rounded-full', cfg.dot)} />
@@ -929,7 +957,7 @@ export default function DoctorFinderModule() {
                   transition={{ duration: 0.25 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-3">
+                  <div className="flex items-start gap-3 rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-3">
                     <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-semibold text-rose-800 dark:text-rose-200">
@@ -950,7 +978,7 @@ export default function DoctorFinderModule() {
               size="lg"
               onClick={handleSearch}
               disabled={isSearching || !location.trim()}
-              className="w-full h-12 text-base bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-lg shadow-teal-500/20"
+              className="h-12 w-full rounded-full bg-medical text-base text-medical-foreground shadow-lg shadow-medical/30 hover:bg-medical/90"
             >
               {isSearching ? (
                 <>
@@ -979,10 +1007,10 @@ export default function DoctorFinderModule() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.35 }}
           >
-            <Card className="border-dashed border-teal-200 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/40 to-cyan-50/20 dark:from-teal-950/10 dark:to-cyan-950/10">
-              <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
-                  <Search className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+            <Card className="rounded-3xl border-dashed border-medical/40 bg-medical-soft/40 dark:border-medical/30 dark:bg-medical-soft/20">
+              <CardContent className="flex flex-col items-center justify-center px-4 py-14 text-center">
+                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-medical text-medical-foreground shadow-lg shadow-medical/25">
+                  <Search className="h-6 w-6" />
                 </div>
                 <p className="text-sm font-medium text-foreground">Search to find doctors near you</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
@@ -1005,12 +1033,12 @@ export default function DoctorFinderModule() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.35 }}
           >
-            <Card className="border-teal-300 dark:border-teal-800 bg-gradient-to-br from-teal-50 via-cyan-50 to-white dark:from-teal-950/40 dark:via-cyan-950/30 dark:to-card shadow-lg shadow-teal-500/10">
+            <Card className="card-medical">
               <CardContent className="p-5 md:p-6">
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   <div className="flex items-start gap-3 flex-1">
                     <div className="relative">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-md">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-medical text-medical-foreground shadow-md shadow-medical/30">
                         <Video className="h-6 w-6" />
                       </div>
                       <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
@@ -1019,33 +1047,33 @@ export default function DoctorFinderModule() {
                       </span>
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-teal-900 dark:text-teal-100">
+                      <h3 className="text-base font-bold text-foreground">
                         Need immediate advice? Connect with a doctor in 2 minutes
                       </h3>
-                      <p className="text-sm text-teal-700 dark:text-teal-300 mt-0.5 flex items-center gap-1.5">
+                      <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-medical">
                         <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                         Video Consult Available Now
                       </p>
                     </div>
                   </div>
-                  <Button className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-md shrink-0">
+                  <Button className="shrink-0 rounded-full bg-medical text-medical-foreground shadow-md hover:bg-medical/90">
                     <Video className="h-4 w-4" />
                     Start Video Consult
                   </Button>
                 </div>
 
-                <Separator className="my-4 bg-teal-200/50 dark:bg-teal-800/50" />
+                <Separator className="my-4 bg-medical/20" />
 
                 {/* Online doctors */}
                 <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-medical">
                     Available Right Now
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {onlineDoctors.map((doc) => (
                       <div
                         key={doc.id}
-                        className="flex items-center gap-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white/70 dark:bg-card/60 p-2.5"
+                        className="flex items-center gap-2.5 rounded-2xl border border-medical/20 bg-card/70 p-2.5"
                       >
                         <div className="relative shrink-0">
                           <Avatar className="h-9 w-9">
@@ -1091,18 +1119,18 @@ export default function DoctorFinderModule() {
                   initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
-                  className="relative overflow-hidden rounded-xl border border-amber-300/70 dark:border-amber-800 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent dark:from-amber-950/30 dark:via-amber-950/20 px-4 py-3"
+                  className="relative overflow-hidden rounded-2xl border border-amber-300/70 dark:border-amber-800 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent dark:from-amber-950/30 dark:via-amber-950/20 px-4 py-3"
                   role="note"
                   aria-label="Demo directory notice"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
                       <FlaskConical className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
                         Demo directory
-                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+                        <span className="rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
                           Sample data
                         </span>
                       </p>
@@ -1114,7 +1142,7 @@ export default function DoctorFinderModule() {
                     <button
                       onClick={() => setDemoNoticeDismissed(true)}
                       aria-label="Dismiss demo notice"
-                      className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded-md text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-amber-700/70 transition-colors hover:bg-amber-100 hover:text-amber-900 dark:hover:bg-amber-900/40"
                     >
                       ✕
                     </button>
@@ -1124,25 +1152,25 @@ export default function DoctorFinderModule() {
             </AnimatePresence>
 
             {/* Filter & Sort Bar */}
-            <Card className="bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-4 space-y-3">
+            <Card className="card-medical">
+              <CardContent className="space-y-3 p-4">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                   {/* Results count + location + source */}
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="font-semibold text-base">{filteredDoctors.length}</span>
+                      <span className="text-base font-bold text-medical">{filteredDoctors.length}</span>
                       <span className="text-muted-foreground">doctors found</span>
                       {selectedSpecialty && (
-                        <Badge variant="secondary" className="ml-1 bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
+                        <Badge variant="secondary" className="ml-1 rounded-full bg-medical-soft text-medical">
                           {SPECIALTY_MAP[selectedSpecialty].shortLabel}
                         </Badge>
                       )}
                     </div>
                     {searchedLocation && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 text-teal-500" />
+                        <MapPin className="h-3 w-3 text-medical" />
                         <span className="truncate max-w-[260px]">{searchedLocation}</span>
-                        <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 text-[10px] font-medium">
+                        <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-medical-soft px-1.5 py-0.5 text-[10px] font-medium text-medical">
                           <Globe className="h-2.5 w-2.5" />
                           {searchSource === 'google'
                             ? 'Google Places'
@@ -1162,7 +1190,7 @@ export default function DoctorFinderModule() {
                       <Filter className="h-3.5 w-3.5" /> Sort:
                     </span>
                     <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
-                      <SelectTrigger className="h-9 w-[140px] text-xs">
+                      <SelectTrigger className="h-9 w-[140px] rounded-full text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1175,7 +1203,7 @@ export default function DoctorFinderModule() {
                   </div>
                 </div>
 
-                <Separator />
+                <Separator className="bg-medical/15" />
 
                 {/* Filter toggles */}
                 <div className="flex flex-wrap items-center gap-2">
@@ -1207,7 +1235,7 @@ export default function DoctorFinderModule() {
                   <div className="flex items-center gap-1.5 ml-1">
                     <CircleDollarSign className="h-3.5 w-3.5 text-muted-foreground" />
                     <Select value={maxFee} onValueChange={(v) => setMaxFee(v as typeof maxFee)}>
-                      <SelectTrigger className="h-9 w-[110px] text-xs">
+                      <SelectTrigger className="h-9 w-[110px] rounded-full text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1226,33 +1254,38 @@ export default function DoctorFinderModule() {
             {isSearching ? (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={i} className="animate-pulse">
+                  <Card key={i} className="card-medical rounded-3xl">
                     <CardContent className="p-5">
                       <div className="flex gap-4">
-                        <div className="h-14 w-14 rounded-full bg-muted" />
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 w-1/2 bg-muted rounded" />
-                          <div className="h-3 w-1/3 bg-muted rounded" />
-                          <div className="h-3 w-2/3 bg-muted rounded" />
+                        <div className="h-16 w-16 rounded-2xl bg-medical-soft" />
+                        <div className="flex-1 space-y-2.5 pt-1">
+                          <div className="h-4 w-1/2 rounded-full bg-medical-soft" />
+                          <div className="h-3 w-1/3 rounded-full bg-medical-soft/80" />
+                          <div className="h-3 w-2/3 rounded-full bg-medical-soft/60" />
                         </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <div className="h-14 rounded-2xl bg-medical-soft/50" />
+                        <div className="h-14 rounded-2xl bg-medical-soft/50" />
+                        <div className="h-14 rounded-2xl bg-medical-soft/50" />
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             ) : filteredDoctors.length === 0 ? (
-              <Card className="border-dashed">
+              <Card className="rounded-3xl border-dashed border-medical/40 bg-medical-soft/30 dark:border-medical/30 dark:bg-medical-soft/20">
                 <CardContent className="py-12 text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                    <Search className="h-7 w-7 text-muted-foreground" />
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-medical-soft text-medical">
+                    <Search className="h-7 w-7" />
                   </div>
                   <p className="mt-3 font-semibold">No doctors match your filters</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Try adjusting your filters or searching a different area.
                   </p>
                   <Button
                     variant="outline"
-                    className="mt-4"
+                    className="mt-4 rounded-full border-medical/30 hover:bg-medical-soft hover:text-medical dark:border-medical/40 dark:hover:bg-medical-soft/70 dark:hover:text-medical"
                     onClick={() => {
                       setFilterToday(false)
                       setFilterOpenNow(false)
@@ -1289,7 +1322,7 @@ export default function DoctorFinderModule() {
         className="space-y-4"
       >
         <div className="flex items-center gap-2">
-          <HandHeart className="h-5 w-5 text-teal-600" />
+          <HandHeart className="h-5 w-5 text-medical" />
           <h2 className="text-xl font-bold">Health Concern Guide</h2>
         </div>
 
@@ -1304,10 +1337,10 @@ export default function DoctorFinderModule() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.05 }}
               >
-                <Card className={cn('h-full border bg-card/80 backdrop-blur-sm transition-shadow hover:shadow-md', meta.borderColor)}>
+                <Card className={cn('card-medical h-full transition-shadow hover:shadow-lg')}>
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2.5 mb-2">
-                      <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg', meta.bgColor, meta.textColor)}>
+                    <div className="mb-2 flex items-center gap-2.5">
+                      <span className={cn('flex h-9 w-9 items-center justify-center rounded-full', meta.bgColor, meta.textColor)}>
                         <Icon className="h-5 w-5" />
                       </span>
                       <div>
@@ -1324,7 +1357,7 @@ export default function DoctorFinderModule() {
         </div>
 
         {/* Red Flag Symptoms */}
-        <Card className="border-rose-200 dark:border-rose-900 bg-gradient-to-br from-rose-50 to-orange-50/50 dark:from-rose-950/40 dark:to-orange-950/20">
+        <Card className="rounded-3xl border-rose-200 dark:border-rose-900 bg-gradient-to-br from-rose-50 to-orange-50/50 dark:from-rose-950/40 dark:to-orange-950/20">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg text-rose-800 dark:text-rose-200">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950">
@@ -1366,7 +1399,7 @@ export default function DoctorFinderModule() {
             <>
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <CalendarIcon className="h-5 w-5 text-teal-600" />
+                  <CalendarIcon className="h-5 w-5 text-medical" />
                   Book Appointment
                 </DialogTitle>
                 <DialogDescription>
@@ -1375,7 +1408,7 @@ export default function DoctorFinderModule() {
               </DialogHeader>
 
               {/* Doctor summary */}
-              <div className="flex items-start gap-3 rounded-xl border border-teal-100 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 p-3">
+              <div className="flex items-start gap-3 rounded-2xl border border-medical/25 bg-medical-soft/50 p-3">
                 <Avatar className="h-12 w-12">
                   <AvatarFallback className={cn('bg-gradient-to-br text-white font-semibold', getAvatarGradient(bookingDoctor.name))}>
                     {getInitials(bookingDoctor.name)}
@@ -1385,7 +1418,7 @@ export default function DoctorFinderModule() {
                   <p className="font-semibold leading-tight">{bookingDoctor.name}</p>
                   <p className="text-xs text-muted-foreground leading-tight mt-0.5">{bookingDoctor.qualifications}</p>
                   <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                    <Badge variant="secondary" className={cn('text-[10px]', SPECIALTY_MAP[bookingDoctor.specialty].bgColor, SPECIALTY_MAP[bookingDoctor.specialty].textColor)}>
+                    <Badge variant="secondary" className={cn('rounded-full text-[10px]', SPECIALTY_MAP[bookingDoctor.specialty].bgColor, SPECIALTY_MAP[bookingDoctor.specialty].textColor)}>
                       {SPECIALTY_MAP[bookingDoctor.specialty].shortLabel}
                     </Badge>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -1394,7 +1427,7 @@ export default function DoctorFinderModule() {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-teal-700 dark:text-teal-300">₹{bookingDoctor.fee}</p>
+                  <p className="text-sm font-bold text-medical">₹{bookingDoctor.fee}</p>
                   <p className="text-[10px] text-muted-foreground">consultation</p>
                 </div>
               </div>
@@ -1402,9 +1435,9 @@ export default function DoctorFinderModule() {
               {/* Date picker */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-1.5">
-                  <CalendarIcon className="h-3.5 w-3.5 text-teal-600" /> Select Date
+                  <CalendarIcon className="h-3.5 w-3.5 text-medical" /> Select Date
                 </Label>
-                <div className="rounded-lg border p-2 flex justify-center bg-background">
+                <div className="flex justify-center rounded-2xl border border-medical/25 bg-background p-2">
                   <Calendar
                     mode="single"
                     selected={bookingDate}
@@ -1424,9 +1457,9 @@ export default function DoctorFinderModule() {
               {/* Time slot */}
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5 text-teal-600" /> Select Time Slot
+                  <Clock className="h-3.5 w-3.5 text-medical" /> Select Time Slot
                 </Label>
-                <div className="grid grid-cols-4 gap-1.5 max-h-32 overflow-y-auto p-0.5">
+                <div className="grid max-h-36 grid-cols-4 gap-2 overflow-y-auto p-0.5">
                   {TIME_SLOTS.map((slot) => {
                     const isSelected = bookingTime === slot
                     const isBooked =
@@ -1441,12 +1474,12 @@ export default function DoctorFinderModule() {
                         onClick={() => setBookingTime(slot)}
                         title={isBooked ? 'You already have an appointment at this time' : undefined}
                         className={cn(
-                          'rounded-md border px-2 py-1.5 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed',
+                          'min-h-10 rounded-full border px-3 py-2 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-40',
                           isSelected
-                            ? 'border-teal-500 bg-teal-600 text-white shadow-sm'
+                            ? 'border-transparent bg-medical text-medical-foreground shadow-md shadow-medical/30'
                             : isBooked
-                              ? 'border-muted bg-muted/40 text-muted-foreground line-through'
-                              : 'border-border bg-background hover:border-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30'
+                              ? 'border-transparent bg-muted/40 text-muted-foreground line-through'
+                              : 'border-medical/20 bg-card hover:border-medical/40 hover:bg-medical-soft'
                         )}
                       >
                         {slot}
@@ -1468,7 +1501,7 @@ export default function DoctorFinderModule() {
               {/* Reason for visit */}
               <div className="space-y-2">
                 <Label htmlFor="reason" className="text-sm font-medium flex items-center gap-1.5">
-                  <Pill className="h-3.5 w-3.5 text-teal-600" /> Reason for Visit
+                  <Pill className="h-3.5 w-3.5 text-medical" /> Reason for Visit
                 </Label>
                 <Textarea
                   id="reason"
@@ -1482,12 +1515,12 @@ export default function DoctorFinderModule() {
 
               <DialogFooter className="gap-2">
                 <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
+                  <Button variant="outline" className="rounded-full">Cancel</Button>
                 </DialogClose>
                 <Button
                   onClick={() => confirmBooking()}
                   disabled={!canConfirm || bookingSaving}
-                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
+                  className="rounded-full bg-medical text-medical-foreground hover:bg-medical/90"
                 >
                   {bookingSaving ? (
                     <>
@@ -1525,7 +1558,7 @@ export default function DoctorFinderModule() {
                 You&apos;ll receive a confirmation shortly.
               </DialogDescription>
 
-              <div className="mt-4 rounded-xl border bg-muted/40 p-3 text-left space-y-1.5 text-sm">
+              <div className="mt-4 space-y-1.5 rounded-2xl border border-medical/20 bg-medical-soft/40 p-3 text-left text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Doctor</span>
                   <span className="font-medium">{bookingDoctor.name}</span>
@@ -1542,7 +1575,7 @@ export default function DoctorFinderModule() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Fee</span>
-                  <span className="font-medium text-teal-700 dark:text-teal-300">₹{bookingDoctor.fee}</span>
+                  <span className="font-medium text-medical">₹{bookingDoctor.fee}</span>
                 </div>
                 <Separator className="my-1" />
                 <div className="flex items-center justify-between">
@@ -1551,7 +1584,7 @@ export default function DoctorFinderModule() {
                 </div>
               </div>
 
-              <Button onClick={closeBooking} className="mt-5 w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700">
+              <Button onClick={closeBooking} className="mt-5 w-full rounded-full bg-medical text-medical-foreground hover:bg-medical/90">
                 Done
               </Button>
             </motion.div>
@@ -1579,11 +1612,12 @@ function FilterToggle({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+        'inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition-all',
         active
-          ? 'border-teal-500 bg-teal-600 text-white shadow-sm'
-          : 'border-border bg-background hover:bg-accent'
+          ? 'bg-medical text-medical-foreground shadow-md shadow-medical/25'
+          : 'bg-medical-soft/60 text-foreground hover:bg-medical-soft'
       )}
     >
       <Icon className="h-3 w-3" />
@@ -1607,22 +1641,28 @@ function DoctorCard({
   const meta = SPECIALTY_MAP[doctor.specialty]
   const Icon = meta.icon
 
+  // Reference-style stat chips — mapped strictly to existing Doctor data fields.
+  const statChips: { icon: React.ElementType; value: string; label: string }[] = [
+    { icon: Award, value: `${doctor.experience}`, label: 'Yrs Experience' },
+    { icon: Star, value: `${doctor.reviews}`, label: 'Reviews' },
+    { icon: Navigation, value: `${doctor.distance}`, label: 'Km Away' },
+  ]
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.4) }}
+      className="h-full"
     >
-      <Card className="h-full bg-card/80 backdrop-blur-sm border-border/70 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-lg transition-all">
-        <CardContent className="p-5">
-          {/* Top: avatar + name + rating */}
-          <div className="flex items-start gap-3">
+      <Card className="h-full rounded-3xl border-border/60 bg-card shadow-md shadow-medical/5 transition-all hover:-translate-y-0.5 hover:border-medical/40 hover:shadow-xl hover:shadow-medical/15">
+        <CardContent className="flex h-full flex-col gap-4 p-5">
+          {/* Top: teal gradient avatar block + name + badges */}
+          <div className="flex items-start gap-4">
             <div className="relative shrink-0">
-              <Avatar className="h-14 w-14">
-                <AvatarFallback className={cn('bg-gradient-to-br text-white font-bold text-base', getAvatarGradient(doctor.name))}>
-                  {getInitials(doctor.name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-700 shadow-md shadow-medical/30 dark:from-teal-600 dark:to-cyan-800">
+                <span className="font-serif text-xl font-bold text-white">{getInitials(doctor.name)}</span>
+              </div>
               {doctor.onlineNow && (
                 <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
               )}
@@ -1631,136 +1671,142 @@ function DoctorCard({
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="font-semibold text-base leading-tight truncate">{doctor.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{doctor.qualifications}</p>
+                  <h3 className="truncate text-base font-bold leading-tight">{doctor.name}</h3>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{doctor.qualifications}</p>
                 </div>
-                <Badge variant="secondary" className={cn('shrink-0 text-[10px]', meta.bgColor, meta.textColor, 'border', meta.borderColor)}>
+                <Badge variant="secondary" className={cn('shrink-0 rounded-full border text-[10px]', meta.bgColor, meta.textColor, meta.borderColor)}>
                   <Icon className="h-3 w-3" />
                   {meta.shortLabel}
                 </Badge>
               </div>
 
-              {/* Rating + experience + gender */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs">
-                <span className="flex items-center gap-1">
-                  <StarRating rating={doctor.rating} />
-                  <span className="font-semibold">{doctor.rating}</span>
-                  <span className="text-muted-foreground">({doctor.reviews} reviews)</span>
+              {/* Rating + gender pills */}
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                  aria-label={`Rated ${doctor.rating} out of 5`}
+                >
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  {doctor.rating}
                 </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <Award className="h-3 w-3" /> {doctor.experience} yrs
-                </span>
-                <span className="flex items-center gap-1 text-muted-foreground">
-                  <User className="h-3 w-3" /> {doctor.gender}
+                <span className="inline-flex items-center gap-1 rounded-full bg-medical-soft px-2 py-0.5 text-[10px] font-semibold text-medical">
+                  <User className="h-3 w-3" />
+                  {doctor.gender}
                 </span>
               </div>
             </div>
           </div>
 
-          <Separator className="my-3" />
+          {/* Stats row — 3 icon-chips (Experience / Reviews / Distance) */}
+          <div className="grid grid-cols-3 gap-2">
+            {statChips.map((chip) => {
+              const ChipIcon = chip.icon
+              return (
+                <div key={chip.label} className="flex items-center gap-2 rounded-2xl bg-medical-soft/70 px-2.5 py-2">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-card text-medical shadow-sm">
+                    <ChipIcon className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="min-w-0 leading-tight">
+                    <span className="block truncate text-sm font-bold">{chip.value}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">{chip.label}</span>
+                  </span>
+                </div>
+              )
+            })}
+          </div>
 
-          {/* Clinic + address */}
-          <div className="space-y-1.5 text-sm">
+          {/* Clinic + address + languages */}
+          <div className="space-y-1.5 text-xs">
             <div className="flex items-start gap-2">
-              <Hospital className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-              <span className="font-medium leading-tight">{doctor.clinic}</span>
+              <Hospital className="mt-0.5 h-3.5 w-3.5 shrink-0 text-medical" />
+              <span className="font-semibold leading-tight">{doctor.clinic}</span>
             </div>
             <div className="flex items-start gap-2">
-              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-              <span className="text-muted-foreground leading-tight text-xs">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="leading-tight text-muted-foreground">
                 {doctor.address}, {doctor.city}
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <Navigation className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-              <span className="text-muted-foreground text-xs">{doctor.distance} km away</span>
-            </div>
-            <div className="flex items-start gap-2">
-              <Languages className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-              <span className="text-muted-foreground text-xs">{doctor.languages.join(', ')}</span>
+              <Languages className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="leading-tight text-muted-foreground">{doctor.languages.join(', ')}</span>
             </div>
           </div>
 
-          <Separator className="my-3" />
-
-          {/* Bottom: fee + slot + actions */}
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Consultation Fee</p>
-              <p className="text-lg font-bold text-teal-700 dark:text-teal-300">₹{doctor.fee}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Next Available</p>
-              <p className="text-sm font-semibold flex items-center gap-1 justify-end">
-                <Clock className="h-3.5 w-3.5 text-emerald-600" />
-                {doctor.nextSlotDay}, {doctor.nextSlotTime}
-              </p>
-            </div>
+          {/* Availability chip (fee lives on the Book CTA) */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-medical px-3 py-1.5 text-[11px] font-semibold text-medical-foreground">
+              <Clock className="h-3 w-3" />
+              Next: {doctor.nextSlotDay}, {doctor.nextSlotTime}
+            </span>
           </div>
 
           {/* Badges row */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-1.5">
             {doctor.openNow === true && (
-              <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+              <Badge variant="secondary" className="rounded-full text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Open Now
               </Badge>
             )}
             {doctor.openNow === false && (
-              <Badge variant="secondary" className="text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+              <Badge variant="secondary" className="rounded-full text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Closed
               </Badge>
             )}
             {doctor.availableToday && (
-              <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+              <Badge variant="secondary" className="rounded-full text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
                 <CalendarIcon className="h-3 w-3" /> Available Today
               </Badge>
             )}
             {doctor.videoConsult && (
-              <Badge variant="secondary" className="text-[10px] bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300">
+              <Badge variant="secondary" className="rounded-full text-[10px] bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300">
                 <Video className="h-3 w-3" /> Video Consult
               </Badge>
             )}
             {doctor.onlineNow && (
-              <Badge variant="secondary" className="text-[10px] bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
+              <Badge variant="secondary" className="rounded-full text-[10px] bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online Now
               </Badge>
             )}
           </div>
 
           {/* Action buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="mt-auto grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Button
               onClick={onBook}
               size="sm"
-              className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
+              className="h-10 rounded-full bg-medical text-medical-foreground shadow-md shadow-medical/25 hover:bg-medical/90"
             >
               <CalendarIcon className="h-3.5 w-3.5" />
-              Book
+              Book · ₹{doctor.fee}
             </Button>
             <Button
               size="sm"
-              variant="secondary"
+              variant="outline"
               disabled={!doctor.videoConsult}
-              className={!doctor.videoConsult ? 'opacity-40' : ''}
+              className={cn(
+                'h-10 rounded-full border-medical/30 hover:bg-medical-soft hover:text-medical dark:border-medical/40 dark:bg-transparent dark:hover:bg-medical-soft/70 dark:hover:text-medical',
+                !doctor.videoConsult && 'opacity-40'
+              )}
             >
               <Video className="h-3.5 w-3.5" />
               Video
             </Button>
             {doctor.phone ? (
-              <Button size="sm" variant="outline" asChild>
+              <Button size="sm" variant="outline" asChild className="h-10 rounded-full border-medical/30 hover:bg-medical-soft hover:text-medical dark:border-medical/40 dark:bg-transparent dark:hover:bg-medical-soft/70 dark:hover:text-medical">
                 <a href={`tel:${doctor.phone}`}>
                   <Phone className="h-3.5 w-3.5" />
                   Call
                 </a>
               </Button>
             ) : (
-              <Button size="sm" variant="outline" disabled className="opacity-40">
+              <Button size="sm" variant="outline" disabled className="h-10 rounded-full opacity-40">
                 <Phone className="h-3.5 w-3.5" />
                 Call
               </Button>
             )}
             {doctor.mapsUrl && (
-              <Button size="sm" variant="outline" asChild>
+              <Button size="sm" variant="outline" asChild className="h-10 rounded-full border-medical/30 hover:bg-medical-soft hover:text-medical dark:border-medical/40 dark:bg-transparent dark:hover:bg-medical-soft/70 dark:hover:text-medical">
                 <a href={doctor.mapsUrl} target="_blank" rel="noopener noreferrer">
                   <Navigation className="h-3.5 w-3.5" />
                   Directions
@@ -1775,7 +1821,7 @@ function DoctorCard({
               href={doctor.mapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+              className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-medical"
             >
               <Globe className="h-3 w-3" />
               View on Google Maps

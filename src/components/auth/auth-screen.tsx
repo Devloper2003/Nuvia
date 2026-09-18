@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Loader2,
   Mail,
-  Lock,
+  KeyRound,
   User as UserIcon,
   Eye,
   EyeOff,
@@ -65,8 +65,9 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const } },
 }
 
-// Floating orb config — GPU-accelerated drift, blurred, low opacity
-const orbBase = 'absolute rounded-full blur-3xl pointer-events-none will-change-transform'
+// Glass sphere blobs — pure CSS drift/float (prefers-reduced-motion covered
+// globally in globals.css for .animate-drift-slow / .animate-float)
+const sphereBase = 'absolute rounded-full pointer-events-none backdrop-blur-[2px] will-change-transform'
 
 export default function AuthScreen({ onAuthed }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>('login')
@@ -216,28 +217,31 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           content flows naturally via BODY scroll (the only reliable scroll
           model on iOS Safari). */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden>
-        <div className="absolute inset-0 bg-animated-gradient opacity-95" />
-        <div className="absolute inset-0 bg-gradient-to-br from-white/55 via-white/35 to-white/55 dark:from-black/45 dark:via-black/30 dark:to-black/55" />
+        {/* Warm cream canvas — soft rose + peach radial washes (reference aesthetic) */}
+        <div className="absolute inset-0 bg-[linear-gradient(165deg,oklch(0.985_0.015_85)_0%,oklch(0.98_0.017_350)_48%,oklch(0.975_0.024_55)_100%)] dark:bg-[linear-gradient(165deg,oklch(0.165_0.02_345)_0%,oklch(0.145_0.026_350)_48%,oklch(0.155_0.022_50)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(56rem_56rem_at_8%_-10%,oklch(0.92_0.06_355/0.6),transparent_62%),radial-gradient(48rem_48rem_at_108%_12%,oklch(0.93_0.06_55/0.55),transparent_60%),radial-gradient(52rem_52rem_at_50%_120%,oklch(0.9_0.06_305/0.32),transparent_62%)] dark:bg-[radial-gradient(56rem_56rem_at_8%_-10%,oklch(0.5_0.14_350/0.2),transparent_62%),radial-gradient(48rem_48rem_at_108%_12%,oklch(0.5_0.12_55/0.14),transparent_60%),radial-gradient(52rem_52rem_at_50%_120%,oklch(0.46_0.14_305/0.16),transparent_62%)]" />
 
-        {/* ─── Floating blurred orbs (GPU-accelerated drift) ─────────────────── */}
-        <motion.div
+        {/* ─── Organic glass spheres (CSS drift — reduced-motion safe) ───────── */}
+        <div
           aria-hidden
-          className={`${orbBase} top-[-10%] left-[-6%] h-[28rem] w-[28rem] bg-rose-400/40 dark:bg-rose-500/30`}
-          animate={{ x: [0, 28, -10, 0], y: [0, -22, 18, 0], scale: [1, 1.08, 0.96, 1] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
+          className={`${sphereBase} animate-drift-slow top-[-9%] left-[-5%] h-[22rem] w-[22rem] sm:h-[27rem] sm:w-[27rem] border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/85 via-rose-100/70 to-rose-200/55 dark:from-white/10 dark:via-rose-400/10 dark:to-fuchsia-400/10 shadow-[inset_0_2px_20px_oklch(1_0_0/0.75),inset_0_-16px_32px_oklch(0.86_0.08_355/0.35),0_30px_70px_-30px_oklch(0.62_0.2_355/0.35)] opacity-80 sm:opacity-90`}
+        >
+          <span className="absolute left-[16%] top-[14%] h-20 w-20 rounded-full bg-white/85 blur-xl dark:bg-white/15" />
+        </div>
+        <div
           aria-hidden
-          className={`${orbBase} bottom-[-12%] right-[-8%] h-[32rem] w-[32rem] bg-fuchsia-400/35 dark:bg-fuchsia-500/25`}
-          animate={{ x: [0, -32, 14, 0], y: [0, 24, -16, 0], scale: [1, 1.06, 0.98, 1] }}
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
+          style={{ animationDelay: '-9s' }}
+          className={`${sphereBase} animate-drift-slow bottom-[-11%] right-[-7%] h-[24rem] w-[24rem] sm:h-[30rem] sm:w-[30rem] border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/85 via-amber-100/70 to-rose-200/50 dark:from-white/10 dark:via-amber-400/10 dark:to-rose-400/10 shadow-[inset_0_2px_20px_oklch(1_0_0/0.75),inset_0_-16px_32px_oklch(0.88_0.08_60/0.35),0_30px_70px_-30px_oklch(0.7_0.16_55/0.35)] opacity-75 sm:opacity-90`}
+        >
+          <span className="absolute right-[18%] top-[12%] h-16 w-16 rounded-full bg-white/85 blur-xl dark:bg-white/15" />
+        </div>
+        <div
           aria-hidden
-          className={`${orbBase} top-[38%] right-[18%] h-[20rem] w-[20rem] bg-amber-300/40 dark:bg-amber-400/25`}
-          animate={{ x: [0, 18, -22, 0], y: [0, 16, -10, 0], scale: [1, 0.94, 1.07, 1] }}
-          transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
-        />
+          style={{ animationDelay: '-2.2s' }}
+          className={`${sphereBase} animate-float hidden md:block top-[16%] right-[30%] xl:right-[26%] h-36 w-36 xl:h-44 xl:w-44 border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/80 via-lilac/60 to-rose-100/60 dark:from-white/10 dark:via-lilac/15 dark:to-rose-300/10 shadow-[inset_0_2px_14px_oklch(1_0_0/0.7),inset_0_-10px_20px_oklch(0.85_0.06_305/0.3),0_22px_50px_-26px_oklch(0.6_0.18_305/0.35)] opacity-70`}
+        >
+          <span className="absolute left-[20%] top-[18%] h-8 w-8 rounded-full bg-white/85 blur-lg dark:bg-white/15" />
+        </div>
       </div>
 
       {/* ─── Left brand panel (hidden on mobile) ──────────────────────────── */}
@@ -309,6 +313,29 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                 </motion.div>
               ))}
             </motion.div>
+
+            {/* Dark contrast promo card — the one bold accent against the cream */}
+            <motion.div
+              variants={fadeUp}
+              className="relative mt-5 max-w-lg overflow-hidden rounded-3xl bg-foreground p-5 text-background shadow-[0_24px_60px_-28px_oklch(0.2_0.03_345/0.55)] sm:p-6"
+            >
+              <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-44 w-44 rounded-full bg-rose-400/25 blur-2xl" />
+              <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-10 h-36 w-36 rounded-full bg-amber-300/20 blur-2xl" />
+              <p className="relative text-[10px] font-semibold uppercase tracking-[0.18em] text-background/55">
+                New in Nuvia
+              </p>
+              <p className="relative mt-1.5 font-serif text-lg font-semibold leading-snug sm:text-xl">
+                AI Health Coach is live — gentle 24/7 guidance tuned to your cycle.
+              </p>
+              <button
+                type="button"
+                onClick={() => switchMode('signup')}
+                className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-background/10 px-3.5 py-1.5 text-xs font-semibold text-background transition-colors hover:bg-background/20"
+              >
+                Discover
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </motion.div>
           </motion.div>
 
           {/* Trust footer — glass chip with foreground text */}
@@ -360,7 +387,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           </motion.div>
 
           {/* Premium form card */}
-          <motion.div variants={fadeUp} className="card-premium p-4 sm:p-8">
+          <motion.div variants={fadeUp} className="glass-premium rounded-3xl p-4 sm:p-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={mode}
@@ -390,7 +417,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-11 rounded-xl border-border bg-card/80 backdrop-blur-sm hover:bg-accent hover:border-rose-300 dark:hover:border-rose-700 text-sm font-medium gap-2.5 transition-all hover:shadow-md"
+                      className="w-full h-11 rounded-full border-border bg-white/60 backdrop-blur-sm hover:bg-accent hover:border-rose-300 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-rose-700 text-sm font-medium gap-2.5 transition-all hover:shadow-md"
                       onClick={handleGoogleClick}
                       disabled={loading !== null}
                     >
@@ -410,7 +437,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                     <div className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-card px-3 text-xs text-muted-foreground uppercase tracking-wider">
+                    <span className="glass rounded-full px-3.5 py-1 text-xs text-muted-foreground uppercase tracking-wider">
                       or
                     </span>
                   </div>
@@ -422,14 +449,16 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                     <div className="space-y-1.5">
                       <Label htmlFor="name" className="text-sm font-medium">Full name</Label>
                       <div className="relative">
-                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+                          <UserIcon className="h-4 w-4" />
+                        </div>
                         <Input
                           id="name"
                           type="text"
                           placeholder="Your name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="pl-9 h-11 rounded-xl bg-card/70 border-border focus-visible:border-rose-400 transition-colors"
+                          className="h-11 rounded-full border-border bg-white/55 pl-11 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
                           onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
                         />
                       </div>
@@ -440,14 +469,16 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                   <div className="space-y-1.5">
                     <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+                        <Mail className="h-4 w-4" />
+                      </div>
                       <Input
                         id="email"
                         type="email"
                         placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-9 h-11 rounded-xl bg-card/70 border-border focus-visible:border-rose-400 transition-colors"
+                        className="h-11 rounded-full border-border bg-white/55 pl-11 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
                         onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
                       />
                     </div>
@@ -455,37 +486,39 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                   </div>
 
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-                      {mode === 'login' && (
-                        <button
-                          type="button"
-                          className="text-xs text-primary hover:underline"
-                          onClick={() => toast.info('Password reset link would be sent to your email.')}
-                        >
-                          Forgot?
-                        </button>
-                      )}
-                    </div>
+                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+                        <KeyRound className="h-4 w-4" />
+                      </div>
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder={mode === 'signup' ? 'At least 6 characters' : 'Enter your password'}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-9 pr-9 h-11 rounded-xl bg-card/70 border-border focus-visible:border-rose-400 transition-colors"
+                        className="h-11 rounded-full border-border bg-white/55 pl-11 pr-28 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
                         onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
+                      <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/70 hover:text-foreground dark:hover:bg-white/10"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                        {mode === 'login' && (
+                          <button
+                            type="button"
+                            className="flex h-7 items-center rounded-full border border-white/80 bg-white/75 px-2.5 text-[11px] font-medium text-foreground/75 shadow-sm transition-colors hover:text-rose-700 dark:border-white/10 dark:bg-white/10 dark:text-foreground/80 dark:hover:text-rose-300"
+                            onClick={() => toast.info('Password reset link would be sent to your email.')}
+                          >
+                            I forgot
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                   </div>
@@ -499,7 +532,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
 
                   <Button
                     type="button"
-                    className="btn-premium w-full h-11 rounded-xl text-sm font-semibold gap-1.5"
+                    className="btn-premium glow-rose w-full h-11 rounded-full text-sm font-semibold gap-1.5"
                     onClick={handleEmailAuth}
                     disabled={loading !== null}
                   >
@@ -526,7 +559,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                   </button>
                 </p>
 
-                <div className="hidden sm:block mt-4 sm:mt-5 rounded-xl bg-muted/60 border border-border p-3">
+                <div className="hidden sm:block mt-4 sm:mt-5 rounded-2xl border border-white/60 bg-white/45 p-3 dark:border-white/10 dark:bg-white/[0.06]">
                   <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
                     <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500 mt-0.5" />
                     <span>

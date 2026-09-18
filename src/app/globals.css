@@ -64,57 +64,76 @@ body {
   --color-pregnancy-foreground: var(--pregnancy-foreground);
   --color-menopause: var(--menopause);
   --color-menopause-foreground: var(--menopause-foreground);
+  --color-medical: var(--medical);
+  --color-medical-foreground: var(--medical-foreground);
+  --color-medical-soft: var(--medical-soft);
+  --color-peach: var(--peach);
+  --color-peach-soft: var(--peach-soft);
+  --color-blush: var(--blush);
+  --color-lilac: var(--lilac);
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: oklch(0.985 0.002 325);
-  --foreground: oklch(0.175 0.015 325);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.175 0.015 325);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.175 0.015 325);
-  --primary: oklch(0.55 0.2 350);
-  --primary-foreground: oklch(0.98 0.005 350);
-  --secondary: oklch(0.955 0.025 325);
-  --secondary-foreground: oklch(0.3 0.06 325);
-  --muted: oklch(0.955 0.015 325);
-  --muted-foreground: oklch(0.5 0.03 325);
-  --accent: oklch(0.94 0.035 325);
-  --accent-foreground: oklch(0.3 0.06 325);
+  /* ── Nuvia “Blush Petal” theme (redesigned from user references) ──
+     Soft rose-cream canvas, hot-pink primary, peach + lilac accents.
+     Larger radius = the pillowy card language from the references. */
+  --radius: 1rem;
+  --background: oklch(0.978 0.014 350);
+  --foreground: oklch(0.21 0.03 345);
+  --card: oklch(0.998 0.004 350);
+  --card-foreground: oklch(0.21 0.03 345);
+  --popover: oklch(0.998 0.004 350);
+  --popover-foreground: oklch(0.21 0.03 345);
+  --primary: oklch(0.62 0.22 355);
+  --primary-foreground: oklch(0.99 0.005 355);
+  --secondary: oklch(0.945 0.04 350);
+  --secondary-foreground: oklch(0.38 0.1 350);
+  --muted: oklch(0.955 0.02 350);
+  --muted-foreground: oklch(0.52 0.05 345);
+  --accent: oklch(0.94 0.05 355);
+  --accent-foreground: oklch(0.38 0.1 350);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.02 325);
-  --input: oklch(0.91 0.02 325);
-  --ring: oklch(0.55 0.2 350);
-  --chart-1: oklch(0.55 0.2 350);
-  --chart-2: oklch(0.65 0.18 30);
-  --chart-3: oklch(0.6 0.15 160);
-  --chart-4: oklch(0.7 0.15 280);
-  --chart-5: oklch(0.75 0.12 60);
-  --sidebar: oklch(0.975 0.01 325);
-  --sidebar-foreground: oklch(0.175 0.015 325);
-  --sidebar-primary: oklch(0.55 0.2 350);
-  --sidebar-primary-foreground: oklch(0.98 0.005 350);
-  --sidebar-accent: oklch(0.94 0.035 325);
-  --sidebar-accent-foreground: oklch(0.3 0.06 325);
-  --sidebar-border: oklch(0.91 0.02 325);
-  --sidebar-ring: oklch(0.55 0.2 350);
+  --border: oklch(0.93 0.035 350);
+  --input: oklch(0.93 0.035 350);
+  --ring: oklch(0.62 0.22 355);
+  --chart-1: oklch(0.62 0.22 355);
+  --chart-2: oklch(0.78 0.13 55);
+  --chart-3: oklch(0.68 0.15 300);
+  --chart-4: oklch(0.62 0.12 200);
+  --chart-5: oklch(0.72 0.16 5);
+  --sidebar: oklch(0.972 0.024 350);
+  --sidebar-foreground: oklch(0.21 0.03 345);
+  --sidebar-primary: oklch(0.62 0.22 355);
+  --sidebar-primary-foreground: oklch(0.99 0.005 355);
+  --sidebar-accent: oklch(0.94 0.05 355);
+  --sidebar-accent-foreground: oklch(0.38 0.1 350);
+  --sidebar-border: oklch(0.93 0.035 350);
+  --sidebar-ring: oklch(0.62 0.22 355);
 
-  --rose: oklch(0.55 0.2 350);
-  --rose-foreground: oklch(0.98 0.005 350);
-  --rose-light: oklch(0.92 0.05 350);
-  --rose-dark: oklch(0.4 0.15 350);
+  /* Reference palette: teal medical (doctor pages), peach & blush & lilac surfaces */
+  --medical: oklch(0.52 0.1 205);
+  --medical-foreground: oklch(0.985 0.01 205);
+  --medical-soft: oklch(0.94 0.035 205);
+  --peach: oklch(0.78 0.12 50);
+  --peach-soft: oklch(0.95 0.045 50);
+  --blush: oklch(0.94 0.05 355);
+  --lilac: oklch(0.9 0.06 300);
+
+  --rose: oklch(0.62 0.22 355);
+  --rose-foreground: oklch(0.99 0.005 355);
+  --rose-light: oklch(0.92 0.06 355);
+  --rose-dark: oklch(0.45 0.17 350);
   --wellness: oklch(0.6 0.15 160);
   --wellness-foreground: oklch(0.98 0.005 160);
-  --fertility: oklch(0.65 0.18 30);
-  --fertility-foreground: oklch(0.98 0.005 30);
-  --pregnancy: oklch(0.6 0.15 280);
-  --pregnancy-foreground: oklch(0.98 0.005 280);
+  --fertility: oklch(0.68 0.17 35);
+  --fertility-foreground: oklch(0.98 0.005 35);
+  --pregnancy: oklch(0.62 0.15 300);
+  --pregnancy-foreground: oklch(0.98 0.005 300);
   --menopause: oklch(0.55 0.12 20);
   --menopause-foreground: oklch(0.98 0.005 20);
 
   /* Premium palette tokens — used by glow / gradient utilities */
-  --premium-rose: oklch(0.62 0.22 350);
+  --premium-rose: oklch(0.64 0.22 355);
   --premium-pink: oklch(0.68 0.21 5);
   --premium-fuchsia: oklch(0.6 0.24 330);
   --premium-amber: oklch(0.78 0.16 70);
@@ -122,48 +141,58 @@ body {
 }
 
 .dark {
-  --background: oklch(0.13 0.015 325);
-  --foreground: oklch(0.96 0.008 325);
-  --card: oklch(0.18 0.02 325);
-  --card-foreground: oklch(0.96 0.008 325);
-  --popover: oklch(0.18 0.02 325);
-  --popover-foreground: oklch(0.96 0.008 325);
-  --primary: oklch(0.7 0.18 350);
-  --primary-foreground: oklch(0.15 0.03 350);
-  --secondary: oklch(0.24 0.03 325);
-  --secondary-foreground: oklch(0.9 0.02 325);
-  --muted: oklch(0.24 0.03 325);
-  --muted-foreground: oklch(0.65 0.04 325);
-  --accent: oklch(0.28 0.04 325);
-  --accent-foreground: oklch(0.9 0.02 325);
+  /* Night “Moonlit Rose” — warm dark plum instead of cold neutral */
+  --background: oklch(0.14 0.02 345);
+  --foreground: oklch(0.96 0.01 350);
+  --card: oklch(0.19 0.028 348);
+  --card-foreground: oklch(0.96 0.01 350);
+  --popover: oklch(0.19 0.028 348);
+  --popover-foreground: oklch(0.96 0.01 350);
+  --primary: oklch(0.72 0.18 355);
+  --primary-foreground: oklch(0.16 0.04 350);
+  --secondary: oklch(0.26 0.04 348);
+  --secondary-foreground: oklch(0.92 0.02 350);
+  --muted: oklch(0.26 0.035 348);
+  --muted-foreground: oklch(0.68 0.04 348);
+  --accent: oklch(0.3 0.05 350);
+  --accent-foreground: oklch(0.92 0.02 350);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.7 0.18 350);
+  --ring: oklch(0.72 0.18 355);
   --chart-1: oklch(0.7 0.18 350);
   --chart-2: oklch(0.75 0.16 30);
   --chart-3: oklch(0.65 0.14 160);
   --chart-4: oklch(0.7 0.14 280);
   --chart-5: oklch(0.75 0.12 60);
-  --sidebar: oklch(0.16 0.018 325);
-  --sidebar-foreground: oklch(0.96 0.008 325);
-  --sidebar-primary: oklch(0.7 0.18 350);
-  --sidebar-primary-foreground: oklch(0.15 0.03 350);
-  --sidebar-accent: oklch(0.28 0.04 325);
-  --sidebar-accent-foreground: oklch(0.9 0.02 325);
+  --sidebar: oklch(0.17 0.026 346);
+  --sidebar-foreground: oklch(0.96 0.01 350);
+  --sidebar-primary: oklch(0.72 0.18 355);
+  --sidebar-primary-foreground: oklch(0.16 0.04 350);
+  --sidebar-accent: oklch(0.3 0.05 350);
+  --sidebar-accent-foreground: oklch(0.92 0.02 350);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.7 0.18 350);
+  --sidebar-ring: oklch(0.72 0.18 355);
 
-  --rose: oklch(0.7 0.18 350);
-  --rose-foreground: oklch(0.15 0.03 350);
-  --rose-light: oklch(0.28 0.06 350);
+  /* Dark-mode reference palette */
+  --medical: oklch(0.68 0.1 205);
+  --medical-foreground: oklch(0.14 0.03 205);
+  --medical-soft: oklch(0.28 0.05 205);
+  --peach: oklch(0.8 0.12 50);
+  --peach-soft: oklch(0.3 0.05 50);
+  --blush: oklch(0.3 0.05 350);
+  --lilac: oklch(0.32 0.06 300);
+
+  --rose: oklch(0.72 0.18 355);
+  --rose-foreground: oklch(0.16 0.04 350);
+  --rose-light: oklch(0.3 0.06 352);
   --rose-dark: oklch(0.55 0.18 350);
   --wellness: oklch(0.65 0.14 160);
   --wellness-foreground: oklch(0.15 0.03 160);
-  --fertility: oklch(0.75 0.16 30);
-  --fertility-foreground: oklch(0.15 0.03 30);
-  --pregnancy: oklch(0.7 0.14 280);
-  --pregnancy-foreground: oklch(0.15 0.03 280);
+  --fertility: oklch(0.75 0.16 35);
+  --fertility-foreground: oklch(0.15 0.03 35);
+  --pregnancy: oklch(0.7 0.14 300);
+  --pregnancy-foreground: oklch(0.15 0.03 300);
   --menopause: oklch(0.65 0.12 20);
   --menopause-foreground: oklch(0.15 0.03 20);
 
@@ -182,20 +211,20 @@ body {
     @apply bg-background text-foreground;
     position: relative;
     min-height: 100dvh;
-    /* Subtle multi-layer mesh gradient — premium, very low intensity.
-       Painted above background-color; non-scrolling so it stays anchored. */
+    /* “Blush Petal” mesh — rose halo top-left, peach glow top-right,
+       lilac wash bottom (matches the reference app canvases). */
     background-image:
-      radial-gradient(60rem 60rem at 8% -10%, oklch(0.92 0.06 350 / 0.5), transparent 60%),
-      radial-gradient(50rem 50rem at 110% 10%, oklch(0.93 0.07 60 / 0.42), transparent 60%),
-      radial-gradient(55rem 55rem at 50% 120%, oklch(0.9 0.07 330 / 0.38), transparent 65%);
+      radial-gradient(62rem 62rem at 6% -12%, oklch(0.93 0.06 355 / 0.75), transparent 58%),
+      radial-gradient(52rem 52rem at 112% 8%, oklch(0.94 0.06 55 / 0.6), transparent 58%),
+      radial-gradient(56rem 56rem at 50% 122%, oklch(0.91 0.06 305 / 0.42), transparent 62%);
     background-attachment: fixed;
     background-repeat: no-repeat;
   }
   .dark body {
     background-image:
-      radial-gradient(60rem 60rem at 8% -10%, oklch(0.5 0.18 350 / 0.22), transparent 60%),
-      radial-gradient(50rem 50rem at 110% 10%, oklch(0.55 0.16 60 / 0.16), transparent 60%),
-      radial-gradient(55rem 55rem at 50% 120%, oklch(0.48 0.18 330 / 0.18), transparent 65%);
+      radial-gradient(62rem 62rem at 6% -12%, oklch(0.5 0.16 350 / 0.26), transparent 58%),
+      radial-gradient(52rem 52rem at 112% 8%, oklch(0.54 0.13 55 / 0.18), transparent 58%),
+      radial-gradient(56rem 56rem at 50% 122%, oklch(0.47 0.16 305 / 0.2), transparent 62%);
   }
 }
 
@@ -618,6 +647,74 @@ summary, label {
   .shimmer::after {
     animation: none !important;
   }
+}
+
+/* ─── Soft elevation cards (reference-style tinted surfaces) ───────────────── */
+/* Pillowy rose card: for hero/summary panels sitting on the blush canvas.   */
+.card-blush {
+  background: linear-gradient(165deg, oklch(0.99 0.008 350 / 88%) 0%, oklch(0.965 0.03 352 / 92%) 100%);
+  border-radius: calc(var(--radius) + 0.5rem);
+  border: 1px solid oklch(0.92 0.05 352 / 70%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 80%),
+    0 20px 50px -24px oklch(0.62 0.2 355 / 30%),
+    0 6px 18px -10px oklch(0.5 0.08 345 / 14%);
+}
+.dark .card-blush {
+  background: linear-gradient(165deg, oklch(0.22 0.034 348 / 92%) 0%, oklch(0.19 0.03 350 / 88%) 100%);
+  border: 1px solid oklch(1 0 0 / 10%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 12%),
+    0 20px 50px -24px oklch(0.1 0.02 350 / 60%);
+}
+
+/* Peach sister card (warm accent panel — fertile days, nutrition, etc.) */
+.card-peach {
+  background: linear-gradient(165deg, oklch(0.99 0.012 60 / 88%) 0%, oklch(0.965 0.045 55 / 92%) 100%);
+  border-radius: calc(var(--radius) + 0.5rem);
+  border: 1px solid oklch(0.92 0.06 60 / 70%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 80%),
+    0 20px 50px -24px oklch(0.72 0.14 55 / 32%),
+    0 6px 18px -10px oklch(0.5 0.08 345 / 12%);
+}
+.dark .card-peach {
+  background: linear-gradient(165deg, oklch(0.23 0.04 55 / 92%) 0%, oklch(0.19 0.035 52 / 88%) 100%);
+  border: 1px solid oklch(1 0 0 / 10%);
+}
+
+/* Teal medical card — doctor/clinical surfaces (reference #3) */
+.card-medical {
+  background: linear-gradient(165deg, oklch(0.99 0.008 200 / 88%) 0%, oklch(0.962 0.03 205 / 92%) 100%);
+  border-radius: calc(var(--radius) + 0.5rem);
+  border: 1px solid oklch(0.9 0.05 205 / 65%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 80%),
+    0 20px 50px -24px oklch(0.52 0.1 205 / 30%),
+    0 6px 18px -10px oklch(0.4 0.06 210 / 12%);
+}
+.dark .card-medical {
+  background: linear-gradient(165deg, oklch(0.21 0.035 205 / 92%) 0%, oklch(0.18 0.03 205 / 88%) 100%);
+  border: 1px solid oklch(1 0 0 / 10%);
+}
+
+/* Soft tinted chip — pill-shaped phase/legend chips from the references.
+   NOTE: solid (opaque) colors only — alpha-composited lab colors mis-render
+   (hue flip) in some headless/Chromium builds when combined with element
+   opacity (e.g. opacity-70 phase chips rendered cyan). Solid = safe. */
+.chip-soft {
+  border-radius: 999px;
+  border: 1px solid #f6bcd2;
+  background: #fce4ee;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dark .chip-soft {
+  border: 1px solid oklch(1 0 0 / 14%);
+  background: oklch(0.3 0.05 350);
+}
+.chip-soft:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -8px rgba(214, 51, 132, 0.45);
 }
 
 /* ─── Brand text selection ─────────────────────────────────────────────────── */

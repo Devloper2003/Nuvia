@@ -1,0 +1,1790 @@
+     1→'use client'
+     2→
+     3→import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+     6→import { Badge } from '@/components/ui/badge'
+     7→import { Button } from '@/components/ui/button'
+     8→import { Input } from '@/components/ui/input'
+     9→import { Label } from '@/components/ui/label'
+    10→import { Textarea } from '@/components/ui/textarea'
+    11→import { Separator } from '@/components/ui/separator'
+    12→import { ScrollArea } from '@/components/ui/scroll-area'
+    13→import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+    14→import { Calendar } from '@/components/ui/calendar'
+    15→import {
+    16→  Dialog,
+    17→  DialogContent,
+    18→  DialogHeader,
+    19→  DialogTitle,
+    20→  DialogDescription,
+    21→  DialogFooter,
+    22→  DialogClose,
+    23→} from '@/components/ui/dialog'
+    24→import {
+    25→  Select,
+    26→  SelectContent,
+    27→  SelectItem,
+    28→  SelectTrigger,
+    29→  SelectValue,
+    30→} from '@/components/ui/select'
+    31→import { cn } from '@/lib/utils'
+    32→import { toast } from 'sonner'
+    33→import { useAppStore } from '@/lib/store'
+    34→import {
+    35→  MapPin,
+    36→  Stethoscope,
+    37→  Star,
+    38→  Phone,
+    39→  Video,
+    40→  Calendar as CalendarIcon,
+    41→  Clock,
+    42→  Search,
+    43→  Loader2,
+    44→  Filter,
+    45→  AlertTriangle,
+    46→  CheckCircle2,
+    47→  User,
+    48→  Award,
+    49→  Languages,
+    50→  Navigation,
+    51→  Heart,
+    52→  Activity,
+    53→  Brain,
+    54→  Baby,
+    55→  Sparkles,
+    56→  Zap,
+    57→  Siren,
+    58→  Eye,
+    59→  Droplet,
+    60→  Thermometer,
+    61→  Pill,
+    62→  Hospital,
+    63→  CircleDollarSign,
+    64→  Frown,
+    65→  Flame,
+    66→  Utensils,
+    67→  HandHeart,
+    68→  Crosshair,
+    69→  FlaskConical,
+    70→  ExternalLink,
+    71→  Globe,
+    72→  ChevronRight,
+    73→  MapPinned,
+    74→} from 'lucide-react'
+    75→
+    76→// ─── Types ────────────────────────────────────────────────────────────────────
+    77→
+    78→type Specialty =
+    79→  | 'Gynecologist'
+    80→  | 'Fertility Specialist'
+    81→  | 'Obstetrician'
+    82→  | 'Endocrinologist'
+    83→  | 'Nutritionist'
+    84→  | 'Dermatologist'
+    85→  | 'Mental Health Counselor'
+    86→  | 'General Physician'
+    87→  | 'Urologist'
+    88→
+    89→type Severity = 'Mild' | 'Moderate' | 'Severe'
+    90→
+    91→interface Doctor {
+    92→  id: string
+    93→  name: string
+    94→  specialty: Specialty
+    95→  qualifications: string
+    96→  experience: number
+    97→  rating: number
+    98→  reviews: number
+    99→  clinic: string
+   100→  address: string
+   101→  city: string
+   102→  area?: string
+   103→  distance: number
+   104→  fee: number
+   105→  nextSlotDay: 'Today' | 'Tomorrow' | 'Day After'
+   106→  nextSlotTime: string
+   107→  languages: string[]
+   108→  gender: 'Female' | 'Male'
+   109→  availableToday: boolean
+   110→  videoConsult: boolean
+   111→  onlineNow: boolean
+   112→  // Google Places powered fields
+   113→  openNow?: boolean | null
+   114→  phone?: string | null
+   115→  placeId?: string | null
+   116→  mapsUrl?: string
+   117→  website?: string | null
+   118→  lat?: number | null
+   119→  lng?: number | null
+   120→  types?: string[]
+   121→  photoUrl?: string | null
+   122→  source?: 'google' | 'empty'
+   123→}
+   124→
+   125→interface AreaSuggestion {
+   126→  description: string
+   127→  mainText: string
+   128→  secondaryText: string
+   129→}
+   130→
+   131→// ─── Helper: debounce ─────────────────────────────────────────────────────────
+   132→function debounce<T extends (...args: any[]) => void>(fn: T, delay: number) {
+   133→  let t: ReturnType<typeof setTimeout>
+   134→  return (...args: Parameters<T>) => {
+   135→    clearTimeout(t)
+   136→    t = setTimeout(() => fn(...args), delay)
+   137→  }
+   138→}
+   139→
+   140→// ─── Specialty Metadata ───────────────────────────────────────────────────────
+   141→
+   142→interface SpecialtyMeta {
+   143→  id: Specialty
+   144→  label: string
+   145→  shortLabel: string
+   146→  description: string
+   147→  icon: React.ElementType
+   148→  color: string
+   149→  bgColor: string
+   150→  borderColor: string
+   151→  textColor: string
+   152→}
+   153→
+   154→const SPECIALTIES: SpecialtyMeta[] = [
+   155→  {
+   156→    id: 'Gynecologist',
+   157→    label: 'Gynecologist',
+   158→    shortLabel: 'Gynecologist',
+   159→    description: 'Period issues, PCOS, irregular cycles',
+   160→    icon: Stethoscope,
+   161→    color: '#0d9488',
+   162→    bgColor: 'bg-teal-50 dark:bg-teal-950/40',
+   163→    borderColor: 'border-teal-200 dark:border-teal-800',
+   164→    textColor: 'text-teal-700 dark:text-teal-300',
+   165→  },
+   166→  {
+   167→    id: 'Fertility Specialist',
+   168→    label: 'Fertility Specialist',
+   169→    shortLabel: 'Fertility',
+   170→    description: 'Conception, IVF, fertility tracking',
+   171→    icon: Baby,
+   172→    color: '#0891b2',
+   173→    bgColor: 'bg-cyan-50 dark:bg-cyan-950/40',
+   174→    borderColor: 'border-cyan-200 dark:border-cyan-800',
+   175→    textColor: 'text-cyan-700 dark:text-cyan-300',
+   176→  },
+   177→  {
+   178→    id: 'Obstetrician',
+   179→    label: 'Obstetrician',
+   180→    shortLabel: 'Obstetrician',
+   181→    description: 'Pregnancy care, prenatal',
+   182→    icon: Heart,
+   183→    color: '#be123c',
+   184→    bgColor: 'bg-rose-50 dark:bg-rose-950/40',
+   185→    borderColor: 'border-rose-200 dark:border-rose-800',
+   186→    textColor: 'text-rose-700 dark:text-rose-300',
+   187→  },
+   188→  {
+   189→    id: 'Endocrinologist',
+   190→    label: 'Endocrinologist',
+   191→    shortLabel: 'Endocrine',
+   192→    description: 'Hormone issues, thyroid, PCOS',
+   193→    icon: Activity,
+   194→    color: '#7c3aed',
+   195→    bgColor: 'bg-violet-50 dark:bg-violet-950/40',
+   196→    borderColor: 'border-violet-200 dark:border-violet-800',
+   197→    textColor: 'text-violet-700 dark:text-violet-300',
+   198→  },
+   199→  {
+   200→    id: 'Nutritionist',
+   201→    label: 'Nutritionist/Dietitian',
+   202→    shortLabel: 'Nutritionist',
+   203→    description: 'Diet, weight management',
+   204→    icon: Utensils,
+   205→    color: '#16a34a',
+   206→    bgColor: 'bg-green-50 dark:bg-green-950/40',
+   207→    borderColor: 'border-green-200 dark:border-green-800',
+   208→    textColor: 'text-green-700 dark:text-green-300',
+   209→  },
+   210→  {
+   211→    id: 'Dermatologist',
+   212→    label: 'Dermatologist',
+   213→    shortLabel: 'Dermatologist',
+   214→    description: 'Acne, skin issues related to hormones',
+   215→    icon: Sparkles,
+   216→    color: '#db2777',
+   217→    bgColor: 'bg-pink-50 dark:bg-pink-950/40',
+   218→    borderColor: 'border-pink-200 dark:border-pink-800',
+   219→    textColor: 'text-pink-700 dark:text-pink-300',
+   220→  },
+   221→  {
+   222→    id: 'Mental Health Counselor',
+   223→    label: 'Mental Health Counselor',
+   224→    shortLabel: 'Mental Health',
+   225→    description: 'Anxiety, depression, mood',
+   226→    icon: Brain,
+   227→    color: '#2563eb',
+   228→    bgColor: 'bg-sky-50 dark:bg-sky-950/40',
+   229→    borderColor: 'border-sky-200 dark:border-sky-800',
+   230→    textColor: 'text-sky-700 dark:text-sky-300',
+   231→  },
+   232→  {
+   233→    id: 'General Physician',
+   234→    label: 'General Physician',
+   235→    shortLabel: 'General Physician',
+   236→    description: 'General health',
+   237→    icon: Stethoscope,
+   238→    color: '#475569',
+   239→    bgColor: 'bg-slate-50 dark:bg-slate-950/40',
+   240→    borderColor: 'border-slate-200 dark:border-slate-800',
+   241→    textColor: 'text-slate-700 dark:text-slate-300',
+   242→  },
+   243→  {
+   244→    id: 'Urologist',
+   245→    label: 'Urologist',
+   246→    shortLabel: 'Urologist',
+   247→    description: 'Urinary issues',
+   248→    icon: Droplet,
+   249→    color: '#0284c7',
+   250→    bgColor: 'bg-cyan-50 dark:bg-cyan-950/40',
+   251→    borderColor: 'border-cyan-200 dark:border-cyan-800',
+   252→    textColor: 'text-cyan-700 dark:text-cyan-300',
+   253→  },
+   254→]
+   255→
+   256→const SPECIALTY_MAP: Record<Specialty, SpecialtyMeta> = SPECIALTIES.reduce(
+   257→  (acc, s) => ({ ...acc, [s.id]: s }),
+   258→  {} as Record<Specialty, SpecialtyMeta>
+   259→)
+   260→
+   261→// ─── Health Concern Guide ─────────────────────────────────────────────────────
+   262→
+   263→interface GuideEntry {
+   264→  specialty: Specialty
+   265→  whenToSee: string
+   266→  icon: React.ElementType
+   267→}
+   268→
+   269→const SPECIALTY_GUIDE: GuideEntry[] = [
+   270→  {
+   271→    specialty: 'Gynecologist',
+   272→    whenToSee: 'Irregular periods, severe cramps, abnormal bleeding, pelvic pain, or routine annual check-ups.',
+   273→    icon: Stethoscope,
+   274→  },
+   275→  {
+   276→    specialty: 'Fertility Specialist',
+   277→    whenToSee: 'Trying to conceive for 12+ months (6+ months if over 35), PCOS with fertility concerns, or recurrent pregnancy loss.',
+   278→    icon: Baby,
+   279→  },
+   280→  {
+   281→    specialty: 'Endocrinologist',
+   282→    whenToSee: 'Hormone imbalances, thyroid issues (hypo/hyper), severe PCOS resistant to first-line treatment, or diabetes management.',
+   283→    icon: Activity,
+   284→  },
+   285→  {
+   286→    specialty: 'Obstetrician',
+   287→    whenToSee: 'Confirmed or suspected pregnancy, prenatal care, high-risk pregnancy monitoring, or postpartum follow-up.',
+   288→    icon: Heart,
+   289→  },
+   290→  {
+   291→    specialty: 'Mental Health Counselor',
+   292→    whenToSee: 'Persistent anxiety, low mood, mood swings affecting daily life, PMS/PMDD symptoms, or postpartum depression.',
+   293→    icon: Brain,
+   294→  },
+   295→  {
+   296→    specialty: 'Nutritionist',
+   297→    whenToSee: 'PCOS diet planning, weight management, gestational diabetes, or eating concerns tied to cycle changes.',
+   298→    icon: Utensils,
+   299→  },
+   300→]
+   301→
+   302→const RED_FLAG_SYMPTOMS = [
+   303→  { text: 'Severe pelvic pain that doesn\'t subside', icon: Frown },
+   304→  { text: 'Heavy bleeding — soaking a pad in 1 hour', icon: Droplet },
+   305→  { text: 'Missed period with severe abdominal pain', icon: AlertTriangle },
+   306→  { text: 'Fever (≥101°F) with pelvic symptoms', icon: Thermometer },
+   307→  { text: 'Sudden severe headache, worse than usual', icon: Zap },
+   308→  { text: 'Vision changes, blurriness, or flashing lights', icon: Eye },
+   309→]
+   310→
+   311→// ─── Time Slots for Booking ───────────────────────────────────────────────────
+   312→
+   313→const TIME_SLOTS = [
+   314→  '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM',
+   315→  '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+   316→  '03:00 PM', '03:30 PM', '04:00 PM', '04:30 PM',
+   317→  '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM',
+   318→]
+   319→
+   320→// ─── Severity Config ──────────────────────────────────────────────────────────
+   321→
+   322→const SEVERITY_CONFIG: Record<Severity, { label: string; color: string; bg: string; border: string; ring: string; dot: string }> = {
+   323→  Mild: {
+   324→    label: 'Mild',
+   325→    color: 'text-emerald-700 dark:text-emerald-300',
+   326→    bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+   327→    border: 'border-emerald-300 dark:border-emerald-700',
+   328→    ring: 'ring-emerald-500',
+   329→    dot: 'bg-emerald-500',
+   330→  },
+   331→  Moderate: {
+   332→    label: 'Moderate',
+   333→    color: 'text-amber-700 dark:text-amber-300',
+   334→    bg: 'bg-amber-50 dark:bg-amber-950/40',
+   335→    border: 'border-amber-300 dark:border-amber-700',
+   336→    ring: 'ring-amber-500',
+   337→    dot: 'bg-amber-500',
+   338→  },
+   339→  Severe: {
+   340→    label: 'Severe',
+   341→    color: 'text-rose-700 dark:text-rose-300',
+   342→    bg: 'bg-rose-50 dark:bg-rose-950/40',
+   343→    border: 'border-rose-300 dark:border-rose-700',
+   344→    ring: 'ring-rose-500',
+   345→    dot: 'bg-rose-500',
+   346→  },
+   347→}
+   348→
+   349→// ─── Helper: Avatar Gradient ──────────────────────────────────────────────────
+   350→
+   351→const AVATAR_GRADIENTS = [
+   352→  'from-teal-500 to-cyan-600',
+   353→  'from-rose-500 to-pink-600',
+   354→  'from-violet-500 to-purple-600',
+   355→  'from-amber-500 to-orange-600',
+   356→  'from-emerald-500 to-green-600',
+   357→  'from-sky-500 to-blue-600',
+   358→  'from-fuchsia-500 to-pink-600',
+   359→  'from-cyan-500 to-teal-600',
+   360→]
+   361→
+   362→function getAvatarGradient(name: string): string {
+   363→  let hash = 0
+   364→  for (let i = 0; i < name.length; i++) {
+   365→    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+   366→  }
+   367→  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length]
+   368→}
+   369→
+   370→function getInitials(name: string): string {
+   371→  const parts = name.replace(/^Dr\.\s*/i, '').split(' ')
+   372→  return (parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')
+   373→}
+   374→
+   375→// ─── Sub-component: Star Rating ───────────────────────────────────────────────
+   376→
+   377→function StarRating({ rating }: { rating: number }) {
+   378→  const full = Math.floor(rating)
+   379→  const hasHalf = rating - full >= 0.5
+   380→  return (
+   381→    <div className="flex items-center gap-0.5" aria-label={`Rating ${rating} out of 5`}>
+   382→      {Array.from({ length: 5 }).map((_, i) => {
+   383→        const isFull = i < full
+   384→        const isHalf = i === full && hasHalf
+   385→        return (
+   386→          <Star
+   387→            key={i}
+   388→            className={cn(
+   389→              'h-3.5 w-3.5',
+   390→              isFull || isHalf
+   391→                ? 'fill-amber-400 text-amber-400'
+   392→                : 'fill-muted text-muted-foreground/40'
+   393→            )}
+   394→          />
+   395→        )
+   396→      })}
+   397→    </div>
+   398→  )
+   399→}
+   400→
+   401→// ─── Main Component ───────────────────────────────────────────────────────────
+   402→
+   403→export default function DoctorFinderModule() {
+   404→  const userProfile = useAppStore((s) => s.userProfile)
+   405→  // Search state
+   406→  const [location, setLocation] = useState('')
+   407→  const [selectedSpecialty, setSelectedSpecialty] = useState<Specialty | null>(null)
+   408→  const [severity, setSeverity] = useState<Severity | null>(null)
+   409→  const [hasSearched, setHasSearched] = useState(false)
+   410→  const [isSearching, setIsSearching] = useState(false)
+   411→  const [doctors, setDoctors] = useState<Doctor[]>([])
+   412→  const [searchError, setSearchError] = useState<string | null>(null)
+   413→  const [searchSource, setSearchSource] = useState<'google' | 'simulated' | null>(null)
+   414→  const [demoNoticeDismissed, setDemoNoticeDismissed] = useState(false)
+   415→  const [searchedLocation, setSearchedLocation] = useState('')
+   416→
+   417→  // Autocomplete state
+   418→  const [suggestions, setSuggestions] = useState<AreaSuggestion[]>([])
+   419→  const [showSuggestions, setShowSuggestions] = useState(false)
+   420→  const [locating, setLocating] = useState(false)
+   421→  const suggestionsRef = React.useRef<HTMLDivElement | null>(null)
+   422→  // AbortController ref so rapid typing cancels stale geocode requests
+   423→  const suggestionsAbortRef = React.useRef<AbortController | null>(null)
+   424→
+   425→  // Filter & sort state
+   426→  const [sortBy, setSortBy] = useState<'distance' | 'rating' | 'experience' | 'fee'>('distance')
+   427→  const [filterToday, setFilterToday] = useState(false)
+   428→  const [filterVideo, setFilterVideo] = useState(false)
+   429→  const [filterFemale, setFilterFemale] = useState(false)
+   430→  const [filterOpenNow, setFilterOpenNow] = useState(false)
+   431→  const [maxFee, setMaxFee] = useState<'any' | '500' | '800' | '1200'>('any')
+   432→
+   433→  // Booking dialog state
+   434→  const [bookingDoctor, setBookingDoctor] = useState<Doctor | null>(null)
+   435→  const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined)
+   436→  const [bookingTime, setBookingTime] = useState<string>('')
+   437→  const [bookingReason, setBookingReason] = useState('')
+   438→  const [bookingConfirmed, setBookingConfirmed] = useState(false)
+   439→  const [bookingSaving, setBookingSaving] = useState(false)
+   440→  // Keys of `${doctorName}|${YYYY-MM-DD}|${slot}` the user has ALREADY booked —
+   441→  // used to grey out slots in the picker and block duplicate submissions.
+   442→  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set())
+   443→
+   444→  // ─── Location autocomplete ──────────────────────────────────────────────
+   445→  const fetchSuggestions = React.useCallback(async (q: string) => {
+   446→    if (q.trim().length < 2) {
+   447→      setSuggestions([])
+   448→      return
+   449→    }
+   450→    // Cancel any in-flight request so a slow earlier response can't
+   451→    // overwrite the result of a newer one (rapid-typing race condition).
+   452→    suggestionsAbortRef.current?.abort()
+   453→    const controller = new AbortController()
+   454→    suggestionsAbortRef.current = controller
+   455→    try {
+   456→      const res = await fetch(`/api/doctors/geocode?q=${encodeURIComponent(q.trim())}`, {
+   457→        signal: controller.signal,
+   458→      })
+   459→      if (res.ok) {
+   460→        const data = await res.json()
+   461→        setSuggestions(data.suggestions || [])
+   462→      }
+   463→    } catch (e: unknown) {
+   464→      // AbortError is expected when a newer keystroke supersedes this request;
+   465→      // swallow it silently. Anything else stays silent to match prior behavior.
+   466→      const name = (e as { name?: string })?.name
+   467→      if (name !== 'AbortError') {
+   468→        // silent
+   469→      }
+   470→    }
+   471→  }, [])
+   472→
+   473→  const debouncedFetch = React.useRef(
+   474→    debounce((q: string) => fetchSuggestions(q), 250)
+   475→  ).current
+   476→
+   477→  const handleLocationChange = (val: string) => {
+   478→    setLocation(val)
+   479→    setShowSuggestions(true)
+   480→    debouncedFetch(val)
+   481→  }
+   482→
+   483→  const selectSuggestion = (s: AreaSuggestion) => {
+   484→    setLocation(s.description)
+   485→    setShowSuggestions(false)
+   486→    setSuggestions([])
+   487→  }
+   488→
+   489→  // ─── Use my current location ────────────────────────────────────────────
+   490→  const useMyLocation = () => {
+   491→    if (!navigator.geolocation) {
+   492→      setSearchError('Geolocation is not supported on this device.')
+   493→      return
+   494→    }
+   495→    setLocating(true)
+   496→    navigator.geolocation.getCurrentPosition(
+   497→      async (pos) => {
+   498→        try {
+   499→          const res = await fetch(
+   500→            `/api/doctors/geocode?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`
+   501→          )
+   502→          if (res.ok) {
+   503→            const data = await res.json()
+   504→            setLocation(data.formatted || `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`)
+   505→          } else {
+   506→            setLocation(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`)
+   507→          }
+   508→        } catch {
+   509→          setLocation(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`)
+   510→        } finally {
+   511→          setLocating(false)
+   512→        }
+   513→      },
+   514→      () => {
+   515→        setLocating(false)
+   516→        setSearchError('Could not access your location. Please enter it manually.')
+   517→      },
+   518→      { enableHighAccuracy: true, timeout: 8000 }
+   519→    )
+   520→  }
+   521→
+   522→  // ─── Fetch doctors from API ─────────────────────────────────────────────
+   523→  const fetchDoctors = async (loc: string, spec: Specialty | null) => {
+   524→    setIsSearching(true)
+   525→    setSearchError(null)
+   526→    setHasSearched(false)
+   527→    setSearchedLocation(loc)
+   528→    try {
+   529→      const params = new URLSearchParams({ location: loc })
+   530→      if (spec) params.set('specialty', spec)
+   531→      const res = await fetch(`/api/doctors/search?${params.toString()}`)
+   532→      if (!res.ok) throw new Error('Search failed')
+   533→      const data = await res.json()
+   534→      if (!data.ok) throw new Error(data.error || 'Search failed')
+   535→      setDoctors(data.doctors || [])
+   536→      setSearchSource(data.source || null)
+   537→      setDemoNoticeDismissed(false)
+   538→      setHasSearched(true)
+   539→    } catch (e: any) {
+   540→      setSearchError(e?.message || 'Something went wrong. Please try again.')
+   541→      setDoctors([])
+   542→      setHasSearched(true)
+   543→    } finally {
+   544→      setIsSearching(false)
+   545→    }
+   546→  }
+   547→
+   548→  // Derived: filtered + sorted doctors
+   549→  const filteredDoctors = useMemo(() => {
+   550→    if (!hasSearched) return []
+   551→    let list = [...doctors]
+   552→
+   553→    // Apply filter bar filters
+   554→    if (filterToday) list = list.filter((d) => d.availableToday)
+   555→    if (filterVideo) list = list.filter((d) => d.videoConsult)
+   556→    if (filterFemale) list = list.filter((d) => d.gender === 'Female')
+   557→    if (filterOpenNow) list = list.filter((d) => d.openNow === true)
+   558→    if (maxFee !== 'any') {
+   559→      const cap = parseInt(maxFee, 10)
+   560→      list = list.filter((d) => d.fee <= cap)
+   561→    }
+   562→
+   563→    // Sort
+   564→    list.sort((a, b) => {
+   565→      switch (sortBy) {
+   566→        case 'rating':
+   567→          return b.rating - a.rating
+   568→        case 'experience':
+   569→          return b.experience - a.experience
+   570→        case 'fee':
+   571→          return a.fee - b.fee
+   572→        case 'distance':
+   573→        default:
+   574→          return a.distance - b.distance
+   575→      }
+   576→    })
+   577→
+   578→    return list
+   579→  }, [hasSearched, doctors, filterToday, filterVideo, filterFemale, filterOpenNow, maxFee, sortBy])
+   580→
+   581→  // Online-now doctors for telehealth quick connect
+   582→  const onlineDoctors = useMemo(() => doctors.filter((d) => d.onlineNow).slice(0, 3), [doctors])
+   583→
+   584→  const isSevere = severity === 'Severe'
+   585→
+   586→  // ─── Handlers ────────────────────────────────────────────────────────────
+   587→
+   588→  const handleSearch = () => {
+   589→    if (!location.trim()) {
+   590→      setSearchError('Please enter your area or city to find doctors nearby.')
+   591→      return
+   592→    }
+   593→    setShowSuggestions(false)
+   594→    fetchDoctors(location.trim(), selectedSpecialty)
+   595→  }
+   596→
+   597→  const handleSelectSpecialty = (s: Specialty) => {
+   598→    setSelectedSpecialty((cur) => (cur === s ? null : s))
+   599→  }
+   600→
+   601→  const dateKey = (d: Date) => d.toISOString().split('T')[0]
+   602→  const slotKey = (doctor: string, d: Date, time: string) => `${doctor}|${dateKey(d)}|${time}`
+   603→
+   604→  const openBooking = (doctor: Doctor) => {
+   605→    setBookingDoctor(doctor)
+   606→    setBookingDate(undefined)
+   607→    setBookingTime('')
+   608→    setBookingReason('')
+   609→    setBookingConfirmed(false)
+   610→    setBookedSlots(new Set())
+   611→    // Load existing appointments so already-booked slots appear disabled.
+   612→    const userId = userProfile?.id
+   613→    if (userId) {
+   614→      fetch(`/api/appointments?userId=${userId}`)
+   615→        .then((r) => (r.ok ? r.json() : Promise.resolve([])))
+   616→        .then((appts: Array<{ doctorName: string; date: string; time: string; status: string }>) => {
+   617→          const keys = new Set<string>()
+   618→          for (const a of Array.isArray(appts) ? appts : []) {
+   619→            if (a.status && a.status !== 'cancelled') {
+   620→              keys.add(`${a.doctorName}|${a.date}|${a.time}`)
+   621→            }
+   622→          }
+   623→          setBookedSlots(keys)
+   624→        })
+   625→        .catch(() => {})
+   626→    }
+   627→  }
+   628→
+   629→  const closeBooking = () => {
+   630→    setBookingDoctor(null)
+   631→    setTimeout(() => setBookingConfirmed(false), 200)
+   632→  }
+   633→
+   634→  const confirmBooking = async () => {
+   635→    if (!bookingDate || !bookingTime || !bookingDoctor) return
+   636→    const userId = userProfile?.id
+   637→    if (!userId) {
+   638→      toast.error('Please sign in to book an appointment')
+   639→      return
+   640→    }
+   641→    // Client-side de-dupe: block booking a slot already on the calendar.
+   642→    if (bookedSlots.has(slotKey(bookingDoctor.name, bookingDate, bookingTime))) {
+   643→      toast.error('That slot is already booked', {
+   644→        description: 'Pick a different date or time for this doctor.',
+   645→      })
+   646→      return
+   647→    }
+   648→    setBookingSaving(true)
+   649→    try {
+   650→      const res = await fetch('/api/appointments', {
+   651→        method: 'POST',
+   652→        headers: { 'Content-Type': 'application/json' },
+   653→        body: JSON.stringify({
+   654→          userId,
+   655→          doctorName: bookingDoctor.name,
+   656→          specialty: bookingDoctor.specialty,
+   657→          date: bookingDate.toISOString().split('T')[0],
+   658→          time: bookingTime,
+   659→          type: bookingDoctor.videoConsult ? 'video' : 'in_person',
+   660→          notes: bookingReason.trim() || undefined,
+   661→        }),
+   662→      })
+   663→      if (res.status === 409) {
+   664→        // Server-side de-dupe triggered — sync the booked set and prompt retry.
+   665→        setBookedSlots((prev) => new Set(prev).add(slotKey(bookingDoctor.name, bookingDate, bookingTime)))
+   666→        setBookingTime('')
+   667→        toast.error('That slot is already booked', {
+   668→          description: 'Please choose a different date or time.',
+   669→        })
+   670→        return
+   671→      }
+   672→      if (!res.ok) {
+   673→        const err = await res.json().catch(() => ({}))
+   674→        throw new Error(err.error || 'Booking failed')
+   675→      }
+   676→      setBookedSlots((prev) => new Set(prev).add(slotKey(bookingDoctor.name, bookingDate, bookingTime)))
+   677→      setBookingConfirmed(true)
+   678→      toast.success('Appointment booked! 🎉', {
+   679→        description: `${bookingDoctor.name} · ${bookingDate.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })} at ${bookingTime}. See it on your dashboard.`,
+   680→      })
+   681→    } catch (e) {
+   682→      toast.error(e instanceof Error ? e.message : 'Could not book appointment')
+   683→    } finally {
+   684→      setBookingSaving(false)
+   685→    }
+   686→  }
+   687→
+   688→  const canConfirm = bookingDate && bookingTime
+   689→
+   690→  // Close suggestions on outside click
+   691→  React.useEffect(() => {
+   692→    const handler = (e: MouseEvent) => {
+   693→      if (suggestionsRef.current && !suggestionsRef.current.contains(e.target as Node)) {
+   694→        setShowSuggestions(false)
+   695→      }
+   696→    }
+   697→    document.addEventListener('mousedown', handler)
+   698→    return () => document.removeEventListener('mousedown', handler)
+   699→  }, [])
+   700→
+   701→  // ─── Render ──────────────────────────────────────────────────────────────
+   702→
+   703→  return (
+   704→    <div className="space-y-6 pb-4">
+   705→      {/* ═══ 1. HEADER ═══ */}
+   706→      <motion.header
+   707→        initial={{ opacity: 0, y: -12 }}
+   708→        animate={{ opacity: 1, y: 0 }}
+   709→        transition={{ duration: 0.4 }}
+   710→        className="space-y-3"
+   711→      >
+   712→        <div className="flex items-center gap-3">
+   713→          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/20">
+   714→            <Stethoscope className="h-6 w-6" />
+   715→          </div>
+   716→          <div>
+   717→            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+   718→              <span className="bg-gradient-to-r from-teal-600 via-cyan-600 to-teal-500 bg-clip-text text-transparent">
+   719→                Find Your Doctor
+   720→              </span>
+   721→            </h1>
+   722→            <p className="text-sm md:text-base text-muted-foreground mt-0.5">
+   723→              Connect with trusted healthcare specialists near you
+   724→            </p>
+   725→          </div>
+   726→        </div>
+   727→
+   728→        {/* Emergency banner */}
+   729→        <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-3">
+   730→          <Siren className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+   731→          <p className="text-sm text-rose-800 dark:text-rose-200 font-medium">
+   732→            🚨 For medical emergencies, call your local emergency number immediately
+   733→            <span className="block text-xs font-normal text-rose-700/80 dark:text-rose-300/80 mt-0.5">
+   734→              India: 108 / 112 · US: 911 · UK: 999 · EU: 112
+   735→            </span>
+   736→          </p>
+   737→        </div>
+   738→      </motion.header>
+   739→
+   740→      {/* ═══ 2. SEARCH SECTION ═══ */}
+   741→      <motion.div
+   742→        initial={{ opacity: 0, y: 12 }}
+   743→        animate={{ opacity: 1, y: 0 }}
+   744→        transition={{ duration: 0.4, delay: 0.05 }}
+   745→      >
+   746→        <Card className="border-teal-100 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/40 via-white to-cyan-50/30 dark:from-teal-950/20 dark:via-card dark:to-cyan-950/20 backdrop-blur-sm">
+   747→          <CardHeader className="pb-4">
+   748→            <CardTitle className="flex items-center gap-2 text-lg">
+   749→              <Search className="h-5 w-5 text-teal-600" />
+   750→              Search Healthcare Providers
+   751→            </CardTitle>
+   752→            <CardDescription>
+   753→              Tell us what you need and we&apos;ll find the right specialist for you.
+   754→            </CardDescription>
+   755→          </CardHeader>
+   756→          <CardContent className="space-y-5">
+   757→            {/* Location input with autocomplete + use my location */}
+   758→            <div className="space-y-2">
+   759→              <div className="flex items-center justify-between">
+   760→                <Label htmlFor="location" className="text-sm font-medium flex items-center gap-1.5">
+   761→                  <MapPin className="h-3.5 w-3.5 text-teal-600" />
+   762→                  Your Location
+   763→                </Label>
+   764→                <button
+   765→                  type="button"
+   766→                  onClick={useMyLocation}
+   767→                  disabled={locating}
+   768→                  className="inline-flex items-center gap-1 text-xs font-medium text-teal-700 dark:text-teal-300 hover:text-teal-800 dark:hover:text-teal-200 disabled:opacity-50 transition-colors"
+   769→                >
+   770→                  {locating ? (
+   771→                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+   772→                  ) : (
+   773→                    <Crosshair className="h-3.5 w-3.5" />
+   774→                  )}
+   775→                  {locating ? 'Locating...' : 'Use my location'}
+   776→                </button>
+   777→              </div>
+   778→              <div className="relative" ref={suggestionsRef}>
+   779→                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+   780→                <Input
+   781→                  id="location"
+   782→                  placeholder="Enter your area or city (works for any location in India)"
+   783→                  value={location}
+   784→                  onChange={(e) => handleLocationChange(e.target.value)}
+   785→                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+   786→                  onKeyDown={(e) => {
+   787→                    if (e.key === 'Enter') {
+   788→                      e.preventDefault()
+   789→                      handleSearch()
+   790→                    }
+   791→                  }}
+   792→                  className="pl-9 pr-9 h-11 bg-background/70"
+   793→                />
+   794→                {location && (
+   795→                  <button
+   796→                    type="button"
+   797→                    onClick={() => { setLocation(''); setSuggestions([]); }}
+   798→                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+   799→                    aria-label="Clear location"
+   800→                  >
+   801→                    ×
+   802→                  </button>
+   803→                )}
+   804→                {/* Autocomplete dropdown */}
+   805→                <AnimatePresence>
+   806→                  {showSuggestions && suggestions.length > 0 && (
+   807→                    <motion.div
+   808→                      initial={{ opacity: 0, y: -4 }}
+   809→                      animate={{ opacity: 1, y: 0 }}
+   810→                      exit={{ opacity: 0, y: -4 }}
+   811→                      transition={{ duration: 0.15 }}
+   812→                      className="absolute z-30 mt-1 w-full rounded-xl border border-teal-100 dark:border-teal-900/50 bg-white dark:bg-card shadow-xl overflow-hidden"
+   813→                    >
+   814→                      <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-teal-50/50 dark:bg-teal-950/30 border-b border-teal-100 dark:border-teal-900/50 flex items-center gap-1">
+   815→                        <MapPinned className="h-3 w-3" /> Powered by Google Places
+   816→                      </div>
+   817→                      <ul className="max-h-64 overflow-y-auto chandracycle-scroll">
+   818→                        {suggestions.map((s, i) => (
+   819→                          <li key={i}>
+   820→                            <button
+   821→                              type="button"
+   822→                              onClick={() => selectSuggestion(s)}
+   823→                              className="w-full text-left px-3 py-2.5 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors flex items-start gap-2"
+   824→                            >
+   825→                              <MapPin className="h-4 w-4 text-teal-500 shrink-0 mt-0.5" />
+   826→                              <div className="min-w-0">
+   827→                                <p className="text-sm font-medium truncate">{s.mainText}</p>
+   828→                                {s.secondaryText && (
+   829→                                  <p className="text-xs text-muted-foreground truncate">{s.secondaryText}</p>
+   830→                                )}
+   831→                              </div>
+   832→                            </button>
+   833→                          </li>
+   834→                        ))}
+   835→                      </ul>
+   836→                    </motion.div>
+   837→                  )}
+   838→                </AnimatePresence>
+   839→              </div>
+   840→              {searchError && (
+   841→                <p className="text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
+   842→                  <AlertTriangle className="h-3 w-3" /> {searchError}
+   843→                </p>
+   844→              )}
+   845→            </div>
+   846→
+   847→            {/* Specialty selector grid */}
+   848→            <div className="space-y-2">
+   849→              <Label className="text-sm font-medium flex items-center gap-1.5">
+   850→                <Stethoscope className="h-3.5 w-3.5 text-teal-600" />
+   851→                Health Concern
+   852→              </Label>
+   853→              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+   854→                {SPECIALTIES.map((s) => {
+   855→                  const Icon = s.icon
+   856→                  const isSelected = selectedSpecialty === s.id
+   857→                  return (
+   858→                    <button
+   859→                      key={s.id}
+   860→                      type="button"
+   861→                      onClick={() => handleSelectSpecialty(s.id)}
+   862→                      className={cn(
+   863→                        'group flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all duration-200',
+   864→                        isSelected
+   865→                          ? cn(s.bgColor, s.borderColor, 'shadow-md ring-2', s.ring, 'ring-offset-0')
+   866→                          : 'border-border bg-background/60 hover:bg-accent/50 hover:border-teal-200 dark:hover:border-teal-800'
+   867→                      )}
+   868→                    >
+   869→                      <div className="flex items-center gap-2 w-full">
+   870→                        <span
+   871→                          className={cn(
+   872→                            'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+   873→                            isSelected ? cn(s.bgColor, s.textColor) : 'bg-muted text-muted-foreground'
+   874→                          )}
+   875→                        >
+   876→                          <Icon className="h-4 w-4" />
+   877→                        </span>
+   878→                        {isSelected && (
+   879→                          <CheckCircle2 className="h-4 w-4 ml-auto text-teal-600" />
+   880→                        )}
+   881→                      </div>
+   882→                      <span className="text-xs font-semibold leading-tight">{s.shortLabel}</span>
+   883→                      <span className="text-[10px] text-muted-foreground leading-tight line-clamp-2">
+   884→                        {s.description}
+   885→                      </span>
+   886→                    </button>
+   887→                  )
+   888→                })}
+   889→              </div>
+   890→            </div>
+   891→
+   892→            {/* Severity level */}
+   893→            <div className="space-y-2">
+   894→              <Label className="text-sm font-medium flex items-center gap-1.5">
+   895→                <Activity className="h-3.5 w-3.5 text-teal-600" />
+   896→                Severity Level
+   897→              </Label>
+   898→              <div className="grid grid-cols-3 gap-2">
+   899→                {(Object.keys(SEVERITY_CONFIG) as Severity[]).map((sev) => {
+   900→                  const cfg = SEVERITY_CONFIG[sev]
+   901→                  const isSelected = severity === sev
+   902→                  return (
+   903→                    <button
+   904→                      key={sev}
+   905→                      type="button"
+   906→                      onClick={() => setSeverity((cur) => (cur === sev ? null : sev))}
+   907→                      className={cn(
+   908→                        'flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all',
+   909→                        isSelected
+   910→                          ? cn(cfg.bg, cfg.border, cfg.color, 'shadow-md ring-2', cfg.ring)
+   911→                          : 'border-border bg-background/60 hover:bg-accent/50'
+   912→                      )}
+   913→                    >
+   914→                      <span className={cn('h-2 w-2 rounded-full', cfg.dot)} />
+   915→                      {cfg.label}
+   916→                    </button>
+   917→                  )
+   918→                })}
+   919→              </div>
+   920→            </div>
+   921→
+   922→            {/* Severe warning */}
+   923→            <AnimatePresence>
+   924→              {isSevere && (
+   925→                <motion.div
+   926→                  initial={{ opacity: 0, height: 0 }}
+   927→                  animate={{ opacity: 1, height: 'auto' }}
+   928→                  exit={{ opacity: 0, height: 0 }}
+   929→                  transition={{ duration: 0.25 }}
+   930→                  className="overflow-hidden"
+   931→                >
+   932→                  <div className="flex items-start gap-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 px-4 py-3">
+   933→                    <AlertTriangle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+   934→                    <div className="text-sm">
+   935→                      <p className="font-semibold text-rose-800 dark:text-rose-200">
+   936→                        Your symptoms seem severe.
+   937→                      </p>
+   938→                      <p className="text-rose-700 dark:text-rose-300 mt-0.5">
+   939→                        We recommend booking an appointment soon. Consider{' '}
+   940→                        <span className="font-semibold">teleconsultation</span> for immediate advice.
+   941→                      </p>
+   942→                    </div>
+   943→                  </div>
+   944→                </motion.div>
+   945→              )}
+   946→            </AnimatePresence>
+   947→
+   948→            {/* Search button */}
+   949→            <Button
+   950→              size="lg"
+   951→              onClick={handleSearch}
+   952→              disabled={isSearching || !location.trim()}
+   953→              className="w-full h-12 text-base bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-lg shadow-teal-500/20"
+   954→            >
+   955→              {isSearching ? (
+   956→                <>
+   957→                  <Loader2 className="h-5 w-5 animate-spin" />
+   958→                  Searching...
+   959→                </>
+   960→              ) : (
+   961→                <>
+   962→                  <Search className="h-5 w-5" />
+   963→                  Find Doctors
+   964→                </>
+   965→              )}
+   966→            </Button>
+   967→          </CardContent>
+   968→        </Card>
+   969→      </motion.div>
+   970→
+   971→      {/* ═══ PRE-SEARCH EMPTY STATE ═══ */}
+   972→      {/* A brand-new user (no search performed yet) sees a friendly hint card
+   973→          in place of results — no fake doctor listings. */}
+   974→      <AnimatePresence>
+   975→        {!hasSearched && !isSearching && (
+   976→          <motion.div
+   977→            initial={{ opacity: 0, y: 12 }}
+   978→            animate={{ opacity: 1, y: 0 }}
+   979→            exit={{ opacity: 0, y: -12 }}
+   980→            transition={{ duration: 0.35 }}
+   981→          >
+   982→            <Card className="border-dashed border-teal-200 dark:border-teal-900/50 bg-gradient-to-br from-teal-50/40 to-cyan-50/20 dark:from-teal-950/10 dark:to-cyan-950/10">
+   983→              <CardContent className="flex flex-col items-center justify-center py-14 px-4 text-center">
+   984→                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-100 dark:bg-teal-950/40 mb-3">
+   985→                  <Search className="h-6 w-6 text-teal-600 dark:text-teal-400" />
+   986→                </div>
+   987→                <p className="text-sm font-medium text-foreground">Search to find doctors near you</p>
+   988→                <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+   989→                  Enter your area or city above, optionally pick a health concern, then tap
+   990→                  &ldquo;Find Doctors&rdquo; — we&rsquo;ll surface verified specialists from
+   991→                  Google Places with real clinic details, fees, and availability.
+   992→                </p>
+   993→              </CardContent>
+   994→            </Card>
+   995→          </motion.div>
+   996→        )}
+   997→      </AnimatePresence>
+   998→
+   999→      {/* ═══ 5. TELEHEALTH QUICK CONNECT ═══ */}
+  1000→      <AnimatePresence>
+  1001→        {hasSearched && isSevere && (
+  1002→          <motion.div
+  1003→            initial={{ opacity: 0, y: 12 }}
+  1004→            animate={{ opacity: 1, y: 0 }}
+  1005→            exit={{ opacity: 0, y: -12 }}
+  1006→            transition={{ duration: 0.35 }}
+  1007→          >
+  1008→            <Card className="border-teal-300 dark:border-teal-800 bg-gradient-to-br from-teal-50 via-cyan-50 to-white dark:from-teal-950/40 dark:via-cyan-950/30 dark:to-card shadow-lg shadow-teal-500/10">
+  1009→              <CardContent className="p-5 md:p-6">
+  1010→                <div className="flex flex-col md:flex-row md:items-center gap-4">
+  1011→                  <div className="flex items-start gap-3 flex-1">
+  1012→                    <div className="relative">
+  1013→                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-md">
+  1014→                        <Video className="h-6 w-6" />
+  1015→                      </div>
+  1016→                      <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+  1017→                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+  1018→                        <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500" />
+  1019→                      </span>
+  1020→                    </div>
+  1021→                    <div>
+  1022→                      <h3 className="font-bold text-base text-teal-900 dark:text-teal-100">
+  1023→                        Need immediate advice? Connect with a doctor in 2 minutes
+  1024→                      </h3>
+  1025→                      <p className="text-sm text-teal-700 dark:text-teal-300 mt-0.5 flex items-center gap-1.5">
+  1026→                        <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+  1027→                        Video Consult Available Now
+  1028→                      </p>
+  1029→                    </div>
+  1030→                  </div>
+  1031→                  <Button className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700 shadow-md shrink-0">
+  1032→                    <Video className="h-4 w-4" />
+  1033→                    Start Video Consult
+  1034→                  </Button>
+  1035→                </div>
+  1036→
+  1037→                <Separator className="my-4 bg-teal-200/50 dark:bg-teal-800/50" />
+  1038→
+  1039→                {/* Online doctors */}
+  1040→                <div className="space-y-2">
+  1041→                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+  1042→                    Available Right Now
+  1043→                  </p>
+  1044→                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+  1045→                    {onlineDoctors.map((doc) => (
+  1046→                      <div
+  1047→                        key={doc.id}
+  1048→                        className="flex items-center gap-2.5 rounded-lg border border-teal-200 dark:border-teal-800 bg-white/70 dark:bg-card/60 p-2.5"
+  1049→                      >
+  1050→                        <div className="relative shrink-0">
+  1051→                          <Avatar className="h-9 w-9">
+  1052→                            <AvatarFallback className={cn('bg-gradient-to-br text-white font-semibold text-xs', getAvatarGradient(doc.name))}>
+  1053→                              {getInitials(doc.name)}
+  1054→                            </AvatarFallback>
+  1055→                          </Avatar>
+  1056→                          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-card" />
+  1057→                        </div>
+  1058→                        <div className="min-w-0 flex-1">
+  1059→                          <p className="text-xs font-semibold truncate">{doc.name}</p>
+  1060→                          <div className="flex items-center gap-1">
+  1061→                            <Badge variant="secondary" className="h-4 text-[10px] px-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+  1062→                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Online
+  1063→                            </Badge>
+  1064→                            <span className="text-[10px] text-muted-foreground truncate">{SPECIALTY_MAP[doc.specialty].shortLabel}</span>
+  1065→                          </div>
+  1066→                        </div>
+  1067→                      </div>
+  1068→                    ))}
+  1069→                  </div>
+  1070→                </div>
+  1071→              </CardContent>
+  1072→            </Card>
+  1073→          </motion.div>
+  1074→        )}
+  1075→      </AnimatePresence>
+  1076→
+  1077→      {/* ═══ 3 & 4. RESULTS + FILTER BAR ═══ */}
+  1078→      <AnimatePresence>
+  1079→        {hasSearched && (
+  1080→          <motion.div
+  1081→            initial={{ opacity: 0 }}
+  1082→            animate={{ opacity: 1 }}
+  1083→            exit={{ opacity: 0 }}
+  1084→            transition={{ duration: 0.3 }}
+  1085→            className="space-y-4"
+  1086→          >
+  1087→            {/* Visible demo-directory notice (simulated source) */}
+  1088→            <AnimatePresence>
+  1089→              {searchSource === 'simulated' && !demoNoticeDismissed && (
+  1090→                <motion.div
+  1091→                  initial={{ opacity: 0, y: -6 }}
+  1092→                  animate={{ opacity: 1, y: 0 }}
+  1093→                  exit={{ opacity: 0, y: -6 }}
+  1094→                  className="relative overflow-hidden rounded-xl border border-amber-300/70 dark:border-amber-800 bg-gradient-to-r from-amber-50 via-amber-50/60 to-transparent dark:from-amber-950/30 dark:via-amber-950/20 px-4 py-3"
+  1095→                  role="note"
+  1096→                  aria-label="Demo directory notice"
+  1097→                >
+  1098→                  <div className="flex items-start gap-3">
+  1099→                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300">
+  1100→                      <FlaskConical className="h-4 w-4" />
+  1101→                    </div>
+  1102→                    <div className="flex-1 min-w-0">
+  1103→                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+  1104→                        Demo directory
+  1105→                        <span className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200">
+  1106→                          Sample data
+  1107→                        </span>
+  1108→                      </p>
+  1109→                      <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-0.5 leading-relaxed">
+  1110→                        Google Places isn&apos;t configured, so these are sample listings shown for
+  1111→                        demonstration. Always verify a doctor&apos;s credentials independently before booking.
+  1112→                      </p>
+  1113→                    </div>
+  1114→                    <button
+  1115→                      onClick={() => setDemoNoticeDismissed(true)}
+  1116→                      aria-label="Dismiss demo notice"
+  1117→                      className="shrink-0 h-6 w-6 inline-flex items-center justify-center rounded-md text-amber-700/70 hover:text-amber-900 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+  1118→                    >
+  1119→                      ✕
+  1120→                    </button>
+  1121→                  </div>
+  1122→                </motion.div>
+  1123→              )}
+  1124→            </AnimatePresence>
+  1125→
+  1126→            {/* Filter & Sort Bar */}
+  1127→            <Card className="bg-card/80 backdrop-blur-sm">
+  1128→              <CardContent className="p-4 space-y-3">
+  1129→                <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+  1130→                  {/* Results count + location + source */}
+  1131→                  <div className="flex flex-col gap-1.5">
+  1132→                    <div className="flex items-center gap-2 text-sm">
+  1133→                      <span className="font-semibold text-base">{filteredDoctors.length}</span>
+  1134→                      <span className="text-muted-foreground">doctors found</span>
+  1135→                      {selectedSpecialty && (
+  1136→                        <Badge variant="secondary" className="ml-1 bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
+  1137→                          {SPECIALTY_MAP[selectedSpecialty].shortLabel}
+  1138→                        </Badge>
+  1139→                      )}
+  1140→                    </div>
+  1141→                    {searchedLocation && (
+  1142→                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+  1143→                        <MapPin className="h-3 w-3 text-teal-500" />
+  1144→                        <span className="truncate max-w-[260px]">{searchedLocation}</span>
+  1145→                        <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 text-[10px] font-medium">
+  1146→                          <Globe className="h-2.5 w-2.5" />
+  1147→                          {searchSource === 'google'
+  1148→                            ? 'Google Places'
+  1149→                            : searchSource === 'simulated'
+  1150→                              ? 'Demo listings'
+  1151→                              : 'Live results'}
+  1152→                        </span>
+  1153→                      </div>
+  1154→                    )}
+  1155→                  </div>
+  1156→
+  1157→                  <div className="flex-1" />
+  1158→
+  1159→                  {/* Sort */}
+  1160→                  <div className="flex items-center gap-2">
+  1161→                    <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+  1162→                      <Filter className="h-3.5 w-3.5" /> Sort:
+  1163→                    </span>
+  1164→                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+  1165→                      <SelectTrigger className="h-9 w-[140px] text-xs">
+  1166→                        <SelectValue />
+  1167→                      </SelectTrigger>
+  1168→                      <SelectContent>
+  1169→                        <SelectItem value="distance">Distance</SelectItem>
+  1170→                        <SelectItem value="rating">Rating</SelectItem>
+  1171→                        <SelectItem value="experience">Experience</SelectItem>
+  1172→                        <SelectItem value="fee">Fee (Low to High)</SelectItem>
+  1173→                      </SelectContent>
+  1174→                    </Select>
+  1175→                  </div>
+  1176→                </div>
+  1177→
+  1178→                <Separator />
+  1179→
+  1180→                {/* Filter toggles */}
+  1181→                <div className="flex flex-wrap items-center gap-2">
+  1182→                  <span className="text-xs text-muted-foreground font-medium mr-1">Filters:</span>
+  1183→                  <FilterToggle
+  1184→                    active={filterToday}
+  1185→                    onClick={() => setFilterToday((v) => !v)}
+  1186→                    icon={CalendarIcon}
+  1187→                    label="Available Today"
+  1188→                  />
+  1189→                  <FilterToggle
+  1190→                    active={filterOpenNow}
+  1191→                    onClick={() => setFilterOpenNow((v) => !v)}
+  1192→                    icon={Clock}
+  1193→                    label="Open Now"
+  1194→                  />
+  1195→                  <FilterToggle
+  1196→                    active={filterVideo}
+  1197→                    onClick={() => setFilterVideo((v) => !v)}
+  1198→                    icon={Video}
+  1199→                    label="Video Consult"
+  1200→                  />
+  1201→                  <FilterToggle
+  1202→                    active={filterFemale}
+  1203→                    onClick={() => setFilterFemale((v) => !v)}
+  1204→                    icon={User}
+  1205→                    label="Female Doctor"
+  1206→                  />
+  1207→                  <div className="flex items-center gap-1.5 ml-1">
+  1208→                    <CircleDollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+  1209→                    <Select value={maxFee} onValueChange={(v) => setMaxFee(v as typeof maxFee)}>
+  1210→                      <SelectTrigger className="h-9 w-[110px] text-xs">
+  1211→                        <SelectValue />
+  1212→                      </SelectTrigger>
+  1213→                      <SelectContent>
+  1214→                        <SelectItem value="any">Any Fee</SelectItem>
+  1215→                        <SelectItem value="500">≤ ₹500</SelectItem>
+  1216→                        <SelectItem value="800">≤ ₹800</SelectItem>
+  1217→                        <SelectItem value="1200">≤ ₹1200</SelectItem>
+  1218→                      </SelectContent>
+  1219→                    </Select>
+  1220→                  </div>
+  1221→                </div>
+  1222→              </CardContent>
+  1223→            </Card>
+  1224→
+  1225→            {/* Doctor cards */}
+  1226→            {isSearching ? (
+  1227→              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+  1228→                {Array.from({ length: 3 }).map((_, i) => (
+  1229→                  <Card key={i} className="animate-pulse">
+  1230→                    <CardContent className="p-5">
+  1231→                      <div className="flex gap-4">
+  1232→                        <div className="h-14 w-14 rounded-full bg-muted" />
+  1233→                        <div className="flex-1 space-y-2">
+  1234→                          <div className="h-4 w-1/2 bg-muted rounded" />
+  1235→                          <div className="h-3 w-1/3 bg-muted rounded" />
+  1236→                          <div className="h-3 w-2/3 bg-muted rounded" />
+  1237→                        </div>
+  1238→                      </div>
+  1239→                    </CardContent>
+  1240→                  </Card>
+  1241→                ))}
+  1242→              </div>
+  1243→            ) : filteredDoctors.length === 0 ? (
+  1244→              <Card className="border-dashed">
+  1245→                <CardContent className="py-12 text-center">
+  1246→                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+  1247→                    <Search className="h-7 w-7 text-muted-foreground" />
+  1248→                  </div>
+  1249→                  <p className="mt-3 font-semibold">No doctors match your filters</p>
+  1250→                  <p className="text-sm text-muted-foreground mt-1">
+  1251→                    Try adjusting your filters or searching a different area.
+  1252→                  </p>
+  1253→                  <Button
+  1254→                    variant="outline"
+  1255→                    className="mt-4"
+  1256→                    onClick={() => {
+  1257→                      setFilterToday(false)
+  1258→                      setFilterOpenNow(false)
+  1259→                      setFilterVideo(false)
+  1260→                      setFilterFemale(false)
+  1261→                      setMaxFee('any')
+  1262→                    }}
+  1263→                  >
+  1264→                    Clear Filters
+  1265→                  </Button>
+  1266→                </CardContent>
+  1267→              </Card>
+  1268→            ) : (
+  1269→              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+  1270→                {filteredDoctors.map((doc, idx) => (
+  1271→                  <DoctorCard
+  1272→                    key={doc.id}
+  1273→                    doctor={doc}
+  1274→                    index={idx}
+  1275→                    onBook={() => openBooking(doc)}
+  1276→                  />
+  1277→                ))}
+  1278→              </div>
+  1279→            )}
+  1280→          </motion.div>
+  1281→        )}
+  1282→      </AnimatePresence>
+  1283→
+  1284→      {/* ═══ 6. HEALTH CONCERN GUIDE ═══ */}
+  1285→      <motion.section
+  1286→        initial={{ opacity: 0, y: 12 }}
+  1287→        animate={{ opacity: 1, y: 0 }}
+  1288→        transition={{ duration: 0.4, delay: 0.1 }}
+  1289→        className="space-y-4"
+  1290→      >
+  1291→        <div className="flex items-center gap-2">
+  1292→          <HandHeart className="h-5 w-5 text-teal-600" />
+  1293→          <h2 className="text-xl font-bold">Health Concern Guide</h2>
+  1294→        </div>
+  1295→
+  1296→        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+  1297→          {SPECIALTY_GUIDE.map((entry, idx) => {
+  1298→            const meta = SPECIALTY_MAP[entry.specialty]
+  1299→            const Icon = entry.icon
+  1300→            return (
+  1301→              <motion.div
+  1302→                key={entry.specialty}
+  1303→                initial={{ opacity: 0, y: 10 }}
+  1304→                animate={{ opacity: 1, y: 0 }}
+  1305→                transition={{ duration: 0.3, delay: idx * 0.05 }}
+  1306→              >
+  1307→                <Card className={cn('h-full border bg-card/80 backdrop-blur-sm transition-shadow hover:shadow-md', meta.borderColor)}>
+  1308→                  <CardContent className="p-4">
+  1309→                    <div className="flex items-center gap-2.5 mb-2">
+  1310→                      <span className={cn('flex h-9 w-9 items-center justify-center rounded-lg', meta.bgColor, meta.textColor)}>
+  1311→                        <Icon className="h-5 w-5" />
+  1312→                      </span>
+  1313→                      <div>
+  1314→                        <p className="font-semibold text-sm leading-tight">{meta.label}</p>
+  1315→                        <p className="text-[11px] text-muted-foreground">See a {meta.shortLabel} if:</p>
+  1316→                      </div>
+  1317→                    </div>
+  1318→                    <p className="text-sm text-muted-foreground leading-relaxed">{entry.whenToSee}</p>
+  1319→                  </CardContent>
+  1320→                </Card>
+  1321→              </motion.div>
+  1322→            )
+  1323→          })}
+  1324→        </div>
+  1325→
+  1326→        {/* Red Flag Symptoms */}
+  1327→        <Card className="border-rose-200 dark:border-rose-900 bg-gradient-to-br from-rose-50 to-orange-50/50 dark:from-rose-950/40 dark:to-orange-950/20">
+  1328→          <CardHeader className="pb-3">
+  1329→            <CardTitle className="flex items-center gap-2 text-lg text-rose-800 dark:text-rose-200">
+  1330→              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950">
+  1331→                <Flame className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+  1332→              </span>
+  1333→              Red Flag Symptoms
+  1334→            </CardTitle>
+  1335→            <CardDescription className="text-rose-700/80 dark:text-rose-300/80">
+  1336→              Seek <strong>immediate medical attention</strong> if you experience any of these:
+  1337→            </CardDescription>
+  1338→          </CardHeader>
+  1339→          <CardContent>
+  1340→            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+  1341→              {RED_FLAG_SYMPTOMS.map((sym) => {
+  1342→                const Icon = sym.icon
+  1343→                return (
+  1344→                  <div
+  1345→                    key={sym.text}
+  1346→                    className="flex items-start gap-2.5 rounded-lg bg-white/70 dark:bg-card/60 border border-rose-100 dark:border-rose-900/50 px-3 py-2"
+  1347→                  >
+  1348→                    <Icon className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+  1349→                    <span className="text-sm text-rose-900 dark:text-rose-100">{sym.text}</span>
+  1350→                  </div>
+  1351→                )
+  1352→              })}
+  1353→            </div>
+  1354→            <div className="mt-3 flex items-center gap-2 text-xs text-rose-700 dark:text-rose-300 bg-rose-100/60 dark:bg-rose-950/40 rounded-lg px-3 py-2">
+  1355→              <Siren className="h-4 w-4 shrink-0" />
+  1356→              <span>Do not wait — these symptoms may indicate a serious condition requiring urgent care.</span>
+  1357→            </div>
+  1358→          </CardContent>
+  1359→        </Card>
+  1360→      </motion.section>
+  1361→
+  1362→      {/* ═══ 7. APPOINTMENT BOOKING DIALOG ═══ */}
+  1363→      <Dialog open={!!bookingDoctor} onOpenChange={(open) => !open && closeBooking()}>
+  1364→        <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+  1365→          {bookingDoctor && !bookingConfirmed && (
+  1366→            <>
+  1367→              <DialogHeader>
+  1368→                <DialogTitle className="flex items-center gap-2">
+  1369→                  <CalendarIcon className="h-5 w-5 text-teal-600" />
+  1370→                  Book Appointment
+  1371→                </DialogTitle>
+  1372→                <DialogDescription>
+  1373→                  Choose a date and time that works for you.
+  1374→                </DialogDescription>
+  1375→              </DialogHeader>
+  1376→
+  1377→              {/* Doctor summary */}
+  1378→              <div className="flex items-start gap-3 rounded-xl border border-teal-100 dark:border-teal-900/50 bg-teal-50/50 dark:bg-teal-950/20 p-3">
+  1379→                <Avatar className="h-12 w-12">
+  1380→                  <AvatarFallback className={cn('bg-gradient-to-br text-white font-semibold', getAvatarGradient(bookingDoctor.name))}>
+  1381→                    {getInitials(bookingDoctor.name)}
+  1382→                  </AvatarFallback>
+  1383→                </Avatar>
+  1384→                <div className="min-w-0 flex-1">
+  1385→                  <p className="font-semibold leading-tight">{bookingDoctor.name}</p>
+  1386→                  <p className="text-xs text-muted-foreground leading-tight mt-0.5">{bookingDoctor.qualifications}</p>
+  1387→                  <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+  1388→                    <Badge variant="secondary" className={cn('text-[10px]', SPECIALTY_MAP[bookingDoctor.specialty].bgColor, SPECIALTY_MAP[bookingDoctor.specialty].textColor)}>
+  1389→                      {SPECIALTY_MAP[bookingDoctor.specialty].shortLabel}
+  1390→                    </Badge>
+  1391→                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+  1392→                      <Hospital className="h-3 w-3" /> {bookingDoctor.clinic}
+  1393→                    </span>
+  1394→                  </div>
+  1395→                </div>
+  1396→                <div className="text-right shrink-0">
+  1397→                  <p className="text-sm font-bold text-teal-700 dark:text-teal-300">₹{bookingDoctor.fee}</p>
+  1398→                  <p className="text-[10px] text-muted-foreground">consultation</p>
+  1399→                </div>
+  1400→              </div>
+  1401→
+  1402→              {/* Date picker */}
+  1403→              <div className="space-y-2">
+  1404→                <Label className="text-sm font-medium flex items-center gap-1.5">
+  1405→                  <CalendarIcon className="h-3.5 w-3.5 text-teal-600" /> Select Date
+  1406→                </Label>
+  1407→                <div className="rounded-lg border p-2 flex justify-center bg-background">
+  1408→                  <Calendar
+  1409→                    mode="single"
+  1410→                    selected={bookingDate}
+  1411→                    onSelect={setBookingDate}
+  1412→                    disabled={(date) => {
+  1413→                      const today = new Date()
+  1414→                      today.setHours(0, 0, 0, 0)
+  1415→                      const max = new Date(today)
+  1416→                      max.setDate(max.getDate() + 14)
+  1417→                      return date < today || date > max
+  1418→                    }}
+  1419→                    className="mx-auto"
+  1420→                  />
+  1421→                </div>
+  1422→              </div>
+  1423→
+  1424→              {/* Time slot */}
+  1425→              <div className="space-y-2">
+  1426→                <Label className="text-sm font-medium flex items-center gap-1.5">
+  1427→                  <Clock className="h-3.5 w-3.5 text-teal-600" /> Select Time Slot
+  1428→                </Label>
+  1429→                <div className="grid grid-cols-4 gap-1.5 max-h-32 overflow-y-auto p-0.5">
+  1430→                  {TIME_SLOTS.map((slot) => {
+  1431→                    const isSelected = bookingTime === slot
+  1432→                    const isBooked =
+  1433→                      !!bookingDate &&
+  1434→                      !!bookingDoctor &&
+  1435→                      bookedSlots.has(slotKey(bookingDoctor.name, bookingDate, slot))
+  1436→                    return (
+  1437→                      <button
+  1438→                        key={slot}
+  1439→                        type="button"
+  1440→                        disabled={!bookingDate || isBooked}
+  1441→                        onClick={() => setBookingTime(slot)}
+  1442→                        title={isBooked ? 'You already have an appointment at this time' : undefined}
+  1443→                        className={cn(
+  1444→                          'rounded-md border px-2 py-1.5 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed',
+  1445→                          isSelected
+  1446→                            ? 'border-teal-500 bg-teal-600 text-white shadow-sm'
+  1447→                            : isBooked
+  1448→                              ? 'border-muted bg-muted/40 text-muted-foreground line-through'
+  1449→                              : 'border-border bg-background hover:border-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/30'
+  1450→                        )}
+  1451→                      >
+  1452→                        {slot}
+  1453→                      </button>
+  1454→                    )
+  1455→                  })}
+  1456→                </div>
+  1457→                {!bookingDate && (
+  1458→                  <p className="text-[11px] text-muted-foreground">Pick a date to see available slots.</p>
+  1459→                )}
+  1460→                {bookingDate && bookedSlots.size > 0 && (
+  1461→                  <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+  1462→                    <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+  1463→                    Crossed-out slots are already booked by you.
+  1464→                  </p>
+  1465→                )}
+  1466→              </div>
+  1467→
+  1468→              {/* Reason for visit */}
+  1469→              <div className="space-y-2">
+  1470→                <Label htmlFor="reason" className="text-sm font-medium flex items-center gap-1.5">
+  1471→                  <Pill className="h-3.5 w-3.5 text-teal-600" /> Reason for Visit
+  1472→                </Label>
+  1473→                <Textarea
+  1474→                  id="reason"
+  1475→                  placeholder="Briefly describe your symptoms or reason for the consultation..."
+  1476→                  value={bookingReason}
+  1477→                  onChange={(e) => setBookingReason(e.target.value)}
+  1478→                  rows={3}
+  1479→                  className="resize-none"
+  1480→                />
+  1481→              </div>
+  1482→
+  1483→              <DialogFooter className="gap-2">
+  1484→                <DialogClose asChild>
+  1485→                  <Button variant="outline">Cancel</Button>
+  1486→                </DialogClose>
+  1487→                <Button
+  1488→                  onClick={() => confirmBooking()}
+  1489→                  disabled={!canConfirm || bookingSaving}
+  1490→                  className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
+  1491→                >
+  1492→                  {bookingSaving ? (
+  1493→                    <>
+  1494→                      <Loader2 className="h-4 w-4 animate-spin" />
+  1495→                      Booking…
+  1496→                    </>
+  1497→                  ) : (
+  1498→                    <>
+  1499→                      <CheckCircle2 className="h-4 w-4" />
+  1500→                      Confirm Appointment
+  1501→                    </>
+  1502→                  )}
+  1503→                </Button>
+  1504→              </DialogFooter>
+  1505→            </>
+  1506→          )}
+  1507→
+  1508→          {bookingDoctor && bookingConfirmed && (
+  1509→            <motion.div
+  1510→              initial={{ opacity: 0, scale: 0.95 }}
+  1511→              animate={{ opacity: 1, scale: 1 }}
+  1512→              transition={{ duration: 0.3 }}
+  1513→              className="py-6 text-center"
+  1514→            >
+  1515→              <motion.div
+  1516→                initial={{ scale: 0 }}
+  1517→                animate={{ scale: 1 }}
+  1518→                transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.1 }}
+  1519→                className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/30"
+  1520→              >
+  1521→                <CheckCircle2 className="h-9 w-9 text-white" />
+  1522→              </motion.div>
+  1523→              <DialogTitle className="mt-4 text-xl">Appointment booked!</DialogTitle>
+  1524→              <DialogDescription className="mt-1">
+  1525→                You&apos;ll receive a confirmation shortly.
+  1526→              </DialogDescription>
+  1527→
+  1528→              <div className="mt-4 rounded-xl border bg-muted/40 p-3 text-left space-y-1.5 text-sm">
+  1529→                <div className="flex items-center justify-between">
+  1530→                  <span className="text-muted-foreground">Doctor</span>
+  1531→                  <span className="font-medium">{bookingDoctor.name}</span>
+  1532→                </div>
+  1533→                <div className="flex items-center justify-between">
+  1534→                  <span className="text-muted-foreground">Date</span>
+  1535→                  <span className="font-medium">
+  1536→                    {bookingDate?.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+  1537→                  </span>
+  1538→                </div>
+  1539→                <div className="flex items-center justify-between">
+  1540→                  <span className="text-muted-foreground">Time</span>
+  1541→                  <span className="font-medium">{bookingTime}</span>
+  1542→                </div>
+  1543→                <div className="flex items-center justify-between">
+  1544→                  <span className="text-muted-foreground">Fee</span>
+  1545→                  <span className="font-medium text-teal-700 dark:text-teal-300">₹{bookingDoctor.fee}</span>
+  1546→                </div>
+  1547→                <Separator className="my-1" />
+  1548→                <div className="flex items-center justify-between">
+  1549→                  <span className="text-muted-foreground">Location</span>
+  1550→                  <span className="font-medium text-right text-xs">{bookingDoctor.clinic}, {bookingDoctor.city}</span>
+  1551→                </div>
+  1552→              </div>
+  1553→
+  1554→              <Button onClick={closeBooking} className="mt-5 w-full bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700">
+  1555→                Done
+  1556→              </Button>
+  1557→            </motion.div>
+  1558→          )}
+  1559→        </DialogContent>
+  1560→      </Dialog>
+  1561→    </div>
+  1562→  )
+  1563→}
+  1564→
+  1565→// ─── Sub-component: Filter Toggle ─────────────────────────────────────────────
+  1566→
+  1567→function FilterToggle({
+  1568→  active,
+  1569→  onClick,
+  1570→  icon: Icon,
+  1571→  label,
+  1572→}: {
+  1573→  active: boolean
+  1574→  onClick: () => void
+  1575→  icon: React.ElementType
+  1576→  label: string
+  1577→}) {
+  1578→  return (
+  1579→    <button
+  1580→      type="button"
+  1581→      onClick={onClick}
+  1582→      className={cn(
+  1583→        'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
+  1584→        active
+  1585→          ? 'border-teal-500 bg-teal-600 text-white shadow-sm'
+  1586→          : 'border-border bg-background hover:bg-accent'
+  1587→      )}
+  1588→    >
+  1589→      <Icon className="h-3 w-3" />
+  1590→      {label}
+  1591→      {active && <CheckCircle2 className="h-3 w-3" />}
+  1592→    </button>
+  1593→  )
+  1594→}
+  1595→
+  1596→// ─── Sub-component: Doctor Card ───────────────────────────────────────────────
+  1597→
+  1598→function DoctorCard({
+  1599→  doctor,
+  1600→  index,
+  1601→  onBook,
+  1602→}: {
+  1603→  doctor: Doctor
+  1604→  index: number
+  1605→  onBook: () => void
+  1606→}) {
+  1607→  const meta = SPECIALTY_MAP[doctor.specialty]
+  1608→  const Icon = meta.icon
+  1609→
+  1610→  return (
+  1611→    <motion.div
+  1612→      initial={{ opacity: 0, y: 16 }}
+  1613→      animate={{ opacity: 1, y: 0 }}
+  1614→      transition={{ duration: 0.35, delay: Math.min(index * 0.06, 0.4) }}
+  1615→    >
+  1616→      <Card className="h-full bg-card/80 backdrop-blur-sm border-border/70 hover:border-teal-200 dark:hover:border-teal-800 hover:shadow-lg transition-all">
+  1617→        <CardContent className="p-5">
+  1618→          {/* Top: avatar + name + rating */}
+  1619→          <div className="flex items-start gap-3">
+  1620→            <div className="relative shrink-0">
+  1621→              <Avatar className="h-14 w-14">
+  1622→                <AvatarFallback className={cn('bg-gradient-to-br text-white font-bold text-base', getAvatarGradient(doctor.name))}>
+  1623→                  {getInitials(doctor.name)}
+  1624→                </AvatarFallback>
+  1625→              </Avatar>
+  1626→              {doctor.onlineNow && (
+  1627→                <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
+  1628→              )}
+  1629→            </div>
+  1630→
+  1631→            <div className="min-w-0 flex-1">
+  1632→              <div className="flex items-start justify-between gap-2">
+  1633→                <div className="min-w-0">
+  1634→                  <h3 className="font-semibold text-base leading-tight truncate">{doctor.name}</h3>
+  1635→                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{doctor.qualifications}</p>
+  1636→                </div>
+  1637→                <Badge variant="secondary" className={cn('shrink-0 text-[10px]', meta.bgColor, meta.textColor, 'border', meta.borderColor)}>
+  1638→                  <Icon className="h-3 w-3" />
+  1639→                  {meta.shortLabel}
+  1640→                </Badge>
+  1641→              </div>
+  1642→
+  1643→              {/* Rating + experience + gender */}
+  1644→              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs">
+  1645→                <span className="flex items-center gap-1">
+  1646→                  <StarRating rating={doctor.rating} />
+  1647→                  <span className="font-semibold">{doctor.rating}</span>
+  1648→                  <span className="text-muted-foreground">({doctor.reviews} reviews)</span>
+  1649→                </span>
+  1650→                <span className="flex items-center gap-1 text-muted-foreground">
+  1651→                  <Award className="h-3 w-3" /> {doctor.experience} yrs
+  1652→                </span>
+  1653→                <span className="flex items-center gap-1 text-muted-foreground">
+  1654→                  <User className="h-3 w-3" /> {doctor.gender}
+  1655→                </span>
+  1656→              </div>
+  1657→            </div>
+  1658→          </div>
+  1659→
+  1660→          <Separator className="my-3" />
+  1661→
+  1662→          {/* Clinic + address */}
+  1663→          <div className="space-y-1.5 text-sm">
+  1664→            <div className="flex items-start gap-2">
+  1665→              <Hospital className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+  1666→              <span className="font-medium leading-tight">{doctor.clinic}</span>
+  1667→            </div>
+  1668→            <div className="flex items-start gap-2">
+  1669→              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+  1670→              <span className="text-muted-foreground leading-tight text-xs">
+  1671→                {doctor.address}, {doctor.city}
+  1672→              </span>
+  1673→            </div>
+  1674→            <div className="flex items-start gap-2">
+  1675→              <Navigation className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+  1676→              <span className="text-muted-foreground text-xs">{doctor.distance} km away</span>
+  1677→            </div>
+  1678→            <div className="flex items-start gap-2">
+  1679→              <Languages className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+  1680→              <span className="text-muted-foreground text-xs">{doctor.languages.join(', ')}</span>
+  1681→            </div>
+  1682→          </div>
+  1683→
+  1684→          <Separator className="my-3" />
+  1685→
+  1686→          {/* Bottom: fee + slot + actions */}
+  1687→          <div className="flex items-center justify-between gap-2 mb-3">
+  1688→            <div>
+  1689→              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Consultation Fee</p>
+  1690→              <p className="text-lg font-bold text-teal-700 dark:text-teal-300">₹{doctor.fee}</p>
+  1691→            </div>
+  1692→            <div className="text-right">
+  1693→              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Next Available</p>
+  1694→              <p className="text-sm font-semibold flex items-center gap-1 justify-end">
+  1695→                <Clock className="h-3.5 w-3.5 text-emerald-600" />
+  1696→                {doctor.nextSlotDay}, {doctor.nextSlotTime}
+  1697→              </p>
+  1698→            </div>
+  1699→          </div>
+  1700→
+  1701→          {/* Badges row */}
+  1702→          <div className="flex flex-wrap gap-1.5 mb-3">
+  1703→            {doctor.openNow === true && (
+  1704→              <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+  1705→                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Open Now
+  1706→              </Badge>
+  1707→            )}
+  1708→            {doctor.openNow === false && (
+  1709→              <Badge variant="secondary" className="text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300">
+  1710→                <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Closed
+  1711→              </Badge>
+  1712→            )}
+  1713→            {doctor.availableToday && (
+  1714→              <Badge variant="secondary" className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
+  1715→                <CalendarIcon className="h-3 w-3" /> Available Today
+  1716→              </Badge>
+  1717→            )}
+  1718→            {doctor.videoConsult && (
+  1719→              <Badge variant="secondary" className="text-[10px] bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300">
+  1720→                <Video className="h-3 w-3" /> Video Consult
+  1721→              </Badge>
+  1722→            )}
+  1723→            {doctor.onlineNow && (
+  1724→              <Badge variant="secondary" className="text-[10px] bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300">
+  1725→                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Online Now
+  1726→              </Badge>
+  1727→            )}
+  1728→          </div>
+  1729→
+  1730→          {/* Action buttons */}
+  1731→          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+  1732→            <Button
+  1733→              onClick={onBook}
+  1734→              size="sm"
+  1735→              className="bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-700 hover:to-cyan-700"
+  1736→            >
+  1737→              <CalendarIcon className="h-3.5 w-3.5" />
+  1738→              Book
+  1739→            </Button>
+  1740→            <Button
+  1741→              size="sm"
+  1742→              variant="secondary"
+  1743→              disabled={!doctor.videoConsult}
+  1744→              className={!doctor.videoConsult ? 'opacity-40' : ''}
+  1745→            >
+  1746→              <Video className="h-3.5 w-3.5" />
+  1747→              Video
+  1748→            </Button>
+  1749→            {doctor.phone ? (
+  1750→              <Button size="sm" variant="outline" asChild>
+  1751→                <a href={`tel:${doctor.phone}`}>
+  1752→                  <Phone className="h-3.5 w-3.5" />
+  1753→                  Call
+  1754→                </a>
+  1755→              </Button>
+  1756→            ) : (
+  1757→              <Button size="sm" variant="outline" disabled className="opacity-40">
+  1758→                <Phone className="h-3.5 w-3.5" />
+  1759→                Call
+  1760→              </Button>
+  1761→            )}
+  1762→            {doctor.mapsUrl && (
+  1763→              <Button size="sm" variant="outline" asChild>
+  1764→                <a href={doctor.mapsUrl} target="_blank" rel="noopener noreferrer">
+  1765→                  <Navigation className="h-3.5 w-3.5" />
+  1766→                  Directions
+  1767→                </a>
+  1768→              </Button>
+  1769→            )}
+  1770→          </div>
+  1771→
+  1772→          {/* Google Maps link footer */}
+  1773→          {doctor.mapsUrl && (
+  1774→            <a
+  1775→              href={doctor.mapsUrl}
+  1776→              target="_blank"
+  1777→              rel="noopener noreferrer"
+  1778→              className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+  1779→            >
+  1780→              <Globe className="h-3 w-3" />
+  1781→              View on Google Maps
+  1782→              <ExternalLink className="h-2.5 w-2.5" />
+  1783→            </a>
+  1784→          )}
+  1785→        </CardContent>
+  1786→      </Card>
+  1787→    </motion.div>
+  1788→  )
+  1789→}
+  1790→

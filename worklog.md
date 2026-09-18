@@ -1008,3 +1008,257 @@ Stage Summary:
   4. Optional: generate a proper maskable icon (current maskable = plain mark on light bg).
   5. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
      double-fork; SW cache is now nuvia-v5 (bump on future asset changes if ever needed).
+
+---
+Task ID: 14-d
+Agent: frontend-styling-expert
+Task: Warm glassmorphism polish of auth-screen.tsx per user reference
+
+Work Log:
+- Read worklog Tasks 12-13 for context (shell layout fix, Nuvia rebrand with animated brand kit)
+  + globals.css theme foundation (.glass/.glass-premium, glow-*, animate-drift-slow/float,
+  blush/peach/lilac tokens, --radius 1rem, reduced-motion registry).
+- EDITED ONLY src/components/auth/auth-screen.tsx (globals.css + all other modules untouched):
+  1. Warm canvas: replaced the saturated bg-animated-gradient + white veil with a cream canvas
+     (oklch cream->blush->peach linear gradient, dark: plum equivalents) + a 3-stop radial wash
+     layer (rose top-left, peach top-right, lilac bottom, dark: variants). Both layers live in
+     the existing fixed inset-0 overflow-hidden pointer-events-none aria-hidden container, so no
+     horizontal overflow is possible.
+  2. Glass spheres: removed the 3 framer-motion blur orbs and replaced with 3 organic CSS
+     "glass sphere" blobs (rounded-full, white->rose / white->amber->rose / white->lilac->rose
+     gradients, hairline white border, inset specular highlight span, backdrop-blur-[2px],
+     soft oklch drop shadows) animated via .animate-drift-slow (negative static animationDelay
+     for phase offset) and .animate-float; pointer-events-none + aria-hidden; third (smallest,
+     near seam) hidden md:block; corner spheres dimmed on mobile (opacity-75/80 -> 90 sm+).
+     Hydration-safe: static markup, CSS-only animation, both classes already registered in the
+     prefers-reduced-motion block.
+  3. Login/signup form card: card-premium -> .glass-premium rounded-3xl (frosted translucent
+     panel per reference); divider "or" chip -> .glass rounded-full pill; Google fallback button
+     rounded-xl -> rounded-full with frosted bg-white/60 dark:bg-white/[0.06]; secure sign-in
+     notice restyled to translucent glass rounded-2xl.
+  4. Pill inputs: name/email/password inputs -> h-11 rounded-full bg-white/55 dark:bg-white/[0.07]
+     with circular leading icon chips (h-8 w-8 rounded-full bg-white/70 dark:bg-white/10 border
+     white/80, rose icon) absolutely positioned left-1.5, pointer-events-none; icons now
+     UserIcon / Mail / KeyRound (Lock import swapped for KeyRound, all else same). ids, values,
+     onChange, onKeyDown Enter handlers, validation, errors 100% unchanged.
+  5. Password row: eye toggle + NEW "I forgot" pill grouped in one right-anchored flex
+     (absolute right-1.5); pill = h-7 rounded-full bg-white/75 dark:bg-white/10 border, keeps the
+     exact same toast.info('Password reset link would be sent to your email.') handler; input got
+     pl-11 pr-28 to clear both controls. Old "Forgot?" text link removed from the label row
+     (label row simplified to just the Label).
+  6. Primary sign-in button: btn-premium kept, rounded-xl -> rounded-full + glow-rose; loading/
+     disabled states untouched.
+  7. Dark contrast promo card added under the left-column feature grid: rounded-3xl
+     bg-foreground text-background (charcoal in light mode, auto-inverts to white card with dark
+     text in dark mode), decorative rose/amber blur blobs inside, "NEW IN NUVIA" eyebrow + serif
+     "AI Health Coach is live - gentle 24/7 guidance tuned to your cycle." + "Discover ->" pill
+     button wired to the EXISTING switchMode('signup') handler (no new state).
+  8. Brand lockup untouched: BrandMark/BrandWordmark/BrandTagline markup, sizes and animation
+     props identical in the left brand chip and the mobile header.
+- Verification (code-level only; dev server was reaped HTTP 000 and per instructions was NOT
+  restarted, no lint/build run, no agent-browser):
+  - npx tsc --noEmit: ZERO errors referencing auth-screen.tsx (remaining output is pre-existing
+    noise from other paths/files already present before this task).
+  - Full re-read of the edited file: JSX balanced, no unused imports (Lock removed, KeyRound +
+    existing icons used), all handlers/ids preserved.
+  - Runtime visual check pending server restart by coordinator (see Stage Summary).
+
+Stage Summary:
+- Auth screen now matches the premium soft reference: warm cream/blush canvas with drifting
+  3D glass spheres, frosted glass-premium rounded-3xl form card, pill inputs with circular
+  leading icon chips, nested "I forgot" pill inside the password field, rounded-full glowing
+  sign-in button, glass "or" divider, and ONE dark contrast promo card ("New in Nuvia /
+  AI Health Coach is live / Discover ->") that flips the form to signup via existing state.
+- Verify after server restart: (a) light+dark rendering of the dark promo card (should invert
+  to white-on-dark-mode); (b) password field right cluster fit at 320-390px (pr-28 clearance);
+  (c) signup mode hides "I forgot" pill and shows name field with user icon chip; (d) no
+  horizontal scroll on mobile (spheres live in fixed overflow-hidden layer); (e) Google modal
+  + email signup/login + forgot toast still work (logic untouched); (f) left column height on
+  short laptops - promo card may push trust footer below fold, page scrolls naturally.
+- DB state changes: none. No API/dependency changes. Only file touched:
+  src/components/auth/auth-screen.tsx (+ this worklog entry).
+---
+Task ID: 14-b
+Agent: frontend-styling-expert
+Task: Redesign dashboard.tsx + period-tracker.tsx per user reference screenshots (blush/petal theme)
+
+Work Log:
+- Read worklog (Tasks 12-13) + new globals.css token foundation; studied both target modules
+  end-to-end before editing (dashboard 1520 L, tracker 1787 L). Edited ONLY these 2 files.
+- SHARED CYCLE PALETTE (both pages, identical values so they read as one system):
+  Menstrual oklch(0.62 0.22 355) rose · Follicular oklch(0.62 0.19 305) violet ·
+  Ovulation oklch(0.72 0.15 55) peach · Luteal oklch(0.68 0.12 200) teal.
+- DASHBOARD:
+  1. Hero cycle-summary card glass -> .card-blush, p-6 sm:p-8 (REF-A pillowy panel).
+  2. CycleProgressRing: phase segments now SOLID full-opacity colors (were 0.3-alpha washed),
+     rounded caps kept, dashedasharray/offset math byte-identical; track softened to rose tint;
+     added un-rotated SVG overlay "today" marker dot (white fill + phase-color stroke,
+     animate-pulse-soft which is already reduced-motion-safe) positioned clockwise-from-top.
+  3. Ring center restyled REF-A: small-caps "Day" caption, big Playfair serif number
+     (text-foreground), "of N days" caption, pill-shaped phase badge (color-mix tinted bg +
+     phase-color text — accessible on both light/dark instead of white-on-amber).
+  4. Stat tiles: glass Cards -> plain tinted rounded-2xl divs using token utilities:
+     Cycle Day=bg-medical-soft/teal, Days Until Period=bg-blush/rose, Fertility=bg-lilac/violet,
+     Next Ovulation=bg-peach-soft/amber; rounded-2xl white-on-tint icon chips, no plain white
+     borders; AnimatedNumber/values/subtitles untouched.
+  5. Legend chips -> .chip-soft pills with colored dot markers (name + day range).
+  6. NEW quick-action row (grid-cols-1 sm:grid-cols-2): "Log your symptoms" dashed
+     rounded-3xl card with dashed-circle Plus icon (rotates+lifts on hover, onClick
+     setActiveModule('symptoms'), min-h-24, aria-label) + "Fertile Days" .card-peach card with
+     Flower2 icon chip, window date range + "N days left" from a new presentation-only
+     fertileWindow useMemo (derives window = cycle days [L-18, L-12] — same math the tracker
+     calendar uses — from existing cycleInfo; rolls to next cycle if passed; no new data source).
+  7. Hero mini stat boxes -> bg-blush / bg-peach-soft; itemVariants easing refined to
+     cubic-bezier(0.22,1,0.36,1).
+- PERIOD TRACKER:
+  1. PHASES palette -> same 4 crisp colors (+ alpha-tinted bgColor / light tints in oklch).
+  2. CycleWheel Pie: cornerRadius 4->8, paddingAngle 2->3 (crisper separated arcs), inactive
+     cell opacity 0.5->0.55; tooltip bg-card/border-border (dark-safe); center number -> serif
+     text-foreground; phase badge pill slightly larger + shadow.
+  3. Wheel legend chips -> .chip-soft pills with colored dots (phase icon removed, dot added).
+  4. Tab bar -> pill segmented control: TabsList bg-secondary rounded-full p-1 h-auto, triggers
+     rounded-full min-h-11 (44px touch), active = rose-500->pink-500 gradient + white text +
+     rose glow shadow (dark: overrides added so white text/bg survive the dark variants).
+  5. Calendar cells: rounded-lg->rounded-xl, transition duration-200, today ring = ring-rose-500
+     ring-offset-background, period = rose-500/15 fill, ovulation = amber-400/20 (peach),
+     fertile window = VIOLET-400/15 (was orange), predicted = dashed rose border + rose-400/5;
+     legend swatches -> chip-soft pills matching new palette.
+  6. Hero ring panel -> .card-blush; the 6 other cards bg-white/60 backdrop -> .glass;
+     predictions "Next Period In" panel + 3 mini stat boxes -> blush/peach-soft/medical-soft
+     tints with dark: text variants; EmptyStateHero icon tile -> bg-blush.
+- VERIFICATION: local `tsc --noEmit` — the only diagnostics in these 2 files are PRE-EXISTING
+  ones also present in git HEAD (dashboard mk() generics @449-461, setActiveModule('ai-coach')
+  @1045; repo-wide pre-existing errors elsewhere; next.config has ignoreBuildErrors:true for
+  those). No new type errors introduced; period-tracker.tsx is fully clean. Lint/build/dev-server
+  deliberately NOT run per task instructions (coordinator verifies centrally).
+
+Stage Summary:
+- Both cycle pages now share one crisp REF-A segment palette and the blush/petal card language:
+  card-blush hero panels, tinted stat cards (blush/peach/lilac/medical-soft), chip-soft legend
+  pills, segmented pill tab bar, violet fertile window in calendar, dashed quick-log card +
+  peach Fertile Days card with real window range/days-left.
+- Logic untouched: all cycle math, API hooks, dialogs, tabs, ICS export, logging flows are
+  byte-identical except presentation classes/JSX props; only additions = quick-action row +
+  fertileWindow derived memo (uses existing cycleInfo only). Hydration-safe (no random/dates in
+  SSR output; dashboard is mounted-gated; new animation is CSS-only + reduced-motion covered).
+- TO VERIFY (coordinator): light+dark rendering of the new tinted tiles & segmented tabs
+  (dark: data-[state=active] overrides), the today-marker dot alignment on the dashboard ring at
+  various cycleDay values, mobile 390px (stat tiles 2-col grid, quick-action stack, 44px tabs),
+  and that the Fertile Days card shows sane ranges for mid/late-cycle days.
+---
+Task ID: 14-c
+Agent: frontend-styling-expert
+Task: Redesign doctor-finder.tsx per teal medical reference screenshot
+
+Work Log:
+- Read worklog Tasks 12-13 for context (shell layout fix, Nuvia rebrand) + read the new theme
+  foundation in globals.css (medical/medical-soft/medical-foreground tokens incl. dark variants,
+  .card-medical, .chip-soft, .glass, --radius:1rem). Did NOT touch globals.css.
+- Redesigned ONLY src/components/modules/doctor-finder.tsx (style + JSX structure; zero changes to
+  state, handlers, fetch/search/booking logic, API calls, store usage):
+  1. HEADER -> TEAL HERO BAND: rounded-3xl deep-teal gradient panel
+     bg-[linear-gradient(135deg,oklch(0.45_0.09_205),oklch(0.55_0.11_205))] with dark: variant
+     (oklch 0.30->0.42 hue 205); frosted glass stethoscope circle (white/10 + border-white/25 +
+     backdrop-blur), "Find Your Doctor" in white, subtitle; right side 3 frosted glass stat chips
+     (circular icon + bold value + uppercase label) derived from existing module constants:
+     SPECIALTIES.length=9 "Specialities", SPECIALTY_GUIDE.length=6 "Care guides", static
+     "Trusted / Specialists" (new module-level HERO_STATS const, hydration-safe).
+     Decorative chat/call/video frosted orbs (aria-hidden, sm+ only) as a nod to the reference.
+  2. EMERGENCY NOTICE moved INSIDE the hero as a frosted white/10 rounded-2xl pill row (rose-200
+     siren, white text). Safety copy byte-identical: "For medical emergencies..." + "India: 108 /
+     112 · US: 911 · UK: 999 · EU: 112".
+  3. SEARCH PANEL -> .card-medical Card: location Input now h-12 rounded-full with
+     border-medical/30 + focus ring medical; "Use my location" is a teal pill link-button
+     (bg-medical-soft text-medical -> hover solid bg-medical). Autocomplete dropdown restyled
+     (rounded-2xl border-medical/25, medical-soft header row). Search CTA = solid
+     bg-medical text-medical-foreground rounded-full h-12 shadow-medical/30.
+  4. HEALTH-CONCERN TILES -> pill chips: unselected = bg-medical-soft + text-foreground (icon in
+     white circle, text-medical); selected = solid bg-medical text-medical-foreground + glow
+     shadow-medical/30 + white/20 icon disc + CheckCircle2. aria-pressed added. Severity pills
+     follow the same language (selected solid medical; colored severity dots kept).
+  5. DOCTOR CARDS -> REF-style hero cards: rounded-3xl white (bg-card) card w/ teal hover ring +
+     lift; avatar block = rounded-2xl teal gradient (teal-500->cyan-700, dark variant) with white
+     SERIF initials; name bold; specialty badge (meta colors, rounded-full); rating = amber star +
+     number in soft amber pill (aria-label); gender in medical-soft pill. Stats row of 3
+     icon-chips (bg-medical-soft/70, circular white icon disc): experience ("Yrs Experience" =
+     doctor.experience), reviews (doctor.reviews), distance (doctor.distance "Km Away") — mapped
+     strictly to existing fields, nothing invented; "Patients" chip skipped (field doesn't exist).
+     Clinic/address/languages kept; next-slot as solid medical chip; availability badges rounded-full.
+     Actions: "Book · ₹{fee}" solid bg-medical rounded-full (fee folded into CTA per reference);
+     Video/Call/Directions = ghost-outline rounded-full with dark: border/hover overrides; ALL
+     original handlers/conditionals preserved (onBook->openBooking, tel: link, mapsUrl link,
+     videoConsult disable). "View on Google Maps" footer kept (hover:text-medical).
+  6. BOOKING DIALOG: summary box medical-soft rounded-2xl; date container medical border;
+     time slots = rounded-full min-h-10 pills (selected = solid medical + glow, booked =
+     line-through muted, disabled logic + bookedSlots de-dupe untouched); Confirm/Done buttons =
+     solid medical rounded-full; Cancel outline rounded-full; labels' icons text-medical.
+  7. STATES: loading skeletons = card-medical rounded-3xl with medical-soft rounded-full/2xl
+     shimmer blocks + 3-chip row; pre-search + no-results empty states = dashed
+     border-medical/40 bg-medical-soft with solid-medical icon discs (clear-filters button
+     restyled, same reset handler); demo-directory notice kept amber + dismiss behavior/state
+     (rounded-2xl, pill badge, 36px round dismiss button); telehealth quick-connect on card-medical
+     with solid medical CTA (no new handler, as before); filter bar on card-medical, FilterToggle =
+     pill (active solid medical, inactive medical-soft/60), sort/fee Selects rounded-full; guide
+     cards card-medical + rounded-full icon bubbles; red-flag card kept rose (safety semantics).
+- Removed now-unused StarRating sub-component (rating shown via amber badge). Avatar/AvatarFallback,
+  getAvatarGradient still used (telehealth/dialog). Added MessageCircle lucide import (hero orb).
+- Accessibility: aria-pressed on toggles/chips, aria-hidden on decorative orbs/blooms, aria-label
+  on rating pill + icon-only buttons; touch targets >=44px on primary chips/CTAs/slots (min-h-11/
+  min-h-10/h-12), icon-only buttons 32-36px w/ labels (borderline sizes noted for QA).
+- Verified with TypeScript parser (parse OK, 0 syntax errors, 1836 lines). No lint/build run,
+  no dev-server restart, no agent-browser (per task constraints).
+
+Stage Summary:
+- Doctor Finder now matches the teal medical reference: hero band w/ frosted stat chips + embedded
+  emergency pill, medical search card w/ round input + pill link, pill-chip concern/severity/filters,
+  REF-style doctor hero cards (teal gradient serif-initial avatar, amber rating pill, 3 stat chips,
+  solid-teal Book CTA w/ fee), pill time slots, medical skeletons/empty states — light + dark via
+  token utilities (bg-medical flips to lighter teal w/ dark foreground in dark mode automatically).
+- To verify: /find-doctor in light + dark at 390px and desktop — hero wrap, chip selection glow,
+  doctor card stats/actions row, booking dialog time pills, demo notice dismiss, geolocation pill,
+  search -> simulated results flow; confirm dark-mode chip contrast (medical-foreground on
+  bg-medical) reads well.
+- Risk areas: (1) text-medical-foreground contrast on light unselected chips intentionally NOT used
+  (near-white on pale mint = unreadable) — used text-foreground instead per a11y; (2) h-4.5/fractional
+  utilities + shadow-medical/xx rely on Tailwind-4 dynamic spacing/color-mix (v4 supports both);
+  (3) twMerge resolves Button bg-primary->bg-medical overrides (className passed last) — spot-check
+  one solid button in browser; (4) demo notice + red-flag cards intentionally stayed amber/rose for
+  safety semantics. No data/logic/API/store changes; DB untouched; no new packages.
+
+---
+Task ID: 14
+Agent: Z.ai Code (coordinator)
+Task: USER REQUEST — "iske ui/ux better aur smooth kro aur theme ko redesign kro. maine kuch referances diye h... thoda alag alag page ke ui/ux ko update and theme ko redesign" → Full theme redesign ("Blush Petal") based on 4 reference screenshots: soft-pink period tracker (cycle ring + legend chips + quick actions), peach watercolor tracker, teal medical appointment UI, warm-cream glassmorphism login.
+
+Work Log:
+- BASELINE: captured before-screenshots of dashboard/tracker/doctor via agent-browser; logged in QA user (created aisha.qc@nuvia.app, onboardingCompleted+lastPeriodStart set via scripts, cycle seeded for sandbox date 2026-09-18 → Day 9 Follicular).
+- 14-a (coordinator): globals.css theme redesign —
+  - Light "Blush Petal": warm rose-cream bg (oklch 0.978 0.014 350), hot-rose primary (0.62 0.22 355), rose-tinted borders/surfaces, radius 0.75rem→1rem (pillowy shadcn corners).
+  - Dark "Moonlit Rose": warm dark plum (hue 345-350) replacing cold neutral; all surfaces tinted.
+  - NEW tokens + Tailwind-4 utilities: --medical/-soft (teal 205, dark variants), --peach/-soft, --blush, --lilac (mapped in @theme inline → bg-medical, bg-peach-soft, etc.).
+  - NEW surface utilities: .card-blush / .card-peach / .card-medical (tinted gradient cards w/ soft colored shadows, light+dark) and .chip-soft (pill chip).
+  - Body mesh: rose halo TL + peach TR + lilac bottom (dark equivalents).
+  - Chart palette updated (rose/amber/violet/teal).
+- 14-b (subagent): dashboard.tsx + period-tracker.tsx — unified crisp ring segment palette (Menstrual rose / Follicular violet / Ovulation peach / Luteal teal), today-marker dot, card-blush hero w/ serif day numeral + phase pill, 4 tinted stat tiles (medical-soft/blush/lilac/peach-soft), chip-soft legends, NEW quick-action row ("Log your symptoms" dashed card → symptoms module; "Fertile Days" card-peach w/ window range + days-left from existing cycleInfo), tracker segmented pill tabs (rose gradient active), tinted calendar cells (period rose / fertile violet / ovulation amber / predicted dashed, today ring).
+- 14-c (subagent): doctor-finder.tsx — deep-teal hero band (frosted stethoscope disc, stat chips "9 Specialities / 6 Care guides / Trusted Specialists", frosted emergency pill row w/ unchanged safety copy), card-medical search panel (rounded-full input + teal location pill), pill category chips (selected = solid bg-medical), REF-3 doctor cards (teal initials avatar block, rating pill, 3-chip stats Experience/Reviews/Distance, Book · ₹fee teal CTA + ghost video/call/directions), medical booking dialog time-slot pills, teal skeletons/empty states. All handlers byte-preserved.
+- 14-d (subagent): auth-screen.tsx — warm cream/blush canvas w/ radial washes, 3 CSS-only glass spheres (drift/float, reduced-motion-safe, aria-hidden), glass-premium rounded-3xl form card, rounded-full pill inputs w/ circular leading icon chips (User/Mail/KeyRound), "I forgot" pill nested in password field, rounded-full glow-rose CTA, NEW dark contrast promo card ("New in Nuvia" → existing switchMode('signup')). Brand lockup untouched.
+- BUG FOUND+FIXED (coordinator): phase chips rendered CYAN in tracker despite computed style = pink — headless-Chromium mis-renders alpha-composited lab()/oklch colors when element also has opacity-70. Fix: .chip-soft now uses SOLID opaque colors (#fce4ee bg / #f6bcd2 border, dark variant oklch solid). Verified pixels rgb(252,231,240) after fix.
+- OOM ROOT CAUSE (ops): dev server deaths are kernel OOM kills (next-server RSS → 1.8GB on 4GB box; dmesg confirms). Mitigation: restart with NODE_OPTIONS="--max-old-space-size=1536" (V8 heap cap); created scripts/dev-watchdog.sh (optional helper; sandbox reaps it sometimes — manual restart remains reliable).
+- E2E VERIFIED (agent-browser, fresh compile + SW cache cleared + re-registered clean):
+  - Auth: light cream-glass + spheres + pill inputs + dark promo card ✓; dark "Moonlit Rose" w/ inverted promo ✓.
+  - Dashboard: light+dark desktop — blush hero, crisp ring w/ today marker, tinted tiles, legend chips, quick-action row ✓; mobile 390×844 — no h-overflow (sw=cw=390), tiles stack, chips wrap, bottom-nav intact ✓.
+  - Tracker: light+dark — segmented tabs, chip legends (post-fix), calendar tinted cells + today ring + droplet markers, predictions/history panels ✓.
+  - Doctor: light desktop + dark + mobile — teal hero + stat chips + emergency pill; search "Mumbai" → 12 demo results, filters row, redesigned cards w/ stat chips + Book CTA ✓.
+  - Console: warnings only (chart 0-size on hidden tabs — pre-existing; LCP info on mark — priority already set). dev.log clean.
+- Lint: 0 errors 0 warnings (also removed a stale eslint-disable the redesign left).
+- CLEANUP: aisha.qc@nuvia.app cascade-deleted (scripts/del-qa.ts one-off, removed; scripts/check-users.ts + cleanup-qa.ts kept) → 7-user baseline. Browser logged out, SW caches cleared during verify.
+- OPS: recurring 15-min webDevReview cron re-created (job 395443, fixed_rate 900s, Asia/Calcutta) — previous session's cron did not persist.
+
+Stage Summary:
+- ✅ Shipped & browser-verified: complete "Blush Petal" theme redesign across auth, dashboard, period tracker, doctor finder (light+dark, desktop+mobile), with new token system (medical/peach/blush/lilac), 4 new surface utilities, and reference-matched components (cycle ring system, teal medical hero/cards, glassmorphism login). All data logic byte-preserved.
+- DB state: schema untouched; QA user removed; 7-user baseline.
+- Remaining backlog / next-round ideas:
+  1. Sweep remaining modules onto new tokens (hormone-iq, symptoms, fertility, pregnancy, pcos, mental-wellness, diet, fitness, skin, marketplace, community, premium, settings still on old rose-600 classes — they inherit new radius/bg automatically but could get card-blush/tile treatments).
+  2. Mobile bottom-nav: consider center "AI Coach" floating button styling per REF-B (partially there).
+  3. i18n depth (tracker/coach interiors), analytics audit table, timezone quiet hours (carried from Task 12).
+  4. Knwon ops: OOM reaping — use NODE_OPTIONS cap on every restart; agent-browser eats RAM too, close extra tabs between rounds.
