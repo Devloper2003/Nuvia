@@ -287,6 +287,37 @@ export default function SettingsModule() {
     })
   }
 
+  const [seedingDemo, setSeedingDemo] = useState(false)
+  const handleSeedDemoData = async () => {
+    if (!userProfile?.id) {
+      toast.error('Please sign in first')
+      return
+    }
+    setSeedingDemo(true)
+    try {
+      const res = await fetch('/api/seed-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: userProfile.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Seeding failed')
+      if (data.seeded) {
+        toast.success('Demo history created! 🌸', {
+          description: `${data.summary.cycles} past cycles, ${data.summary.symptoms} symptoms, ${data.summary.moods} mood & ${data.summary.sleeps} sleep entries added. Refresh dashboards to see rich charts.`,
+        })
+      } else {
+        toast.info('You already have enough cycle history', {
+          description: 'Demo data is only added for newer accounts with fewer than 3 cycles.',
+        })
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not seed demo data')
+    } finally {
+      setSeedingDemo(false)
+    }
+  }
+
   const handleDeleteAccount = () => {
     setDeleteDialogOpen(false)
     toast.error('Account scheduled for deletion', {
@@ -572,6 +603,21 @@ export default function SettingsModule() {
         delay={0.25}
       >
         <div className="space-y-2">
+          <button
+            onClick={handleSeedDemoData}
+            disabled={seedingDemo}
+            className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left disabled:opacity-60"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 shrink-0">
+              <Sparkles className="h-4 w-4" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium">{seedingDemo ? 'Creating demo history…' : 'Load Demo History'}</div>
+              <div className="text-xs text-muted-foreground">Fill your dashboard & charts with 6 months of sample cycle data</div>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+
           <button
             onClick={handleExportData}
             className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left"

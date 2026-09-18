@@ -78,6 +78,13 @@ export async function POST(request: NextRequest) {
         user: {
           select: { id: true, name: true, avatar: true },
         },
+        comments: {
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true },
+            },
+          },
+        },
       },
     });
 
@@ -86,6 +93,50 @@ export async function POST(request: NextRequest) {
     console.error('Error creating community post:', error);
     return NextResponse.json(
       { error: 'Failed to create community post' },
+      { status: 500 }
+    );
+  }
+}
+
+// ─── PATCH: like / unlike a post (persists the like count) ──────────────────
+// Body: { postId: string, action: 'like' | 'unlike' }
+export async function PATCH(request: NextRequest) {
+  try {
+    const { postId, action } = await request.json();
+
+    if (!postId || !['like', 'unlike'].includes(action)) {
+      return NextResponse.json(
+        { error: 'postId and action (like|unlike) are required' },
+        { status: 400 }
+      );
+    }
+
+    const existing = await db.communityPost.findUnique({ where: { id: postId } });
+    if (!existing) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    const nextLikes =
+      action === 'like'
+        ? existing.likes + 1
+        : Math.max(0, existing.likes - 1);
+
+    const post = await db.communityPost.update({
+      where: { id: postId },
+      data: { likes: nextLikes },
+      include: {
+        user: { select: { id: true, name: true, avatar: true } },
+        comments: {
+          include: { user: { select: { id: true, name: true, avatar: true } } },
+        },
+      },
+    });
+
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error('Error liking post:', error);
+    return NextResponse.json(
+      { error: 'Failed to update like' },
       { status: 500 }
     );
   }

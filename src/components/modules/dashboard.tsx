@@ -7,6 +7,15 @@ import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { useAppStore } from '@/lib/store'
 import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from 'recharts'
+import {
   Droplets,
   CalendarDays,
   Sparkles,
@@ -121,6 +130,15 @@ export default function DashboardModule() {
 
   const [cycles, setCycles] = useState<CycleEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [weeklySymptoms, setWeeklySymptoms] = useState<
+    Array<{ day: string; count: number; label: string }>
+  >([])
+  const [recentActivity, setRecentActivity] = useState<
+    Array<{ id: string; label: string; detail: string; dateLabel: string; kind: string }>
+  >([])
+  const [reminders, setReminders] = useState<
+    Array<{ id: string; doctorName: string; specialty: string; date: string; time: string; type: string }>
+  >([])
 
   useEffect(() => {
     if (!userProfile?.id) {
@@ -141,6 +159,131 @@ export default function DashboardModule() {
       .catch(() => {
         if (!cancelled) setLoading(false)
       })
+    return () => {
+      cancelled = true
+    }
+  }, [userProfile?.id])
+
+  // ─── Weekly symptoms + recent activity (real data) ─────────────────────────
+  useEffect(() => {
+    if (!userProfile?.id) return
+    let cancelled = false
+
+    const daysAgoIso = (n: number) => {
+      const d = new Date()
+      d.setDate(d.getDate() - n)
+      return d.toISOString().split('T')[0]
+    }
+    const last7 = Array.from({ length: 7 }, (_, i) => daysAgoIso(6 - i))
+
+    const loadWellness = async () => {
+      try {
+        const [symRes, moodRes, sleepRes, waterRes] = await Promise.all([
+          fetch(`/api/symptoms?userId=${encodeURIComponent(userProfile.id)}`),
+          fetch(`/api/mood?userId=${encodeURIComponent(userProfile.id)}`),
+          fetch(`/api/sleep?userId=${encodeURIComponent(userProfile.id)}`),
+          fetch(`/api/water?userId=${encodeURIComponent(userProfile.id)}`),
+        ])
+        if (cancelled) return
+        const symptoms = symRes.ok ? await symRes.json() : []
+        const moods = moodRes.ok ? await moodRes.json() : []
+        const sleeps = sleepRes.ok ? await sleepRes.json() : []
+        const waters = waterRes.ok ? await waterRes.json() : []
+
+        // Upcoming appointments → reminders
+        try {
+          const apptRes = await fetch(`/api/appointments?userId=${encodeURIComponent(userProfile.id)}`)
+          if (!cancelled && apptRes.ok) {
+            const appts = await apptRes.json()
+            const todayIso = new Date().toISOString().split('T')[0]
+            setReminders(
+              (Array.isArray(appts) ? appts : [])
+                .filter((a: { date: string; status?: string }) => a.date >= todayIso && a.status !== 'cancelled')
+                .slice(0, 3)
+                .map((a: { id: string; doctorName: string; specialty: string; date: string; time: string; type: string }) => ({
+                  id: a.id,
+                  doctorName: a.doctorName,
+                  specialty: a.specialty,
+                  date: a.date,
+                  time: a.time,
+                  type: a.type,
+                }))
+            )
+          }
+        } catch {
+          // reminders are best-effort
+        }
+
+        // Weekly symptoms bar chart (last 7 days)
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+        setWeeklySymptoms(
+          last7.map((date) => {
+            const d = new Date(date + 'T00:00:00')
+            return {
+              day: dayNames[d.getDay()],
+              label: date,
+              count: (Array.isArray(symptoms) ? symptoms : []).filter(
+                (s: { date: string }) => s.date === date
+              ).length,
+            }
+          })
+        )
+
+        // Recent activity feed — merge latest logs, newest first
+        type Entry = { date: string; createdAt?: string }
+        const mk = <T extends Entry>(
+          arr: T[] | undefined,
+          kind: string,
+          fn: (item: T) => { label: string; detail: string }
+        ) =>
+          (Array.isArray(arr) ? arr : []).slice(0, 5).map((item) => ({
+            id: `${kind}-${item.date}-${Math.random().toString(36).slice(2, 7)}`,
+            kind,
+            dateLabel: item.date,
+            ...fn(item),
+          }))
+
+        const merged = [
+          ...mk(symptoms, 'symptom', (s: { category: string; severity?: number }) => ({
+            label: s.category || 'Symptom',
+            detail: s.severity ? `Severity ${s.severity}/5` : 'Logged',
+          })),
+          ...mk(moods, 'mood', (m: { mood: string; energy?: number }) => ({
+            label: m.mood || 'Mood logged',
+            detail: m.energy ? `Energy ${m.energy}/5` : 'Daily check-in',
+          })),
+          ...mk(sleeps, 'sleep', (s: { hoursSlept: number; quality?: number }) => ({
+            label: `${s.hoursSlept}h sleep`,
+            detail: s.quality ? `Quality ${s.quality}/5` : 'Logged',
+          })),
+          ...mk(waters, 'water', (w: { glasses: number }) => ({
+            label: `${w.glasses} glasses of water`,
+            detail: 'Hydration logged',
+          })),
+        ]
+          .sort((a, b) => (a.dateLabel < b.dateLabel ? 1 : -1))
+          .slice(0, 6)
+          .map((item) => {
+            const todayIso = new Date().toISOString().split('T')[0]
+            const yesterdayIso = new Date(Date.now() - 86_400_000).toISOString().split('T')[0]
+            return {
+              ...item,
+              dateLabel:
+                item.dateLabel === todayIso
+                  ? 'Today'
+                  : item.dateLabel === yesterdayIso
+                    ? 'Yesterday'
+                    : item.dateLabel,
+            }
+          })
+
+        setRecentActivity(merged)
+      } catch {
+        // best-effort — leave empty states visible
+      }
+    }
+
+    loadWellness()
     return () => {
       cancelled = true
     }
@@ -527,7 +670,7 @@ export default function DashboardModule() {
         </Card>
       </motion.div>
 
-      {/* ─── 7. Weekly Symptoms Chart — empty ───────────────────────────────── */}
+      {/* ─── 7. Weekly Symptoms Chart — real data ───────────────────────────── */}
       <motion.div variants={itemVariants}>
         <Card className="glass border-0 shadow-lg">
           <CardHeader className="pb-2">
@@ -535,16 +678,58 @@ export default function DashboardModule() {
               <HeartPulse className="h-5 w-5 text-pink-500" />
               <CardTitle className="text-base">Weekly Symptoms</CardTitle>
             </div>
-            <CardDescription>Track symptoms to see weekly patterns</CardDescription>
+            <CardDescription>Symptoms logged over the last 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <EmptyState
-              icon={HeartPulse}
-              title="No symptoms logged this week"
-              description="Tap a symptom in the Symptoms Tracker to start building your weekly pattern chart."
-              ctaLabel="Log a symptom"
-              onCta={() => setActiveModule('symptoms')}
-            />
+            {weeklySymptoms.every((d) => d.count === 0) ? (
+              <EmptyState
+                icon={HeartPulse}
+                title="No symptoms logged this week"
+                description="Tap a symptom in the Symptoms Tracker to start building your weekly pattern chart."
+                ctaLabel="Log a symptom"
+                onCta={() => setActiveModule('symptoms')}
+              />
+            ) : (
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklySymptoms} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      allowDecimals={false}
+                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`${value} logged`, 'Symptoms']}
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: '1px solid #fecdd3',
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar
+                      dataKey="count"
+                      radius={[6, 6, 0, 0]}
+                      fill="url(#symptomGradient)"
+                      maxBarSize={36}
+                    />
+                    <defs>
+                      <linearGradient id="symptomGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#ec4899" />
+                        <stop offset="100%" stopColor="#fb7185" />
+                      </linearGradient>
+                    </defs>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -559,18 +744,41 @@ export default function DashboardModule() {
             </div>
           </CardHeader>
           <CardContent>
-            <EmptyState
-              icon={Bell}
-              title="No reminders set"
-              description="You haven't set any reminders yet. Add reminders for medications, hydration, or checkups in Settings."
-              ctaLabel="Go to Settings"
-              onCta={() => setActiveModule('settings')}
-            />
+            {reminders.length === 0 ? (
+              <EmptyState
+                icon={Bell}
+                title="No reminders set"
+                description="You haven't set any reminders yet. Add reminders for medications, hydration, or checkups in Settings."
+                ctaLabel="Go to Settings"
+                onCta={() => setActiveModule('settings')}
+              />
+            ) : (
+              <div className="space-y-2">
+                {reminders.map((r) => (
+                  <div
+                    key={r.id}
+                    className="flex items-center gap-3 rounded-xl border bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2.5 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
+                      <Bell className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">Dr. {r.doctorName} — {r.specialty}</p>
+                      <p className="text-xs text-muted-foreground">{r.type} appointment</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">{r.date}</p>
+                      <p className="text-[10px] text-muted-foreground">{r.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* ─── 9. Recent Activity Feed — empty ────────────────────────────────── */}
+      {/* ─── 9. Recent Activity Feed — real data ────────────────────────────── */}
       <motion.div variants={itemVariants}>
         <Card className="glass border-0 shadow-lg">
           <CardHeader className="pb-2">
@@ -582,13 +790,51 @@ export default function DashboardModule() {
             </div>
           </CardHeader>
           <CardContent>
-            <EmptyState
-              icon={Plus}
-              title="No activity yet"
-              description="Your recent logs — periods, moods, symptoms, sleep, water — will show up here. Start tracking to see your timeline."
-              ctaLabel="Log your first entry"
-              onCta={() => setActiveModule('period')}
-            />
+            {recentActivity.length === 0 ? (
+              <EmptyState
+                icon={Plus}
+                title="No activity yet"
+                description="Your recent logs — periods, moods, symptoms, sleep, water — will show up here. Start tracking to see your timeline."
+                ctaLabel="Log your first entry"
+                onCta={() => setActiveModule('period')}
+              />
+            ) : (
+              <div className="space-y-2">
+                {recentActivity.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-xl border bg-white/60 dark:bg-white/5 px-3 py-2.5 hover:shadow-sm transition-shadow"
+                  >
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                        item.kind === 'symptom'
+                          ? 'bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400'
+                          : item.kind === 'mood'
+                            ? 'bg-violet-100 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400'
+                            : item.kind === 'sleep'
+                              ? 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
+                              : 'bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400'
+                      }`}
+                    >
+                      {item.kind === 'symptom' ? (
+                        <HeartPulse className="h-4 w-4" />
+                      ) : item.kind === 'mood' ? (
+                        <Sparkles className="h-4 w-4" />
+                      ) : item.kind === 'sleep' ? (
+                        <Moon className="h-4 w-4" />
+                      ) : (
+                        <GlassWater className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.detail}</p>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground shrink-0">{item.dateLabel}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

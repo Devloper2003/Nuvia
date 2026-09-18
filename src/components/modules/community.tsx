@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   Users,
   Heart,
@@ -29,6 +30,7 @@ import {
   ChevronRight,
   UserCircle,
   Hash,
+  Loader2,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -56,10 +58,19 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { useAppStore } from '@/lib/store'
 
 // ─── Types ────────────────────────────────────────────────────────
 
 type Category = 'General' | 'PCOS' | 'Fertility' | 'Pregnancy' | 'Menopause' | 'Mental Health'
+
+interface CommentItem {
+  id: string
+  content: string
+  author: string
+  timeAgo: string
+  isAnonymous: boolean
+}
 
 interface Post {
   id: string
@@ -71,6 +82,8 @@ interface Post {
   comments: number
   timeAgo: string
   liked: boolean
+  isAnonymous: boolean
+  createdAt: string
 }
 
 interface TrendingTopic {
@@ -109,11 +122,7 @@ interface Badge_ {
   color: string
 }
 
-// ─── Data ─────────────────────────────────────────────────────────
-// NOTE: Demo / placeholder entries were removed so brand-new users start with
-// empty states. The arrays below are intentionally empty. As real community
-// content arrives (user-generated posts, server-side challenges, earned
-// badges), populate them from the API / store instead of hardcoding here.
+// ─── Category mapping (UI ↔ API) ─────────────────────────────────
 
 const categories: Category[] = ['General', 'PCOS', 'Fertility', 'Pregnancy', 'Menopause', 'Mental Health']
 
@@ -126,11 +135,95 @@ const categoryColors: Record<Category, string> = {
   'Mental Health': 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
 }
 
-// Empty arrays — no demo posts, groups, challenges, or pre-earned badges.
-const initialPosts: Post[] = []
-const trendingTopics: TrendingTopic[] = []
+const toApiCategory: Record<Category, string> = {
+  General: 'general',
+  PCOS: 'pcos',
+  Fertility: 'fertility',
+  Pregnancy: 'pregnancy',
+  Menopause: 'menopause',
+  'Mental Health': 'mental_health',
+}
+
+const fromApiCategory: Record<string, Category> = {
+  general: 'General',
+  pcos: 'PCOS',
+  fertility: 'Fertility',
+  pregnancy: 'Pregnancy',
+  menopause: 'Menopause',
+  mental_health: 'Mental Health',
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────
+
+const FLOWERS = ['Lotus', 'Sakhi', 'Amber', 'River', 'Jasmine', 'Peony', 'Rose', 'Lily', 'Daisy', 'Iris']
+
+// Deterministic anonymous display name derived from an id — stable across
+// reloads so anonymous users keep the same alias for a given post/comment.
+function anonName(id: string): string {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  }
+  const flower = FLOWERS[hash % FLOWERS.length]
+  const num = hash % 100
+  return `${flower}_${num}`
+}
+
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return 'Just now'
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d ago`
+  const weeks = Math.floor(days / 7)
+  if (weeks < 5) return `${weeks}w ago`
+  const months = Math.floor(days / 30)
+  return `${months}mo ago`
+}
+
+// Raw API post → UI Post
+interface ApiPost {
+  id: string
+  title: string
+  content: string
+  category: string
+  isAnonymous: boolean
+  likes: number
+  createdAt: string
+  comments?: Array<{ id: string }>
+  user?: { id: string; name: string | null; avatar: string | null }
+}
+
+function mapApiPost(p: ApiPost, currentUserId: string | undefined, likedIds: Set<string>): Post {
+  const category = fromApiCategory[p.category] ?? 'General'
+  const isOwn = currentUserId && p.user?.id === currentUserId
+  const username = p.isAnonymous
+    ? anonName(p.id)
+    : isOwn
+      ? 'You'
+      : (p.user?.name || 'Community member')
+  return {
+    id: p.id,
+    username,
+    title: p.title,
+    content: p.content,
+    category,
+    likes: p.likes,
+    comments: p.comments?.length ?? 0,
+    timeAgo: timeAgo(p.createdAt),
+    liked: likedIds.has(p.id),
+    isAnonymous: p.isAnonymous,
+    createdAt: p.createdAt,
+  }
+}
+
+// Empty arrays — groups & challenges launch later; badges are progress-driven.
 const initialSupportGroups: SupportGroup[] = []
 const initialChallenges: Challenge[] = []
+
 const userBadges: Badge_[] = [
   { id: '1', name: 'First Post', description: 'Created your first post', icon: Send, earned: false, color: 'text-sky-500' },
   { id: '2', name: 'Helpful', description: 'Received 10+ likes on a comment', icon: HandHeart, earned: false, color: 'text-emerald-500' },
@@ -143,10 +236,14 @@ const userBadges: Badge_[] = [
 // ─── Component ────────────────────────────────────────────────────
 
 export default function CommunityModule() {
-  const [posts, setPosts] = useState<Post[]>(initialPosts)
+  const userProfile = useAppStore((s) => s.userProfile)
+  const [posts, setPosts] = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+  const [posting, setPosting] = useState(false)
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set())
   const [activeCategory, setActiveCategory] = useState<Category | 'All'>('All')
-  const [supportGroups, setSupportGroups] = useState<SupportGroup[]>(initialSupportGroups)
-  const [challenges, setChallenges] = useState<Challenge[]>(initialChallenges)
+  const [supportGroups] = useState<SupportGroup[]>(initialSupportGroups)
+  const [challenges] = useState<Challenge[]>(initialChallenges)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [newPost, setNewPost] = useState({
     title: '',
@@ -156,50 +253,212 @@ export default function CommunityModule() {
   })
   const [activeTab, setActiveTab] = useState<'feed' | 'groups' | 'challenges'>('feed')
 
-  // A brand-new user starts at Level 1 with 0 support points and no progress
-  // toward the next level. These values are derived from real community
-  // activity (posts, likes, comments) once that data exists — not hardcoded.
-  const supportScore = 0
-  const nextLevel = 100
-  const level = 1
+  // Comments dialog state
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null)
+  const [commentsList, setCommentsList] = useState<CommentItem[]>([])
+  const [commentsLoading, setCommentsLoading] = useState(false)
+  const [newComment, setNewComment] = useState('')
+  const [commentPosting, setCommentPosting] = useState(false)
 
+  // ─── Data loading ───────────────────────────────────────────────
+  const loadPosts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/community')
+      if (!res.ok) throw new Error('Failed to load posts')
+      const data: ApiPost[] = await res.json()
+      setPosts(data.map((p) => mapApiPost(p, userProfile?.id, likedIds)))
+    } catch {
+      toast.error('Could not load community posts')
+    } finally {
+      setLoading(false)
+    }
+  }, [userProfile?.id])
+
+  useEffect(() => {
+    loadPosts()
+  }, [loadPosts])
+
+  // ─── Derived ────────────────────────────────────────────────────
   const filteredPosts = activeCategory === 'All'
     ? posts
     : posts.filter(p => p.category === activeCategory)
 
+  // Live trending topics — top categories by post count
+  const trendingTopics: TrendingTopic[] = categories
+    .map((cat, i) => ({
+      id: String(i + 1),
+      topic: `#${cat.replace(' ', '')}`,
+      posts: posts.filter(p => p.category === cat).length,
+      trending: posts.filter(p => p.category === cat).length >= 2,
+    }))
+    .filter(t => t.posts > 0)
+    .sort((a, b) => b.posts - a.posts)
+    .slice(0, 5)
+
+  // Gamification — derived from REAL community activity
+  const myPosts = posts.filter(p => userProfile && !p.isAnonymous).length
+  const supportScore = myPosts * 20 + posts.reduce((acc, p) => acc + p.likes, 0) * 5
+  const nextLevel = 100
+  const level = Math.floor(supportScore / nextLevel) + 1
+  const levelNames = ['Newcomer', 'Friend', 'Supporter', 'Advocate', 'Champion', 'Guardian']
+  const levelName = levelNames[Math.min(level - 1, levelNames.length - 1)]
+  const earnedBadges = userBadges.map(b => ({
+    ...b,
+    earned:
+      (b.id === '1' && myPosts >= 1) ||
+      (b.id === '5' && posts.some(p => p.likes >= 5)) ||
+      (b.id === '3' && posts.reduce((acc, p) => acc + p.comments, 0) >= 3),
+  }))
+
   const generateAnonName = () => {
-    const flowers = ['Lotus', 'Sakhi', 'Amber', 'River', 'Jasmine', 'Peony', 'Rose', 'Lily', 'Daisy', 'Iris']
-    const flower = flowers[Math.floor(Math.random() * flowers.length)]
+    const flower = FLOWERS[Math.floor(Math.random() * FLOWERS.length)]
     const num = Math.floor(Math.random() * 100)
     return `${flower}_${num}`
   }
 
-  const handleCreatePost = () => {
+  // ─── Actions ────────────────────────────────────────────────────
+  const handleCreatePost = async () => {
     if (!newPost.title.trim() || !newPost.content.trim()) return
-    const post: Post = {
-      id: Date.now().toString(),
-      username: newPost.anonymous ? generateAnonName() : 'You',
-      title: newPost.title,
-      content: newPost.content,
-      category: newPost.category,
-      likes: 0,
-      comments: 0,
-      timeAgo: 'Just now',
-      liked: false,
+    if (!userProfile) {
+      toast.error('Please sign in to post')
+      return
     }
-    setPosts([post, ...posts])
-    setNewPost({ title: '', content: '', category: 'General', anonymous: true })
-    setDialogOpen(false)
+    setPosting(true)
+    try {
+      const res = await fetch('/api/community', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userProfile.id,
+          title: newPost.title.trim(),
+          content: newPost.content.trim(),
+          category: toApiCategory[newPost.category],
+          isAnonymous: newPost.anonymous,
+        }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to create post')
+      }
+      const created: ApiPost = await res.json()
+      setPosts(prev => [mapApiPost(created, userProfile.id, likedIds), ...prev])
+      setNewPost({ title: '', content: '', category: 'General', anonymous: true })
+      setDialogOpen(false)
+      toast.success('Post shared with the community 💙')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create post')
+    } finally {
+      setPosting(false)
+    }
   }
 
-  const toggleLike = (postId: string) => {
+  const toggleLike = async (postId: string) => {
+    const post = posts.find(p => p.id === postId)
+    if (!post || !userProfile) return
+    const willLike = !post.liked
+
+    // Optimistic update
     setPosts(prev =>
       prev.map(p =>
         p.id === postId
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
+          ? { ...p, liked: willLike, likes: Math.max(0, willLike ? p.likes + 1 : p.likes - 1) }
           : p
       )
     )
+    setLikedIds(prev => {
+      const next = new Set(prev)
+      if (willLike) next.add(postId)
+      else next.delete(postId)
+      return next
+    })
+
+    try {
+      const res = await fetch('/api/community', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, action: willLike ? 'like' : 'unlike' }),
+      })
+      if (!res.ok) throw new Error()
+      const updated: ApiPost = await res.json()
+      setPosts(prev =>
+        prev.map(p => (p.id === postId ? { ...p, likes: updated.likes } : p))
+      )
+    } catch {
+      // Revert on failure
+      setPosts(prev =>
+        prev.map(p =>
+          p.id === postId
+            ? { ...p, liked: !willLike, likes: Math.max(0, !willLike ? p.likes + 1 : p.likes - 1) }
+            : p
+        )
+      )
+      toast.error('Could not update like')
+    }
+  }
+
+  // ─── Comments ───────────────────────────────────────────────────
+  const openComments = async (postId: string) => {
+    setCommentsPostId(postId)
+    setCommentsLoading(true)
+    setCommentsList([])
+    setNewComment('')
+    try {
+      const res = await fetch(`/api/community/comments?postId=${postId}`)
+      if (!res.ok) throw new Error()
+      const data = await res.json()
+      setCommentsList(
+        data.map((c: { id: string; content: string; isAnonymous: boolean; createdAt: string; user?: { id: string; name: string | null } }) => ({
+          id: c.id,
+          content: c.content,
+          author: c.isAnonymous ? anonName(c.id) : (c.user?.name || 'Member'),
+          timeAgo: timeAgo(c.createdAt),
+          isAnonymous: c.isAnonymous,
+        }))
+      )
+    } catch {
+      toast.error('Could not load comments')
+    } finally {
+      setCommentsLoading(false)
+    }
+  }
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !commentsPostId || !userProfile) return
+    setCommentPosting(true)
+    try {
+      const res = await fetch('/api/community/comments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          postId: commentsPostId,
+          userId: userProfile.id,
+          content: newComment.trim(),
+          isAnonymous: true,
+        }),
+      })
+      if (!res.ok) throw new Error()
+      const created = await res.json()
+      const c = created as { id: string; content: string; isAnonymous: boolean; createdAt: string }
+      setCommentsList(prev => [
+        ...prev,
+        {
+          id: c.id,
+          content: c.content,
+          author: anonName(c.id),
+          timeAgo: 'Just now',
+          isAnonymous: true,
+        },
+      ])
+      setPosts(prev =>
+        prev.map(p => (p.id === commentsPostId ? { ...p, comments: p.comments + 1 } : p))
+      )
+      setNewComment('')
+      toast.success('Comment added 💬')
+    } catch {
+      toast.error('Could not add comment')
+    } finally {
+      setCommentPosting(false)
+    }
   }
 
   const toggleGroup = (groupId: string) => {
@@ -311,9 +570,10 @@ export default function CommunityModule() {
                 <Button
                   onClick={handleCreatePost}
                   className="bg-sky-500 hover:bg-sky-600 text-white"
-                  disabled={!newPost.title.trim() || !newPost.content.trim()}
+                  disabled={!newPost.title.trim() || !newPost.content.trim() || posting}
                 >
-                  <Send className="h-3.5 w-3.5 mr-1.5" /> Post
+                  {posting ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1.5" />}
+                  {posting ? 'Posting…' : 'Post'}
                 </Button>
               </div>
             </div>
@@ -335,15 +595,15 @@ export default function CommunityModule() {
                   {level}
                 </div>
                 <div>
-                  <p className="font-semibold text-sm">Level {level} — Newcomer</p>
-                  <p className="text-xs text-muted-foreground">{supportScore} / {nextLevel} points to Level {level + 1}</p>
+                  <p className="font-semibold text-sm">Level {level} — {levelName}</p>
+                  <p className="text-xs text-muted-foreground">{supportScore} / {level * nextLevel} points to Level {level + 1}</p>
                 </div>
               </div>
               <div className="flex-1 w-full sm:w-auto">
-                <Progress value={(supportScore / nextLevel) * 100} className="h-2.5" />
+                <Progress value={((supportScore % nextLevel) / nextLevel) * 100} className="h-2.5" />
               </div>
               <div className="flex items-center gap-1.5">
-                {userBadges.filter(b => b.earned).map(badge => {
+                {earnedBadges.filter(b => b.earned).map(badge => {
                   const Icon = badge.icon
                   return (
                     <div
@@ -356,7 +616,7 @@ export default function CommunityModule() {
                   )
                 })}
                 <div className="h-8 w-8 rounded-full bg-muted border border-dashed border-muted-foreground/30 flex items-center justify-center">
-                  <span className="text-[10px] text-muted-foreground font-medium">+{userBadges.filter(b => !b.earned).length}</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">+{earnedBadges.filter(b => !b.earned).length}</span>
                 </div>
               </div>
             </div>
@@ -420,13 +680,22 @@ export default function CommunityModule() {
               </div>
 
               {/* Posts */}
-              {filteredPosts.length === 0 ? (
+              {loading ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="h-7 w-7 animate-spin text-sky-500" />
+                    <p className="text-xs text-muted-foreground mt-3">Loading community feed…</p>
+                  </CardContent>
+                </Card>
+              ) : filteredPosts.length === 0 ? (
                 <Card className="border-dashed border-sky-200 dark:border-sky-900/50">
                   <CardContent className="flex flex-col items-center justify-center py-12 px-4 text-center">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 dark:bg-sky-950/40 mb-3">
                       <MessageCircle className="h-6 w-6 text-sky-500" />
                     </div>
-                    <p className="text-sm font-medium text-foreground">Be the first to post</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {activeCategory === 'All' ? 'Be the first to post' : `No ${activeCategory} posts yet`}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-xs">
                       Share a question, story, or encouragement. The community grows when you take the first step.
                     </p>
@@ -473,14 +742,21 @@ export default function CommunityModule() {
                                 <div className="flex items-center gap-4 mt-3">
                                   <button
                                     onClick={() => toggleLike(post.id)}
-                                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-500 transition-colors h-9 px-1 -mx-1 rounded-md"
+                                    className={`flex items-center gap-1.5 text-xs h-9 px-1 -mx-1 rounded-md transition-colors ${
+                                      post.liked
+                                        ? 'text-sky-500 font-medium'
+                                        : 'text-muted-foreground hover:text-sky-500'
+                                    }`}
                                   >
                                     <Heart
-                                      className={`h-3.5 w-3.5 ${post.liked ? 'fill-sky-500 text-sky-500' : ''}`}
+                                      className={`h-3.5 w-3.5 transition-transform ${post.liked ? 'fill-sky-500 text-sky-500 scale-110' : ''}`}
                                     />
                                     {post.likes}
                                   </button>
-                                  <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-500 transition-colors h-9 px-1 -mx-1 rounded-md">
+                                  <button
+                                    onClick={() => openComments(post.id)}
+                                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-500 transition-colors h-9 px-1 -mx-1 rounded-md"
+                                  >
                                     <MessageCircle className="h-3.5 w-3.5" />
                                     {post.comments}
                                   </button>
@@ -522,6 +798,11 @@ export default function CommunityModule() {
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.1 + idx * 0.04 }}
                           className="flex items-center justify-between group cursor-pointer"
+                          onClick={() => {
+                            const cat = topic.topic.replace('#', '') as Category
+                            const matched = categories.find(c => c.replace(' ', '') === cat.replace(' ', ''))
+                            if (matched) setActiveCategory(matched)
+                          }}
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-semibold text-muted-foreground w-5">{idx + 1}</span>
@@ -550,7 +831,7 @@ export default function CommunityModule() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-2">
-                    {userBadges.map(badge => {
+                    {earnedBadges.map(badge => {
                       const Icon = badge.icon
                       return (
                         <div
@@ -678,6 +959,14 @@ export default function CommunityModule() {
                   <p className="text-xs text-muted-foreground mt-1 max-w-xs">
                     Community challenges will appear here when they launch. Check back soon for goals you can join.
                   </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-4 border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30"
+                    onClick={() => setActiveTab('feed')}
+                  >
+                    <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Explore the feed
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -687,76 +976,112 @@ export default function CommunityModule() {
                     key={challenge.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.06 }}
+                    transition={{ delay: idx * 0.05 }}
                   >
-                    <Card className="hover:shadow-md transition-shadow">
+                    <Card>
                       <CardContent className="py-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3 flex-1">
-                            <div className={`p-2 rounded-xl ${
-                              challenge.joined
-                                ? 'bg-gradient-to-br from-sky-500 to-blue-600'
-                                : 'bg-muted'
-                            }`}>
-                              <Trophy className={`h-5 w-5 ${challenge.joined ? 'text-white' : 'text-muted-foreground'}`} />
+                            <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shrink-0">
+                              <Target className="h-5 w-5 text-white" />
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-semibold text-sm">{challenge.name}</h3>
-                                <Badge variant="secondary" className="text-[10px] border-0 bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300">
-                                  <Zap className="h-2.5 w-2.5 mr-0.5" /> Active
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{challenge.description}</p>
-                              <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                  <Users className="h-3 w-3" />
-                                  {challenge.participants} participants
+                            <div>
+                              <CardTitle className="text-sm">{challenge.name}</CardTitle>
+                              <CardDescription className="text-xs mt-0.5">{challenge.description}</CardDescription>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Users className="h-3 w-3" /> {challenge.participants} joined
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <Target className="h-3 w-3" />
-                                  {challenge.daysLeft} days left
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                  <Zap className="h-3 w-3" /> {challenge.daysLeft} days left
                                 </span>
                               </div>
+                              <Progress value={challenge.progress} className="h-1.5 mt-2 max-w-xs" />
                             </div>
                           </div>
-                          <div className="sm:w-48 space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">Progress</span>
-                              <span className="font-semibold text-sky-500">{challenge.progress}%</span>
-                            </div>
-                            <Progress value={challenge.progress} className="h-2" />
-                            <Button
-                              size="sm"
-                              variant={challenge.joined ? 'outline' : 'default'}
-                              className={`w-full text-xs h-8 ${
-                                challenge.joined
-                                  ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
-                                  : 'bg-sky-500 hover:bg-sky-600 text-white'
-                              }`}
-                              onClick={() => toggleChallenge(challenge.id)}
-                            >
-                              {challenge.joined ? (
-                              <>
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Joined
-                              </>
-                            ) : (
-                              <>
-                                <ArrowRight className="h-3 w-3 mr-1" /> Join Challenge
-                              </>
-                            )}
+                          <Button
+                            size="sm"
+                            variant={challenge.joined ? 'outline' : 'default'}
+                            className={`text-xs h-8 shrink-0 ${
+                              challenge.joined
+                                ? 'border-sky-200 text-sky-600 dark:border-sky-800 dark:text-sky-400'
+                                : 'bg-sky-500 hover:bg-sky-600 text-white'
+                            }`}
+                            onClick={() => toggleChallenge(challenge.id)}
+                          >
+                            {challenge.joined ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <ArrowRight className="h-3 w-3 mr-1" />}
+                            {challenge.joined ? 'Joined' : 'Join'}
                           </Button>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </div>
             )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Comments Dialog */}
+      <Dialog open={!!commentsPostId} onOpenChange={(open) => !open && setCommentsPostId(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Comments</DialogTitle>
+            <DialogDescription>Support others with a kind reply</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-1">
+            <ScrollArea className="max-h-64">
+              {commentsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-sky-500" />
+                </div>
+              ) : commentsList.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-6">
+                  No comments yet. Be the first to reply 💙
+                </p>
+              ) : (
+                <div className="space-y-3 pr-2">
+                  {commentsList.map(c => (
+                    <div key={c.id} className="flex items-start gap-2.5">
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarFallback className="bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 text-[10px] font-semibold">
+                          {c.author.split('_')[0][0]}{c.author.split('_')[1]?.[0] || ''}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 bg-muted/60 rounded-xl rounded-tl-sm px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold">{c.author}</span>
+                          <span className="text-[10px] text-muted-foreground">{c.timeAgo}</span>
+                        </div>
+                        <p className="text-xs text-foreground/90 mt-0.5 leading-relaxed">{c.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+            <Separator />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Write a supportive comment…"
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
+                disabled={commentPosting}
+              />
+              <Button
+                size="icon"
+                className="bg-sky-500 hover:bg-sky-600 text-white shrink-0 h-10 w-10"
+                onClick={handleAddComment}
+                disabled={!newComment.trim() || commentPosting}
+              >
+                {commentPosting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

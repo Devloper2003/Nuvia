@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { db } from '@/lib/db'
 
 const SYSTEM_PROMPT = `You are ChandraCycle, an AI Women's Health Coach. You provide empathetic, evidence-based wellness guidance about menstrual health, hormonal changes, fertility, pregnancy, PCOS, menopause, nutrition, exercise, and mental wellbeing.
 
@@ -26,9 +27,33 @@ Your knowledge areas:
 
 Always end responses with a supportive note and remind users you provide wellness information, not medical advice.`
 
+// ─── GET: load chat history for a user ──────────────────────────────────────
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+    }
+
+    const messages = await db.chatMessage.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'asc' },
+      take: 100,
+    })
+
+    return NextResponse.json({ messages })
+  } catch (error) {
+    console.error('Chat history fetch error:', error)
+    return NextResponse.json({ messages: [] })
+  }
+}
+
+// ─── POST: generate AI reply (and persist both messages when userId given) ──
 export async function POST(request: NextRequest) {
   try {
-    const { message, history = [] } = await request.json()
+    const { message, history = [], userId } = await request.json()
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json(
@@ -65,6 +90,28 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Persist the conversation when we know the user. Verify the user exists
+    // first so stale/foreign ids can't trigger FK errors. Never let a DB
+    // hiccup break the chat itself.
+    if (userId && typeof userId === 'string') {
+      try {
+        const userExists = await db.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        })
+        if (userExists) {
+          await db.chatMessage.createMany({
+            data: [
+              { userId, role: 'user', content: message },
+              { userId, role: 'assistant', content: response },
+            ],
+          })
+        }
+      } catch (persistError) {
+        console.error('Chat persist error:', persistError)
+      }
+    }
+
     return NextResponse.json({
       success: true,
       response,
@@ -74,6 +121,27 @@ export async function POST(request: NextRequest) {
     console.error('Chat API error:', error)
     return NextResponse.json(
       { error: 'Failed to generate response' },
+      { status: 500 }
+    )
+  }
+}
+
+// ─── DELETE: clear chat history for a user ──────────────────────────────────
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 })
+    }
+
+    await db.chatMessage.deleteMany({ where: { userId } })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Chat clear error:', error)
+    return NextResponse.json(
+      { error: 'Failed to clear history' },
       { status: 500 }
     )
   }

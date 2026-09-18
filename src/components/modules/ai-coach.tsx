@@ -25,6 +25,7 @@ import {
   MapPin,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
 
@@ -62,6 +63,33 @@ export default function CoachModule() {
     }
   }, [messages])
 
+  // Load persisted chat history when the user opens the coach
+  useEffect(() => {
+    const userId = userProfile?.id
+    if (!userId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`/api/chat?userId=${encodeURIComponent(userId)}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data.messages) && data.messages.length > 0) {
+          setMessages(
+            data.messages.map((m: { id: string; role: string; content: string; createdAt: string }) => ({
+              id: m.id,
+              role: m.role === 'user' ? 'user' : 'assistant',
+              content: m.content,
+              timestamp: new Date(m.createdAt),
+            }))
+          )
+        }
+      } catch {
+        // History is best-effort — start fresh on failure
+      }
+    })()
+    return () => { cancelled = true }
+  }, [userProfile?.id])
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return
 
@@ -89,6 +117,7 @@ export default function CoachModule() {
         body: JSON.stringify({
           message: text.trim(),
           history,
+          userId: userProfile?.id,
         }),
       })
 
@@ -130,8 +159,17 @@ export default function CoachModule() {
     sendMessage(input)
   }
 
-  const resetConversation = () => {
+  const resetConversation = async () => {
     setMessages(initialMessages)
+    const userId = userProfile?.id
+    if (userId) {
+      try {
+        await fetch(`/api/chat?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' })
+        toast.success('Conversation cleared')
+      } catch {
+        // ignore
+      }
+    }
   }
 
   const formatTime = (date: Date) => {
