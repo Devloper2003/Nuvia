@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, BellRing, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X, Loader2 } from 'lucide-react'
+import { Bell, BellRing, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X, Loader2, HeartHandshake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -25,6 +25,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: 
   appointment: { icon: Stethoscope, color: 'text-teal-600', bg: 'bg-teal-50 dark:bg-teal-950/40', label: 'Appointment' },
   insight: { icon: Sparkles, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-950/40', label: 'Insight' },
   community: { icon: Users, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/40', label: 'Community' },
+  system: { icon: HeartHandshake, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/20', label: 'ChandraCycle' },
 }
 
 // RFC 7515-ish: the VAPID public key arrives base64url-encoded and must be

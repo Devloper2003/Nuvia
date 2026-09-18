@@ -586,3 +586,15 @@ html::-webkit-scrollbar-track {
     animation: none !important;
   }
 }
+
+/* ─── Brand focus ring for keyboard users (a11y + polish) ──────────────────── */
+:focus-visible {
+  outline: 2px solid oklch(0.72 0.15 350 / 85%);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Smooth image + card rendering on retina ─────────────────────────────── */
+img {
+  content-visibility: auto;
+}

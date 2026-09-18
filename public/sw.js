@@ -1,6 +1,6 @@
 // ChandraCycle Service Worker — offline-first caching for PWA
-const CACHE = 'chandracycle-v3'
-const CORE = ['/', '/manifest.json', '/icon.svg', '/icon-maskable.svg']
+const CACHE = 'chandracycle-v4'
+const CORE = ['/', '/manifest.json', '/icon.svg', '/icon-maskable.svg', '/offline']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -68,16 +68,25 @@ self.addEventListener('fetch', (event) => {
   // Only handle same-origin requests
   if (url.origin !== self.location.origin) return
 
-  // Network-first for navigation (HTML), cache fallback offline
+  // Network-first for navigation (HTML), cache fallback → /offline page.
+  // Only OK responses are cached — error pages (404/500) must not poison the
+  // navigation cache, or they would be served forever while offline.
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone()
-          caches.open(CACHE).then((c) => c.put(req, copy))
+          if (res && res.status === 200) {
+            const copy = res.clone()
+            caches.open(CACHE).then((c) => c.put(req, copy))
+          }
           return res
         })
-        .catch(() => caches.match(req).then((r) => r || caches.match('/')))
+        .catch(() =>
+          caches
+            .match(req)
+            .then((r) => r || caches.match('/offline'))
+            .then((r) => r || caches.match('/'))
+        )
     )
     return
   }

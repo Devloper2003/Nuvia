@@ -54,6 +54,41 @@ export async function GET(request: NextRequest) {
       orderBy: [{ hidden: 'desc' }, { reportedCount: 'desc' }, { createdAt: 'desc' }],
     })
 
+    // Reporter transparency: attach the individual reports (reason + when +
+    // who) to each queue item so the operator can judge context, not just a
+    // bare count. Reporters are identified by name/email for operators only.
+    const postIds = queue.map((p) => p.id)
+    const commentIds = commentQueue.map((c) => c.id)
+    const postReports = postIds.length
+      ? await db.contentReport.findMany({
+          where: { postId: { in: postIds } },
+          include: { reporter: { select: { name: true, email: true } } },
+          orderBy: { createdAt: 'desc' },
+        })
+      : []
+    const commentReports = commentIds.length
+      ? await db.contentReport.findMany({
+          where: { commentId: { in: commentIds } },
+          include: { reporter: { select: { name: true, email: true } } },
+          orderBy: { createdAt: 'desc' },
+        })
+      : []
+    const shapeReport = (r: (typeof postReports)[number]) => ({
+      reason: r.reason,
+      createdAt: r.createdAt,
+      reporter: r.reporter.name ?? r.reporter.email,
+    })
+    const reportsByPost = new Map<string, ReturnType<typeof shapeReport>[]>()
+    for (const r of postReports) {
+      if (!r.postId) continue
+      reportsByPost.set(r.postId, [...(reportsByPost.get(r.postId) ?? []), shapeReport(r)])
+    }
+    const reportsByComment = new Map<string, ReturnType<typeof shapeReport>[]>()
+    for (const r of commentReports) {
+      if (!r.commentId) continue
+      reportsByComment.set(r.commentId, [...(reportsByComment.get(r.commentId) ?? []), shapeReport(r)])
+    }
+
     const totalPosts = await db.communityPost.count()
     const totalComments = await db.comment.count()
     const hiddenCount = await db.communityPost.count({ where: { hidden: true } })
@@ -68,6 +103,32 @@ export async function GET(request: NextRequest) {
       take: 12,
     })
 
+    // Moderation activity over the last 7 days (from the audit trail):
+    // per-day action counts + totals by action, for the operator's pulse view.
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3_600_000)
+    const weekActions = await db.auditLog.findMany({
+      where: {
+        targetType: { in: ['community_post', 'community_comment'] },
+        action: { startsWith: 'moderation:' },
+        createdAt: { gte: weekAgo },
+      },
+      select: { action: true, createdAt: true },
+    })
+    const byDay: { date: string; label: string; count: number }[] = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 3_600_000)
+      const key = d.toISOString().slice(0, 10)
+      byDay.push({ date: key, label: d.toLocaleDateString('en-US', { weekday: 'short' }), count: 0 })
+    }
+    const byAction: Record<string, number> = { restore: 0, dismiss: 0, delete: 0 }
+    for (const a of weekActions) {
+      const key = a.createdAt.toISOString().slice(0, 10)
+      const day = byDay.find((d) => d.date === key)
+      if (day) day.count++
+      const act = a.action.replace('moderation:', '')
+      if (act in byAction) byAction[act]++
+    }
+
     return NextResponse.json({
       queue: queue.map((p) => ({
         id: p.id,
@@ -81,6 +142,7 @@ export async function GET(request: NextRequest) {
         updatedAt: p.updatedAt,
         author: p.user,
         commentCount: p._count.comments,
+        reports: reportsByPost.get(p.id) ?? [],
       })),
       commentQueue: commentQueue.map((c) => ({
         id: c.id,
@@ -90,6 +152,7 @@ export async function GET(request: NextRequest) {
         createdAt: c.createdAt,
         author: c.user,
         post: c.post,
+        reports: reportsByComment.get(c.id) ?? [],
       })),
       stats: {
         totalPosts,
@@ -98,6 +161,11 @@ export async function GET(request: NextRequest) {
         hiddenComments,
         reportedComments,
         queueSize: queue.length,
+      },
+      activity: {
+        byDay,
+        byAction,
+        total: weekActions.length,
       },
       auditLog,
       admin: { name: admin.name, email: admin.email, role: admin.role },

@@ -1,25 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { sendPushToUser } from '@/lib/push'
+import { maybeCreatePeriodReminder } from '@/lib/reminders'
 
-// ─── POST /api/notifications/check — period reminder engine ──────────────────
+// ─── POST /api/notifications/check — period reminder engine (per user) ───────
 // Body: { userId }
 //
-// Computes where the user is in their cycle (same math as the dashboard:
-// cycleDay = days-since-last-period modulo cycleLength) and — when the period
-// is expected within 2 days or is ≥ 2 days late — creates an in-app
-// Notification row and pushes a web-push message to every subscribed device.
+// Thin wrapper over the shared engine in src/lib/reminders.ts. Computes where
+// the user is in their cycle and — when the period is expected within 2 days
+// or is ≥ 2 days late — creates an in-app Notification row and pushes a
+// web-push message to every subscribed device.
 //
-// De-duplication: at most one period_reminder per 36h window so refreshes
-// never spam the bell (or the user's lock screen).
-
-const REMINDER_COOLDOWN_HOURS = 36
-
-function startOfDay(d: Date): Date {
-  const c = new Date(d)
-  c.setHours(0, 0, 0, 0)
-  return c
-}
+// The server-side sweep in /api/cron/reminders reuses the exact same engine,
+// so reminders arrive even when the app is closed.
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,87 +30,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const latest = user.cycles[0]
-    const refStart = latest?.startDate ?? user.lastPeriodStart
-    if (!refStart) {
+    const outcome = await maybeCreatePeriodReminder(user, user.cycles[0] ?? null)
+
+    if (!outcome.triggered) {
+      if (outcome.reason === 'no-cycle-data') {
+        return NextResponse.json({
+          triggered: false,
+          reason: 'no-cycle-data',
+          message: 'Log a period to unlock reminders',
+        })
+      }
       return NextResponse.json({
         triggered: false,
-        reason: 'no-cycle-data',
-        message: 'Log a period to unlock reminders',
+        reason: outcome.reason,
+        daysUntilPeriod: outcome.daysUntilPeriod,
       })
     }
-
-    const cycleLength = latest?.cycleLength ?? user.cycleLength ?? 28
-    const today = startOfDay(new Date())
-    const start = startOfDay(new Date(refStart))
-    const daysSince = Math.floor((today.getTime() - start.getTime()) / 86_400_000)
-    const daysUntilPeriod = cycleLength - daysSince
-
-    let title: string | null = null
-    let message: string | null = null
-
-    if (daysUntilPeriod >= 0 && daysUntilPeriod <= 2) {
-      title =
-        daysUntilPeriod === 0
-          ? '🌸 Your period is expected today'
-          : `🌸 Period expected in ${daysUntilPeriod} day${daysUntilPeriod === 1 ? '' : 's'}`
-      message = `Based on your ${cycleLength}-day cycle, your period is likely to start${
-        daysUntilPeriod === 0 ? ' today' : ` on ${new Date(today.getTime() + daysUntilPeriod * 86_400_000).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`
-      }. Consider stocking up on supplies and planning a lighter schedule.`
-    } else if (daysUntilPeriod < 0 && -daysUntilPeriod >= 2) {
-      const daysLate = -daysUntilPeriod
-      title = `⏰ Period is ${daysLate} day${daysLate === 1 ? '' : 's'} late`
-      message = `Your usual ${cycleLength}-day cycle has run over. Stress, travel and sleep can shift timing — log today as cycle day 1 when it arrives, and reach out to a doctor if delays become a pattern.`
-    }
-
-    if (!title || !message) {
-      return NextResponse.json({
-        triggered: false,
-        reason: 'not-due',
-        daysUntilPeriod,
-      })
-    }
-
-    // Cooldown, two layers:
-    //   a) identical reminder (same title) at most once per 36h
-    //   b) at most one period_reminder of ANY kind per 24h (covers the
-    //      seed route's reminder variants, so the bell never floods)
-    const titleCutoff = new Date(Date.now() - REMINDER_COOLDOWN_HOURS * 3_600_000)
-    const dayCutoff = new Date(Date.now() - 24 * 3_600_000)
-    const [sameReminder, anyRecentReminder] = await Promise.all([
-      db.notification.findFirst({
-        where: { userId, type: 'period_reminder', title, createdAt: { gte: titleCutoff } },
-      }),
-      db.notification.findFirst({
-        where: { userId, type: 'period_reminder', createdAt: { gte: dayCutoff } },
-      }),
-    ])
-    if (sameReminder || anyRecentReminder) {
-      return NextResponse.json({
-        triggered: false,
-        reason: 'cooldown',
-        daysUntilPeriod,
-      })
-    }
-
-    const notification = await db.notification.create({
-      data: { userId, title, message, type: 'period_reminder' },
-    })
-
-    // Fan out to every subscribed browser/device
-    const push = await sendPushToUser(userId, {
-      title,
-      body: message,
-      tag: 'chandracycle-period-reminder',
-      url: '/dashboard',
-      type: 'period_reminder',
-    })
 
     return NextResponse.json({
       triggered: true,
-      notification,
-      daysUntilPeriod,
-      push,
+      notification: { id: outcome.messageId, title: outcome.title },
+      daysUntilPeriod: outcome.daysUntilPeriod,
+      push: outcome.push,
     })
   } catch (error) {
     console.error('Error checking period reminders:', error)

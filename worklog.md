@@ -609,3 +609,108 @@ Stage Summary:
   4. Admin console: moderation stats over time; ContentReport reasons are stored but not yet surfaced in the
      admin queue UI (show reasons + reporter count tooltip).
   5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+
+---
+Task ID: 9
+Agent: Z.ai Code (webDevReview round 9)
+Task: Cron QA + development round — server-side reminder scheduler, admin moderation transparency
+(report reasons + reporter identity + 7-day pulse), PWA offline fallback page, dashboard live stats +
+count-up styling, plus 3 real bug fixes found during QA.
+
+Work Log:
+- QA BASELINE + 3 BUGS FIXED:
+  1. HYDRATION MISMATCH (root-caused, was misdiagnosed before): offline-banner.tsx read
+     `navigator.onLine` in a lazy useState initialiser guarded by `typeof navigator !== 'undefined'`
+     — but Node 21+/Bun HAVE a global navigator with `onLine: undefined` → falsy → SERVER rendered
+     the offline ribbon while client rendered nothing. Fresh sessions showed 1 hydration error on
+     every load. First fix (init true + sync in effect) worked but tripped the new
+     react-hooks/set-state-in-effect lint rule; FINAL fix = useSyncExternalStore with server
+     snapshot `true` (canonical pattern, zero lint issues). Fresh console now 0 errors.
+  2. WELCOME NOTIFICATION TYPE BUG: seed route created "Welcome to ChandraCycle! 🌸" with
+     type='period_reminder' → participated in the 24h reminder cooldown (layer b) → real period
+     reminders SUPPRESSED for 24h after signup + wrong rose styling. Re-typed to new 'system' type;
+     added 'system' entry to notification-panel TYPE_CONFIG (HeartHandshake icon, primary tint,
+     "ChandraCycle" label); migrated 1 existing DB row.
+  3. SW NAVIGATION CACHE POISONING: sw.js cached EVERY navigation response incl. 404/500s — a
+     cached error page would then be served offline forever. Fixed: only status===200 responses are
+     cached. (Discovered live: first CDP offline test served a cached 404 instead of /offline.)
+  4. DAILY CHECK-IN DUPLICATES: seed route de-duped welcome/period variants (round 8) but NOT the
+     check-in; parallel panel mounts race past the unreadCount<2 guard → user had 3 identical
+     check-ins. Fixed with per-day title de-dupe; purged 2 dup rows (all users clean).
+- SERVER-SIDE REMINDER SWEEP (backlog #1, closed — reminders now arrive with app closed):
+  - NEW src/lib/reminders.ts: single source of truth — evaluatePeriodReminder (pure cycle math) +
+    maybeCreatePeriodReminder (cooldowns 36h/24h + Notification row + push fan-out).
+  - /api/notifications/check refactored onto the shared engine — response contract preserved
+    VERIFIED (per-user check still returns triggered/cooldown/no-cycle-data identically).
+  - NEW /api/cron/reminders: sweeps ALL onboarded users in batches of 20, tallies
+    triggered/cooldown/notDue/noCycleData/errors + pushesSent, in-memory last-sweep summary on GET.
+    Auth: if CRON_SECRET set, requires x-cron-secret header or ?secret= (unset → open in sandbox).
+  - NEW mini-services/reminder-scheduler (bun, port 3031): pings the sweep every 15 min + boot sweep
+    after 20s grace; /health observability (uptime, runs, lastRun, lastError); /run-now manual
+    trigger. Started with setsid; auto-restart via `bun --hot`.
+  - E2E VERIFIED: shifted Priya's (test account) cycle start 2026-09-18 → 2026-08-23 (due in 2
+    days) → sweep triggered:true, correct title "🌸 Period expected in 2 days", Notification created,
+    push attempted (0 subs correct); per-user check then returned cooldown (proof shared engine +
+    cooldown work across both paths); data restored + test notification deleted (0 reminders left).
+  - Sweep verified working again after each server reap; scheduler survived restarts (runs counter).
+- ADMIN MODERATION TRANSPARENCY (backlog #4 partial, closed):
+  - GET /api/admin/moderation now attaches per-item `reports: [{reason, createdAt, reporter}]`
+    (reporter = name/email, operator-only) for both post and comment queues, plus `activity`:
+    7-day moderation pulse from AuditLog (per-day counts + restore/dismiss/delete totals).
+  - settings.tsx console: report reason chips on queue cards ("🚩 Spam or misleading · R9 Reporter",
+    tooltip with full timestamp, +N more after 4); "Moderation pulse — last 7 days" violet mini bar
+    chart with per-day tooltips and action totals summary.
+  - UI E2E VERIFIED with throwaway users: r9-mod-test posted, r9-reporter reported via PATCH
+    /api/community (reason "Spam or misleading") → admin login (bootstrap admin@chandracycle.app /
+    chandra-admin) → queue card shows chip + pulse strip renders (screenshot r9-admin-queue2.png).
+- PWA OFFLINE FALLBACK (backlog #2 partial, closed):
+  - NEW /offline route: branded fallback (moon logo + wifi-off badge, gradient bg, Try again client
+    island — page stays a Server Component so it renders from pure cached HTML; Go to homepage link).
+    Note: onClick in the server page initially threw "Event handlers cannot be passed to Client
+    Component props" — extracted retry-button.tsx client island.
+  - sw.js: /offline added to CORE precache, navigation fallback chain cached→/offline→/ cache
+    bumped chandracycle-v3→v4, only-200s cached (bug fix above).
+  - E2E VERIFIED via CDP: attached to BOTH page and service-worker targets, Network.emulateNetworkConditions
+    offline:true on each (emulation does NOT propagate to the SW unless attached to its target —
+    first attempt without SW attachment hit the network and got a live 404), navigated to a fresh
+    uncached URL → SW served cached /offline (title "You are offline — ChandraCycle", both CTAs
+    present), then restored online. Also fixed stale-cache pitfall: purge poisoned entries before
+    re-testing (caches.delete).
+- STYLING ROUND (mandatory):
+  - Dashboard quick-stats: two DEAD cards now LIVE — "Fertility Status" shows Peak/Rising/Low by
+    phase (was "—" for 3 of 4 phases) and "Next Ovulation" shows days + "≈ Oct 14 · 29-day cycle"
+    date estimate (was always "—"). Same ovulation math as the cycle card.
+  - NEW AnimatedNumber component: rAF count-up with ease-out cubic on numeric stats, tabular-nums
+    for stable width, prefers-reduced-motion respected (jumps instantly, implemented lint-clean via
+    rAF-only setState).
+  - globals.css: brand :focus-visible ring (oklch rose, 2px, offset 2) for keyboard users; img
+    content-visibility auto.
+  - /offline page styling (gradient, hover lift on Try again, icon rotate micro-interaction).
+- TEST ARTIFACT CLEANUP: r9-mod-test + r9-reporter + r9-visual users deleted (cascades posts/
+  reports/cycles/moods); test reminder notification deleted; Priya's cycle date restored to
+  2026-09-18; duplicate check-ins purged. Final DB: 7 users (real), 0 reports, 0 test posts,
+  no dup notifications. Visual-test data note: throwaway users were created via the real signup API
+  and deleted via cascade — zero impact on real users (Priya cmu6iahpu…, Shivam cmu6idrlc…).
+- INFRA NOTE: dev server reaped 3× this round (curl 000) — setsid double-fork restart each time.
+  The scheduler mini-service on :3031 is independent and survived.
+
+Stage Summary:
+- ✅ Shipped & verified: server-side reminder sweep + scheduler mini-service (reminders work with
+  app closed), admin moderation transparency (reasons + reporter identity + 7-day pulse chart),
+  PWA offline fallback page with SW wiring, 4 real bug fixes (hydration mismatch, welcome type
+  suppressing reminders, SW cache poisoning, check-in duplicates), mandatory styling round
+  (live stats, count-up animation, focus ring, offline page design).
+- Lint: 0 errors 0 warnings. Fresh browser console: 0 errors. dev.log: clean after restart.
+  Sweep endpoint: 7 swept / 0 errors post-restart. Scheduler: healthy on :3031.
+- DB state changes: Notification types migrated (welcome → system), 2 dup check-ins purged, no
+  schema changes this round. All test artifacts removed.
+- Remaining backlog (next round):
+  1. i18n (hi/ta) for menstrual-health copy — largest remaining item, untouched.
+  2. Admin: bulk-selection currently only on posts; add bulk actions to comment queue. Moderation
+     stats could move to a persisted analytics table instead of 7-day AuditLog window.
+  3. Doctor Finder: visible "demo directory" notice still pending (external Places API unconfigured).
+  4. Reminder scheduler: consider making interval user-configurable (per-user quiet hours).
+  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+  6. KNOWN: dev server keeps getting reaped between rounds — check `curl localhost:3000` first and
+     restart with setsid double-fork before QA. Mini-service scheduler must be restarted separately
+     if the whole sandbox recycles (cd mini-services/reminder-scheduler && setsid bun run dev &).

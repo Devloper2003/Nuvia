@@ -1,8 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WifiOff, Wifi } from 'lucide-react'
+
+// Canonical React pattern for external mutable state (navigator.onLine):
+// the server snapshot is `true` so SSR renders nothing, and the client
+// snapshot is read during hydration — no hydration mismatch, no setState
+// inside an effect body. (Node 21+ exposes a global `navigator` whose
+// `onLine` is undefined, so reading it during SSR render is a trap.)
+function subscribeOnline(callback: () => void) {
+  window.addEventListener('online', callback)
+  window.addEventListener('offline', callback)
+  return () => {
+    window.removeEventListener('online', callback)
+    window.removeEventListener('offline', callback)
+  }
+}
 
 /**
  * Global connectivity banner — listens to browser online/offline events and
@@ -13,23 +27,27 @@ import { WifiOff, Wifi } from 'lucide-react'
  * Renders nothing while online.
  */
 export function OfflineBanner() {
-  // Lazy initialiser: read the real connectivity once (SSR-safe fallback true)
-  const [online, setOnline] = useState(() =>
-    typeof navigator !== 'undefined' ? navigator.onLine : true
+  const online = useSyncExternalStore(
+    subscribeOnline,
+    () => navigator.onLine,
+    () => true // server snapshot — always "online" during SSR
   )
   const [backOnline, setBackOnline] = useState(false)
+  const prevOnline = useRef(true)
 
+  // Detect offline → online transitions from event handlers only.
   useEffect(() => {
-    const goOffline = () => setOnline(false)
-    const goOnline = () => {
-      setOnline(true)
-      setBackOnline(true)
+    const handle = () => {
+      const now = navigator.onLine
+      const was = prevOnline.current
+      prevOnline.current = now
+      if (!was && now) setBackOnline(true)
     }
-    window.addEventListener('offline', goOffline)
-    window.addEventListener('online', goOnline)
+    window.addEventListener('online', handle)
+    window.addEventListener('offline', handle)
     return () => {
-      window.removeEventListener('offline', goOffline)
-      window.removeEventListener('online', goOnline)
+      window.removeEventListener('online', handle)
+      window.removeEventListener('offline', handle)
     }
   }, [])
 

@@ -63,7 +63,10 @@ export async function POST(request: NextRequest) {
           userId: sessionUser.id,
           title: 'Welcome to ChandraCycle! 🌸',
           message: 'Log your first period to unlock personalised cycle predictions, ovulation tracking, and AI insights.',
-          type: 'period_reminder',
+          // NOT 'period_reminder' — that type participates in the 24h reminder
+          // cooldown (src/lib/reminders.ts) and would suppress real period
+          // reminders for a full day after signup.
+          type: 'system',
           read: false,
           createdAt: now,
         })
@@ -103,14 +106,26 @@ export async function POST(request: NextRequest) {
       where: { userId: sessionUser.id, date: todayStr },
     })
     if (!todayMood) {
-      seeds.push({
-        userId: sessionUser.id,
-        title: 'Daily check-in',
-        message: 'How are you feeling today? Log your mood to improve your AI insights.',
-        type: 'insight',
-        read: false,
-        createdAt: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+      // De-dupe: at most ONE check-in per day per user. Without this, parallel
+      // panel mounts (each reading unreadCount before the others commit) could
+      // stack several identical check-ins.
+      const checkinExists = await db.notification.findFirst({
+        where: {
+          userId: sessionUser.id,
+          title: 'Daily check-in',
+          createdAt: { gte: new Date(`${todayStr}T00:00:00.000Z`) },
+        },
       })
+      if (!checkinExists) {
+        seeds.push({
+          userId: sessionUser.id,
+          title: 'Daily check-in',
+          message: 'How are you feeling today? Log your mood to improve your AI insights.',
+          type: 'insight',
+          read: false,
+          createdAt: new Date(now.getTime() - 60 * 60 * 1000), // 1 hour ago
+        })
+      }
     }
 
     if (seeds.length === 0) {

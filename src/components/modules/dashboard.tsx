@@ -731,73 +731,88 @@ export default function DashboardModule() {
       {/* ─── 3. Quick Stats Row ─────────────────────────────────────────────── */}
       {cycleInfo && (
         <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            {
-              title: 'Cycle Day',
-              value: cycleInfo.cycleDay,
-              subtitle: `of ${cycleInfo.cycleLength} days`,
-              icon: CalendarDays,
-              color: 'text-rose-500',
-              bg: 'bg-rose-50 dark:bg-rose-950/30',
-              badge: { text: cycleInfo.phase.name, bg: cycleInfo.phase.color },
-            },
-            {
-              title: 'Days Until Period',
-              value: cycleInfo.daysUntilPeriod,
-              subtitle: 'countdown',
-              icon: Clock,
-              color: 'text-purple-500',
-              bg: 'bg-purple-50 dark:bg-purple-950/30',
-              badge: null,
-            },
-            {
-              title: 'Fertility Status',
-              value: cycleInfo.phase.name === 'Ovulation' ? 'Peak' : '—',
-              subtitle:
-                cycleInfo.phase.name === 'Ovulation'
-                  ? 'High chance'
-                  : 'Log to learn more',
-              icon: Baby,
-              color: 'text-orange-500',
-              bg: 'bg-orange-50 dark:bg-orange-950/30',
-              badge:
-                cycleInfo.phase.name === 'Ovulation'
-                  ? { text: 'Peak', bg: '#e11d48' }
-                  : null,
-            },
-            {
-              title: 'Next Ovulation',
-              value: '—',
-              subtitle: 'Based on cycle length',
-              icon: Flower2,
-              color: 'text-emerald-500',
-              bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-              badge: null,
-            },
-          ].map((stat) => (
-            <Card
-              key={stat.title}
-              className="glass border-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group/card"
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`p-2 rounded-lg ${stat.bg} transition-transform duration-200 group-hover/card:scale-110`}>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+          {(() => {
+            // Ovulation typically occurs 14 days before the next period (same
+            // math as the cycle card) — surfaced here so the "Next ovulation"
+            // stat is a live estimate instead of a dead dash.
+            const ovulationDay = cycleInfo.cycleLength - 14
+            let daysToOvulation = ovulationDay - cycleInfo.cycleDay
+            if (daysToOvulation < 0) daysToOvulation += cycleInfo.cycleLength
+            daysToOvulation = Math.max(0, daysToOvulation)
+            const ovulationDate = new Date(Date.now() + daysToOvulation * 86_400_000)
+            const fertility =
+              cycleInfo.phase.name === 'Ovulation'
+                ? { value: 'Peak', subtitle: 'High chance' }
+                : cycleInfo.phase.name === 'Follicular'
+                  ? { value: 'Rising', subtitle: 'Fertility rising' }
+                  : { value: 'Low', subtitle: 'Low chance' }
+            return [
+              {
+                title: 'Cycle Day',
+                value: cycleInfo.cycleDay,
+                subtitle: `of ${cycleInfo.cycleLength} days`,
+                icon: CalendarDays,
+                color: 'text-rose-500',
+                bg: 'bg-rose-50 dark:bg-rose-950/30',
+                badge: { text: cycleInfo.phase.name, bg: cycleInfo.phase.color },
+              },
+              {
+                title: 'Days Until Period',
+                value: cycleInfo.daysUntilPeriod,
+                subtitle: 'countdown',
+                icon: Clock,
+                color: 'text-purple-500',
+                bg: 'bg-purple-50 dark:bg-purple-950/30',
+                badge: null,
+              },
+              {
+                title: 'Fertility Status',
+                value: fertility.value,
+                subtitle: fertility.subtitle,
+                icon: Baby,
+                color: 'text-orange-500',
+                bg: 'bg-orange-50 dark:bg-orange-950/30',
+                badge:
+                  cycleInfo.phase.name === 'Ovulation'
+                    ? { text: 'Peak', bg: '#e11d48' }
+                    : null,
+              },
+              {
+                title: 'Next Ovulation',
+                value: daysToOvulation,
+                subtitle: `≈ ${ovulationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · ${cycleInfo.cycleLength}-day cycle`,
+                icon: Flower2,
+                color: 'text-emerald-500',
+                bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+                badge: null,
+              },
+            ].map((stat) => (
+              <Card
+                key={stat.title}
+                className="glass border-0 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group/card"
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`p-2 rounded-lg ${stat.bg} transition-transform duration-200 group-hover/card:scale-110`}>
+                      <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                    </div>
+                    {stat.badge && (
+                      <Badge
+                        className="text-white border-0 text-[10px] px-2 py-0.5"
+                        style={{ backgroundColor: stat.badge.bg }}
+                      >
+                        {stat.badge.text}
+                      </Badge>
+                    )}
                   </div>
-                  {stat.badge && (
-                    <Badge
-                      className="text-white border-0 text-[10px] px-2 py-0.5"
-                      style={{ backgroundColor: stat.badge.bg }}
-                    >
-                      {stat.badge.text}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-2xl font-bold">{stat.value}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{stat.subtitle}</p>
-              </CardContent>
-            </Card>
-          ))}
+                  <p className="text-2xl font-bold tabular-nums">
+                    {typeof stat.value === 'number' ? <AnimatedNumber value={stat.value} /> : stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{stat.subtitle}</p>
+                </CardContent>
+              </Card>
+            ))
+          })()}
         </motion.div>
       )}
 
@@ -1235,6 +1250,40 @@ export default function DashboardModule() {
 }
 
 // ─── Hormone Curves Chart (educational) ──────────────────────────────────────
+
+/**
+ * Count-up number animation for dashboard stats. Animates from the previous
+ * value to the new one with an ease-out cubic; renders the final value
+ * instantly when the user prefers reduced motion.
+ */
+function AnimatedNumber({ value, duration = 900 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0)
+  const prev = useRef(0)
+
+  useEffect(() => {
+    // Reduced motion → jump straight to the value (still via rAF so no
+    // synchronous setState inside the effect body).
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const from = reduce ? value : prev.current
+    const start = performance.now()
+    const dur = reduce ? 0 : duration
+    let raf = 0
+    const tick = (now: number) => {
+      const t = Math.min((now - start) / dur, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplay(Math.round(from + (value - from) * eased))
+      if (t < 1) {
+        raf = requestAnimationFrame(tick)
+      } else {
+        prev.current = value
+      }
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, duration])
+
+  return <>{display}</>
+}
 
 function HormoneCurves({ cycleLength, cycleDay }: { cycleLength: number; cycleDay: number }) {
   const { points, ovul } = useMemo(() => buildHormoneCurves(cycleLength), [cycleLength])

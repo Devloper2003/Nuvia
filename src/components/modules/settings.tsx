@@ -51,6 +51,7 @@ import {
   Eye,
   EyeOff,
   MessageSquare,
+  TrendingUp,
 } from 'lucide-react'
 import {
   Card,
@@ -422,6 +423,7 @@ export default function SettingsModule() {
     createdAt: string
     author: { id: string; name: string | null; email: string }
     commentCount: number
+    reports?: { reason: string | null; createdAt: string; reporter: string }[]
   }
   interface AuditEntry {
     id: string
@@ -439,6 +441,12 @@ export default function SettingsModule() {
     hidden: boolean
     author: { id: string; name: string | null; email: string }
     post: { id: string; title: string }
+    reports?: { reason: string | null; createdAt: string; reporter: string }[]
+  }
+  interface ModActivity {
+    byDay: { date: string; label: string; count: number }[]
+    byAction: { restore: number; dismiss: number; delete: number }
+    total: number
   }
   const [adminToken, setAdminToken] = useState<string | null>(null)
   const [adminName, setAdminName] = useState<string | null>(null)
@@ -448,6 +456,7 @@ export default function SettingsModule() {
   const [modQueue, setModQueue] = useState<ModPost[]>([])
   const [modComments, setModComments] = useState<ModComment[]>([])
   const [modStats, setModStats] = useState<{ totalPosts: number; totalComments: number; hiddenCount: number; hiddenComments: number; reportedComments: number; queueSize: number } | null>(null)
+  const [modActivity, setModActivity] = useState<ModActivity | null>(null)
   const [modAudit, setModAudit] = useState<AuditEntry[]>([])
   const [modLoading, setModLoading] = useState(false)
   const [modBusyId, setModBusyId] = useState<string | null>(null)
@@ -468,6 +477,7 @@ export default function SettingsModule() {
       setModQueue(data.queue ?? [])
       setModComments(data.commentQueue ?? [])
       setModStats(data.stats ?? null)
+      setModActivity(data.activity ?? null)
       setModAudit(data.auditLog ?? [])
       setSelectedPostIds(new Set())
     } catch (e) {
@@ -1055,6 +1065,42 @@ export default function SettingsModule() {
               </div>
             </div>
 
+            {/* Moderation pulse — 7-day activity from the audit trail */}
+            {modActivity && modActivity.total > 0 && (
+              <div className="rounded-xl border bg-muted/20 px-3.5 py-3 transition-colors hover:border-violet-300 dark:hover:border-violet-800">
+                <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                  <div className="flex items-center gap-1.5">
+                    <TrendingUp className="h-3.5 w-3.5 text-violet-500" />
+                    <span className="text-xs font-semibold">Moderation pulse — last 7 days</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {modActivity.total} action{modActivity.total === 1 ? '' : 's'} · {modActivity.byAction.restore} restored · {modActivity.byAction.dismiss} dismissed · {modActivity.byAction.delete} deleted
+                  </span>
+                </div>
+                <div className="flex items-end gap-1.5">
+                  {modActivity.byDay.map((d) => {
+                    const max = Math.max(...modActivity.byDay.map((x) => x.count), 1)
+                    return (
+                      <div
+                        key={d.date}
+                        className="flex-1 flex flex-col items-center gap-1 group/day"
+                        title={`${d.count} action${d.count === 1 ? '' : 's'} on ${d.date}`}
+                      >
+                        <div
+                          className={cn(
+                            'w-full rounded-t-sm transition-all group-hover/day:brightness-110',
+                            d.count > 0 ? 'bg-violet-500/80' : 'bg-muted-foreground/15'
+                          )}
+                          style={{ height: `${Math.max((d.count / max) * 28, 3)}px` }}
+                        />
+                        <span className="text-[9px] text-muted-foreground">{d.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Bulk action bar */}
             {selectedPostIds.size > 0 && (
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 dark:border-violet-900 bg-violet-50/60 dark:bg-violet-950/20 px-3 py-2">
@@ -1151,6 +1197,25 @@ export default function SettingsModule() {
                           <span>{post.commentCount} comment{post.commentCount === 1 ? '' : 's'}</span>
                           <span>{post.likes} likes</span>
                         </div>
+                        {post.reports && post.reports.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {post.reports.slice(0, 4).map((r, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300"
+                                title={`Reported by ${r.reporter} · ${new Date(r.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                              >
+                                <Flag className="h-2.5 w-2.5" />
+                                {r.reason || 'No reason given'} · {r.reporter}
+                              </span>
+                            ))}
+                            {post.reports.length > 4 && (
+                              <span className="text-[10px] text-muted-foreground self-center">
+                                +{post.reports.length - 4} more report{post.reports.length - 4 === 1 ? '' : 's'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -1245,6 +1310,25 @@ export default function SettingsModule() {
                           <span>by {comment.author.name ?? comment.author.email}</span>
                           <span>{new Date(comment.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                         </div>
+                        {comment.reports && comment.reports.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {comment.reports.slice(0, 4).map((r, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100/70 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300"
+                                title={`Reported by ${r.reporter} · ${new Date(r.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`}
+                              >
+                                <Flag className="h-2.5 w-2.5" />
+                                {r.reason || 'No reason given'} · {r.reporter}
+                              </span>
+                            ))}
+                            {comment.reports.length > 4 && (
+                              <span className="text-[10px] text-muted-foreground self-center">
+                                +{comment.reports.length - 4} more report{comment.reports.length - 4 === 1 ? '' : 's'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
