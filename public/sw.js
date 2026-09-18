@@ -1,6 +1,6 @@
-// ChandraCycle Service Worker — offline-first caching for PWA
-const CACHE = 'chandracycle-v4'
-const CORE = ['/', '/manifest.json', '/icon.svg', '/icon-maskable.svg', '/offline']
+// Nuvia Service Worker — offline-first caching for PWA
+const CACHE = 'nuvia-v5'
+const CORE = ['/', '/manifest.json', '/brand/nuvia-mark-192.png', '/brand/nuvia-mark-512.png', '/offline']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,7 +21,7 @@ self.addEventListener('activate', (event) => {
 // ─── Web Push ─────────────────────────────────────────────────────────────────
 // Server payloads are JSON: { title, body, tag?, url?, type? }
 self.addEventListener('push', (event) => {
-  let data = { title: 'ChandraCycle', body: 'You have a new update.', url: '/' }
+  let data = { title: 'Nuvia', body: 'You have a new update.', url: '/' }
   try {
     if (event.data) data = { ...data, ...event.data.json() }
   } catch {
@@ -30,9 +30,9 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: '/icon-maskable.svg',
-      badge: '/icon.svg',
-      tag: data.tag || 'chandracycle',
+      icon: '/brand/nuvia-mark-192.png',
+      badge: '/brand/nuvia-mark-192.png',
+      tag: data.tag || 'nuvia',
       renotify: true,
       data: { url: data.url || '/' },
       vibrate: [80, 40, 80],

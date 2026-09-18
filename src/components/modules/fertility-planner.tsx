@@ -1010,7 +1010,7 @@ export default function FertilityModule() {
             <EmptyState
               icon={Sparkles}
               title="Personalized fertility insights coming soon"
-              description="Log BBT, cervical mucus, and OPK results over a couple of cycles — ChandraCycle will surface patterns like ovulation confirmation, mucus transition signals, and cycle regularity here."
+              description="Log BBT, cervical mucus, and OPK results over a couple of cycles — Nuvia will surface patterns like ovulation confirmation, mucus transition signals, and cycle regularity here."
               ctaLabel="Log today's fertility signals"
               onCta={() => {
                 /* Form is on the same page; user can scroll up */

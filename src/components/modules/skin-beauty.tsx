@@ -1241,7 +1241,7 @@ function AISkinInsights() {
             </div>
             <p className="text-sm font-medium text-foreground">No personalized insights yet</p>
             <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-              Log your skin daily and track your cycle — ChandraCycle will surface personalized patterns (like cycle-breakout correlations and product effectiveness) here.
+              Log your skin daily and track your cycle — Nuvia will surface personalized patterns (like cycle-breakout correlations and product effectiveness) here.
             </p>
           </div>
         ) : (

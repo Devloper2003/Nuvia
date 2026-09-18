@@ -561,7 +561,7 @@ export default function PaypalCheckoutModal({
       setTransactionId(txnId)
       setReceipt({
         transactionId: txnId,
-        merchant: 'ChandraCycle (PayPal Sandbox)',
+        merchant: 'Nuvia (PayPal Sandbox)',
         planId: plan.id as 'premium' | 'plus',
         planName: plan.name,
         billingCycle,
@@ -773,7 +773,7 @@ export default function PaypalCheckoutModal({
                     <p className="text-[11px] leading-relaxed text-gray-500">
                       This is a secure PayPal checkout.{' '}
                       <span className="font-medium text-gray-700">
-                        You'll log in to PayPal directly — ChandraCycle never sees your password.
+                        You'll log in to PayPal directly — Nuvia never sees your password.
                       </span>
                     </p>
                   </div>
@@ -811,7 +811,7 @@ export default function PaypalCheckoutModal({
                       A
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#2c2e2f]">ChandraCycle Health</p>
+                      <p className="text-sm font-semibold text-[#2c2e2f]">Nuvia Health</p>
                       <p className="truncate text-xs text-gray-500">{email.trim().toLowerCase() || 'PayPal account'}</p>
                     </div>
                     <ShieldCheck className="h-4 w-4 shrink-0 text-emerald-500" />
@@ -1109,7 +1109,7 @@ export default function PaypalCheckoutModal({
                 <Lock className="h-3 w-3" />
                 PayPal Secure Checkout
               </span>
-              <span>© {new Date().getFullYear()} PayPal · ChandraCycle</span>
+              <span>© {new Date().getFullYear()} PayPal · Nuvia</span>
             </div>
           )}
         </motion.div>

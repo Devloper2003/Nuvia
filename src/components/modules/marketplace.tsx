@@ -539,7 +539,7 @@ export default function MarketplaceModule() {
           <div className="space-y-2 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-medium">
               <ShoppingBag className="h-3.5 w-3.5" />
-              ChandraCycle Marketplace
+              Nuvia Marketplace
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
               <span className="bg-gradient-to-r from-white via-rose-50 to-amber-100 bg-clip-text text-transparent">
@@ -648,7 +648,7 @@ export default function MarketplaceModule() {
 
       {/* ─── 6. AI RECOMMENDATIONS ───────────────────────────────────────── */}
       {/* Removed: "AI-Powered Recommendations" rows that relied on fake
-          per-persona product groups (and a fake "50,000+ ChandraCycle women"
+          per-persona product groups (and a fake "50,000+ Nuvia women"
           claim). Restore this section once there is a real personalization
           backend that returns recommended SKUs based on the user's profile. */}
 

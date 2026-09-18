@@ -8,7 +8,7 @@ import { RetryButton } from './retry-button'
 // Everything renders from the cached HTML — no data fetches on this page.
 
 export const metadata = {
-  title: 'You are offline — ChandraCycle',
+  title: 'You are offline — Nuvia',
 }
 
 export default function OfflinePage() {
@@ -28,7 +28,7 @@ export default function OfflinePage() {
         You&rsquo;re offline
       </h1>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-        ChandraCycle needs a connection to load this page. Your logged data is
+        Nuvia needs a connection to load this page. Your logged data is
         safe and will sync as soon as you&rsquo;re back online.
       </p>
 
@@ -45,7 +45,7 @@ export default function OfflinePage() {
 
       <p className="mt-10 text-xs text-muted-foreground/70 flex items-center gap-1.5">
         <Moon className="h-3 w-3" aria-hidden="true" />
-        ChandraCycle works offline for pages you&rsquo;ve visited before.
+        Nuvia works offline for pages you&rsquo;ve visited before.
       </p>
     </div>
   )

@@ -1,4 +1,4 @@
-// ─── ChandraCycle i18n dictionary ────────────────────────────────────────────
+// ─── Nuvia i18n dictionary ────────────────────────────────────────────
 // Lightweight translation layer for the app chrome (navigation, dashboard,
 // settings, common actions). English is the source of truth; hi (हिन्दी) and
 // ta (தமிழ்) are first-class supported languages for menstrual-health UI copy.

@@ -128,7 +128,7 @@ export async function createOrder(params: {
           application_context: {
             ...(returnUrl ? { return_url: returnUrl } : {}),
             ...(cancelUrl ? { cancel_url: cancelUrl } : {}),
-            brand_name: 'ChandraCycle Health',
+            brand_name: 'Nuvia Health',
             user_action: 'PAY_NOW',
           },
         }

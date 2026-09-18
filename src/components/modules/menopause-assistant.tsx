@@ -910,7 +910,7 @@ export default function MenopauseModule() {
               </div>
               <p className="text-sm font-medium text-foreground">Personalized insights coming soon</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                Log your symptoms, sleep, and mood for a few weeks — ChandraCycle will then surface correlations like hot-flash triggers and sleep-mood patterns here.
+                Log your symptoms, sleep, and mood for a few weeks — Nuvia will then surface correlations like hot-flash triggers and sleep-mood patterns here.
               </p>
             </div>
 

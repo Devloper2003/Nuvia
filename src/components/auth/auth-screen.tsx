@@ -25,6 +25,7 @@ import {
 } from 'lucide-react'
 import GoogleOAuthButton from './google-oauth-button'
 import GoogleSignInModal from './google-signin-modal'
+import { BrandMark, BrandWordmark, BrandTagline } from '@/components/brand/brand-logo'
 
 type Mode = 'login' | 'signup'
 
@@ -129,7 +130,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
       if (data.token && remember) {
         localStorage.setItem('chandracycle_token', data.token)
       }
-      toast.success(mode === 'signup' ? 'Welcome to ChandraCycle!' : 'Welcome back!')
+      toast.success(mode === 'signup' ? 'Welcome to Nuvia!' : 'Welcome back!')
       onAuthed(data.user)
     } catch {
       toast.error('Network error. Please try again.')
@@ -242,23 +243,20 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
       {/* ─── Left brand panel (hidden on mobile) ──────────────────────────── */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
-          {/* Brand row — glass chip with vibrant gradient logo mark */}
+          {/* Brand row — glass chip with the animated Nuvia mark */}
           <motion.div
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
             className="glass rounded-2xl px-4 py-2.5 inline-flex items-center gap-3 self-start"
           >
-            <div className="relative">
-              {/* Glow halo behind the brand mark */}
-              <div className="absolute inset-0 rounded-2xl bg-rose-400/50 blur-lg" aria-hidden />
-              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-600 font-bold text-2xl text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_12px_28px_-8px_rgba(217,70,119,0.55)] animate-float">
-                <span className="font-serif">C</span>
-              </div>
-            </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-semibold text-lg tracking-tight font-serif text-foreground">ChandraCycle</span>
-              <span className="text-[11px] text-muted-foreground tracking-wide">AI Women&apos;s Health Companion</span>
+            <BrandMark size="md" />
+            <div className="flex flex-col leading-tight gap-1">
+              <BrandWordmark size="md" />
+              <BrandTagline
+                className="text-[10px] font-medium tracking-[0.14em] text-muted-foreground"
+                dotClassName="h-[3px] w-[3px]"
+              />
             </div>
           </motion.div>
 
@@ -346,19 +344,19 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           variants={containerStagger}
           className="w-full max-w-md py-4 sm:py-10"
         >
-          {/* Mobile premium header */}
+          {/* Mobile premium header — animated Nuvia lockup */}
           <motion.div
             variants={fadeUp}
             className="lg:hidden flex flex-col items-center text-center mb-4 sm:mb-7"
           >
-            <div className="relative mb-2">
-              <div className="absolute inset-0 rounded-2xl bg-rose-400/50 blur-lg" aria-hidden />
-              <div className="relative flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-600 text-white font-bold text-xl sm:text-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_16px_36px_-10px_rgba(217,70,119,0.6)] animate-float">
-                <span className="font-serif">C</span>
-              </div>
+            <div className="mb-3">
+              <BrandMark size="lg" />
             </div>
-            <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-foreground">ChandraCycle</span>
-            <span className="text-[11px] text-muted-foreground leading-tight tracking-wide mt-0.5">AI Women&apos;s Health Companion</span>
+            <BrandWordmark size="lg" className="mb-1.5" />
+            <BrandTagline
+              className="text-[11px] font-medium tracking-[0.16em] text-muted-foreground"
+              dotClassName="h-[3.5px] w-[3.5px]"
+            />
           </motion.div>
 
           {/* Premium form card */}
@@ -533,7 +531,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                     <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500 mt-0.5" />
                     <span>
                       <span className="font-medium text-foreground">Secure sign-in:</span> Continue with Google
-                      opens a secure permission popup. Your password is never shared with ChandraCycle.
+                      opens a secure permission popup. Your password is never shared with Nuvia.
                     </span>
                   </p>
                 </div>
@@ -542,7 +540,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           </motion.div>
 
           <p className="mt-4 sm:mt-6 text-center text-[11px] text-muted-foreground leading-relaxed pb-[env(safe-area-inset-bottom)]">
-            By continuing you agree to ChandraCycle&apos;s Terms of Service and Privacy Policy.
+            By continuing you agree to Nuvia&apos;s Terms of Service and Privacy Policy.
             <br />Your health data is encrypted and never sold.
           </p>
         </motion.div>

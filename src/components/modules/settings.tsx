@@ -217,8 +217,8 @@ export default function SettingsModule() {
   // not fake history. dob / height / weight / lastPeriod start empty so a
   // new user fills them in rather than seeing fabricated personal data.
   const [formData, setFormData] = useState({
-    name: userProfile?.name || 'ChandraCycle User',
-    email: userProfile?.email || 'user@chandracycle.health',
+    name: userProfile?.name || 'Nuvia User',
+    email: userProfile?.email || 'user@nuvia.health',
     dob: '',
     height: '',
     weight: '',
@@ -406,7 +406,7 @@ export default function SettingsModule() {
 
   const handleSignOut = () => {
     toast.success('Signed out', {
-      description: 'You\'ve been signed out of ChandraCycle.',
+      description: 'You\'ve been signed out of Nuvia.',
     })
   }
 
@@ -519,7 +519,7 @@ export default function SettingsModule() {
   }
   const [adminToken, setAdminToken] = useState<string | null>(null)
   const [adminName, setAdminName] = useState<string | null>(null)
-  const [adminEmail, setAdminEmail] = useState('admin@chandracycle.app')
+  const [adminEmail, setAdminEmail] = useState('admin@nuvia.app')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminLoggingIn, setAdminLoggingIn] = useState(false)
   const [modQueue, setModQueue] = useState<ModPost[]>([])
@@ -964,7 +964,7 @@ export default function SettingsModule() {
           <p className="text-xs text-fuchsia-700 dark:text-fuchsia-300 flex items-start gap-2">
             <Sparkles className="h-3.5 w-3.5 mt-0.5 shrink-0" />
             <span>
-              <strong>Tip:</strong> The more accurate your cycle settings, the better ChandraCycle's predictions.
+              <strong>Tip:</strong> The more accurate your cycle settings, the better Nuvia's predictions.
               Most women have cycles between 26–32 days. Update if your cycle changes over time.
             </span>
           </p>
@@ -1154,7 +1154,7 @@ export default function SettingsModule() {
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="admin@chandracycle.app"
+                  placeholder="admin@nuvia.app"
                   autoComplete="off"
                 />
               </div>
@@ -1619,7 +1619,7 @@ export default function SettingsModule() {
       {/* ─── Appearance ────────────────────────────────────────────── */}
       <SettingsSection
         title="Appearance"
-        description="Customize how ChandraCycle looks for you"
+        description="Customize how Nuvia looks for you"
         icon={Palette}
         iconColor="bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400"
         delay={0.3}
@@ -1721,7 +1721,7 @@ export default function SettingsModule() {
       {/* ─── Subscription (real, DB-backed) ────────────────────────── */}
       <SettingsSection
         title="Subscription"
-        description="Manage your ChandraCycle plan"
+        description="Manage your Nuvia plan"
         icon={Crown}
         iconColor="bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400"
         delay={0.4}
@@ -1839,7 +1839,7 @@ export default function SettingsModule() {
 
       {/* ─── About ─────────────────────────────────────────────────── */}
       <SettingsSection
-        title="About ChandraCycle"
+        title="About Nuvia"
         description="App information and resources"
         icon={Info}
         iconColor="bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400"
@@ -1852,7 +1852,7 @@ export default function SettingsModule() {
                 A
               </div>
               <div>
-                <div className="text-sm font-semibold">ChandraCycle</div>
+                <div className="text-sm font-semibold">Nuvia</div>
                 <div className="text-xs text-muted-foreground">AI Women's Health Companion</div>
               </div>
             </div>
@@ -1885,7 +1885,7 @@ export default function SettingsModule() {
               <ExternalLink className="h-3 w-3 text-muted-foreground ml-auto" />
             </button>
             <button
-              onClick={() => toast.info('Contact us', { description: 'support@chandracycle.health · +91 80-4567-8900' })}
+              onClick={() => toast.info('Contact us', { description: 'support@nuvia.health · +91 80-4567-8900' })}
               className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left"
             >
               <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -1920,7 +1920,7 @@ export default function SettingsModule() {
       >
         <div className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            New to ChandraCycle? Replay the interactive tour to learn where everything is —
+            New to Nuvia? Replay the interactive tour to learn where everything is —
             the sidebar, Period Tracker, AI Coach, your profile, and Premium.
           </p>
           <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50/50 dark:bg-amber-950/10 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1978,7 +1978,7 @@ export default function SettingsModule() {
             <button
               onClick={() =>
                 toast.info('Contact us', {
-                  description: 'support@chandracycle.health · +91 80-4567-8900',
+                  description: 'support@nuvia.health · +91 80-4567-8900',
                 })
               }
               className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/40 transition-colors text-left"
@@ -2017,7 +2017,7 @@ export default function SettingsModule() {
 
       {/* Footer */}
       <div className="text-center text-xs text-muted-foreground pb-2">
-        Made with <HeartPulse className="inline h-3 w-3 text-rose-500" /> for women everywhere · © 2024 ChandraCycle Health
+        Made with <HeartPulse className="inline h-3 w-3 text-rose-500" /> for women everywhere · © 2024 Nuvia Health
       </div>
     </div>
   )

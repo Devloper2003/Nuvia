@@ -951,3 +951,60 @@ Stage Summary:
   6. KNOWN: dev server reaping persists in sandbox — always `curl localhost:3000` first;
      restart with setsid double-fork; restart mini-services/reminder-scheduler separately.
   7. scripts/check-users.ts + scripts/cleanup-qa.ts kept as QA utilities (safe, read/cleanup only).
+
+---
+Task ID: 13
+Agent: Z.ai Code (user-requested rebrand)
+Task: USER REQUEST — "ye logo h and ye brand name aur tagline iske sath do and thoda animated and
+creative" → Rebrand the app to NUVIA using the uploaded logo (lotus-flame + drop mark), brand name
+"Nuvia", tagline "Track • Understand • Thrive", with animated & creative presentation.
+
+Work Log:
+- BRAND ASSETS (PIL, saturation-bbox analysis of the uploaded 1254×1254 logo):
+  - public/brand/nuvia-mark.png (512²) — precise crop of the lotus+drop mark; corner-swirl and
+    NUVIA-text leaf fragments removed via row-wise background fill; -192/-512 PNGs generated for
+    PWA icons. Full original kept as nuvia-logo.png.
+- NEW COMPONENT src/components/brand/brand-logo.tsx (CSS-only animations → hydration-safe,
+  framer-free, bundle-light):
+  - BrandMark: glass tile (white→rose gradient + ring + layered shadow) with breathing halo,
+    orbiting dashed ring, gentle float-tilt, and a diagonal light-sheen sweep; sizes xs→xl.
+  - BrandWordmark: "Nuvia" serif with new .brand-wordmark plum→rose round-trip shimmer class
+    (light + dark variants).
+  - BrandTagline: "Track • Understand • Thrive" with staggered pulsing separator dots.
+  - All keyframes (brand-float-soft/brand-halo/brand-sheen/brand-dot/brand-spin + wordmark)
+    added to globals.css and registered in the prefers-reduced-motion block.
+- INTEGRATED AT: sidebar logo area (collapses to mark-only, AnimatePresence preserved), auth
+  screen brand chip (left panel) + mobile header, AppLoader (mark + "Loading Nuvia…" + tagline,
+  stays hydration-safe), onboarding welcome hero (xl mark replaced the old "C" circle) +
+  onboarding header chip, mobile topbar (xs mark), profile dropdown brand header (mark in white
+  tile + "TRACK · UNDERSTAND · THRIVE"), printable health-report template (img logo).
+- GLOBAL REBRAND: sed "ChandraCycle"→"Nuvia" across src/ + manifest.json (38 files: modules,
+  auth, premium, i18n translations, AI system prompts, push/notification seeds, PayPal labels,
+  legal pages, offline page). Case-sensitive so internal keys survived: chandracycle_token,
+  chandracycle_sidebar_open, chandracycle-scroll, chandracycle-installable, ICS UIDs,
+  admin/storage keys untouched (deliberate). User-facing emails → support@nuvia.health /
+  admin@nuvia.app / user@nuvia.health.
+- PWA: layout.tsx icons → nuvia-mark-192/512.png; manifest.json name "Nuvia — Track • Understand
+  • Thrive" + PNG icons; sw.js cache bumped chandracycle-v4 → nuvia-v5 with new CORE assets
+  (old caches auto-purge on activate; this also fixed stale-chunk serving seen mid-round).
+- METADATA: title "Nuvia — Track • Understand • Thrive", applicationName Nuvia, apple title.
+- E2E VERIFIED (agent-browser): fresh signup riya.qa@test.com → auth screen (animated lockup) →
+  onboarding (Nuvia mark hero, "Welcome to Nuvia", "Enter Nuvia" button) → dashboard sidebar
+  (mark + wordmark + tagline) → dark mode (halo glow, dropdown gradient header) → mobile 390×844
+  topbar. Screenshots nuvia_1…nuvia_9. LCP warning fixed via Image priority on the mark.
+- CLEANUP: riya.qa + cascade rows deleted (7 users baseline). Browser session/localStorage/SW
+  registration cleared. Lint: 0 errors 0 warnings. dev.log clean. Server was reaped once
+  (HTTP 000) — restarted via setsid double-fork.
+
+Stage Summary:
+- ✅ Full Nuvia rebrand shipped & verified end-to-end with animated brand kit (halo+orbit+float+
+  sheen mark, shimmer wordmark, pulsing-dot tagline) across auth, onboarding, shell, mobile,
+  dropdown, loader, PWA icons/metadata and all user-facing copy.
+- DB state changes: none (schema untouched; throwaway QA user created+removed).
+- Remaining backlog (next round):
+  1. i18n depth: module interiors still hard-coded English (period tracker, coach empty states).
+  2. Persisted analytics table for moderation stats (currently 7-day AuditLog window).
+  3. Reminder sweep: per-user local-timezone quiet hours (engine uses server clock).
+  4. Optional: generate a proper maskable icon (current maskable = plain mark on light bg).
+  5. KNOWN: dev server reaping persists — always `curl localhost:3000` first; restart with setsid
+     double-fork; SW cache is now nuvia-v5 (bump on future asset changes if ever needed).

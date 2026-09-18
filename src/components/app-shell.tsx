@@ -1,8 +1,10 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import { useAppStore, ActiveModule } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { BrandMark, BrandWordmark, BrandTagline } from '@/components/brand/brand-logo'
 import {
   LayoutDashboard,
   CalendarDays,
@@ -279,14 +281,11 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
             sidebarOpen ? 'w-64' : 'w-[72px]'
           )}
         >
-          {/* Logo Area — Luxury brand */}
+          {/* Logo Area — Nuvia brand (animated mark + wordmark + tagline) */}
           <div className="relative flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden h-[68px]">
-            {/* Decorative gold shimmer */}
-            <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-rose-500/5 to-transparent pointer-events-none" />
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-white font-bold text-lg shrink-0 shadow-lg shadow-rose-500/30">
-              <span className="relative">C</span>
-              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-300 ring-2 ring-card" />
-            </div>
+            {/* Decorative rose glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-fuchsia-500/5 to-transparent pointer-events-none" />
+            <BrandMark size="sm" className={cn(sidebarOpen ? 'ml-0' : 'mx-auto')} />
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.div
@@ -296,12 +295,11 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                   transition={{ duration: 0.2 }}
                   className="relative flex flex-col overflow-hidden"
                 >
-                  <span className="font-serif text-base tracking-tight bg-gradient-to-r from-amber-600 via-rose-600 to-fuchsia-600 dark:from-amber-300 dark:via-rose-300 dark:to-fuchsia-300 bg-clip-text text-transparent font-bold leading-none">
-                    ChandraCycle
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground/80 leading-tight mt-0.5 font-medium">
-                    AI Health Companion
-                  </span>
+                  <BrandWordmark size="sm" />
+                  <BrandTagline
+                    className="text-[8px] font-medium tracking-[0.14em] text-muted-foreground/80 leading-tight mt-1"
+                    dotClassName="h-[2.5px] w-[2.5px]"
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -374,7 +372,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
             {installable && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('chandracycle-install-request'))}
-                aria-label="Install ChandraCycle on this device"
+                aria-label="Install Nuvia on this device"
                 className="group flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
               >
                 <Smartphone className="h-5 w-5 shrink-0 transition-transform group-hover:scale-110" />
@@ -480,15 +478,15 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-72 p-0 overflow-hidden">
                   {/* Brand header inside profile dropdown */}
-                  <div className="relative px-4 py-4 bg-gradient-to-br from-amber-500 via-rose-500 to-fuchsia-600 text-white overflow-hidden">
+                  <div className="relative px-4 py-4 bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-600 text-white overflow-hidden">
                     <div className="absolute -top-6 -right-6 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
                     <div className="relative flex items-center gap-2.5">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm border border-white/30 font-bold text-base">
-                        C
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/95 shadow-md overflow-hidden">
+                        <Image src="/brand/nuvia-mark.png" alt="Nuvia logo" width={40} height={40} sizes="40px" className="h-[88%] w-[88%] object-contain" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-serif font-bold text-base leading-tight tracking-tight">ChandraCycle</span>
-                        <span className="text-[9px] uppercase tracking-[0.18em] text-white/80 leading-tight">Premium Health</span>
+                        <span className="font-serif font-bold text-base leading-tight tracking-tight">Nuvia</span>
+                        <span className="text-[9px] uppercase tracking-[0.18em] text-white/85 leading-tight">Track · Understand · Thrive</span>
                       </div>
                     </div>
                   </div>

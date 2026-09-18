@@ -233,7 +233,7 @@ const AI_MODEL_INFO = {
     {
       step: 1,
       title: 'Data Collection',
-      description: 'We aggregate your cycle, mood, sleep, symptoms, nutrition, and exercise data points across all ChandraCycle modules.',
+      description: 'We aggregate your cycle, mood, sleep, symptoms, nutrition, and exercise data points across all Nuvia modules.',
     },
     {
       step: 2,
@@ -1032,7 +1032,7 @@ export default function AIInsightsModule() {
                     <p className="text-sm font-medium text-foreground">No predictability score yet</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
                       Insights appear after you log some data. Track your cycle, mood, sleep,
-                      and symptoms for ~30 days and ChandraCycle will compute your health
+                      and symptoms for ~30 days and Nuvia will compute your health
                       predictability score, score breakdown, and personalized AI insights here.
                     </p>
                   </div>
@@ -1168,7 +1168,7 @@ export default function AIInsightsModule() {
                     <p className="text-xs text-muted-foreground mt-1 max-w-sm">
                       Your first monthly AI report will generate automatically once you have
                       at least one full month of cycle, mood, sleep, and symptom logs. Start
-                      tracking across ChandraCycle to unlock key findings, improvements, and
+                      tracking across Nuvia to unlock key findings, improvements, and
                       personalized goals here.
                     </p>
                   </div>
@@ -1279,7 +1279,7 @@ export default function AIInsightsModule() {
                       AI Model Confidence & Transparency
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      How ChandraCycle&apos;s AI works — and why you can trust its insights
+                      How Nuvia&apos;s AI works — and why you can trust its insights
                     </CardDescription>
                   </div>
                   <Button variant="outline" size="sm" className="gap-1.5">
@@ -1343,7 +1343,7 @@ export default function AIInsightsModule() {
                 {/* How AI works */}
                 <div>
                   <h4 className="text-sm font-semibold mb-3 flex items-center gap-1.5">
-                    <Info className="h-4 w-4 text-violet-500" /> How ChandraCycle&apos;s AI Works
+                    <Info className="h-4 w-4 text-violet-500" /> How Nuvia&apos;s AI Works
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                     {AI_MODEL_INFO.howItWorks.map((step, i) => (
@@ -1408,7 +1408,7 @@ export default function AIInsightsModule() {
                 <p className="text-sm font-medium text-foreground">No predictions yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
                   Insights appear after you log some data. 7-day forecasts for mood, energy,
-                  sleep, stress, productivity, and cravings will generate here once ChandraCycle
+                  sleep, stress, productivity, and cravings will generate here once Nuvia
                   has at least a few weeks of your cycle, mood, and symptom logs to model from.
                 </p>
               </CardContent>
@@ -1454,7 +1454,7 @@ export default function AIInsightsModule() {
                       </div>
                       <p className="text-sm font-medium text-foreground">No patterns detected yet</p>
                       <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                        Insights appear after you log some data. ChandraCycle&apos;s pattern engine
+                        Insights appear after you log some data. Nuvia&apos;s pattern engine
                         will surface recurring correlations — like cycle-day mood dips or hydration→cramp
                         links — once you have a few weeks of consistent logs.
                       </p>
@@ -1605,7 +1605,7 @@ export default function AIInsightsModule() {
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
                   Insights appear after you log some data. The correlation matrix — showing how
                   your sleep, mood, energy, stress, water, and cramps interact — will compute
-                  automatically once ChandraCycle has enough paired data points.
+                  automatically once Nuvia has enough paired data points.
                 </p>
               </CardContent>
             </Card>
@@ -1899,7 +1899,7 @@ export default function AIInsightsModule() {
                 </div>
                 <p className="text-sm font-medium text-foreground">No recommendations yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  Insights appear after you log some data. ChandraCycle will generate personalized,
+                  Insights appear after you log some data. Nuvia will generate personalized,
                   evidence-based recommendations across nutrition, exercise, lifestyle, and
                   self-care — each tied to your actual tracked patterns — as your history grows.
                 </p>
@@ -1990,7 +1990,7 @@ export default function AIInsightsModule() {
                 </div>
                 <p className="text-sm font-medium text-foreground">No risk assessments yet</p>
                 <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                  Insights appear after you log some data. ChandraCycle will compute AI risk
+                  Insights appear after you log some data. Nuvia will compute AI risk
                   scores for common women&apos;s health conditions — PCOS, PMS/PMDD, iron &amp;
                   vitamin D deficiency, thyroid — once you have enough cycle, symptom, and
                   lifestyle logs. These scores are not a medical diagnosis; always consult a
@@ -2080,7 +2080,7 @@ export default function AIInsightsModule() {
               &ldquo;Knowledge of your patterns is the first step to thriving — not just surviving — your cycle.&rdquo;
             </p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              ChandraCycle AI · {AI_MODEL_INFO.dataPoints.toLocaleString()} data points · {AI_MODEL_INFO.accuracy}% accuracy · Updated {AI_MODEL_INFO.lastUpdated}
+              Nuvia AI · {AI_MODEL_INFO.dataPoints.toLocaleString()} data points · {AI_MODEL_INFO.accuracy}% accuracy · Updated {AI_MODEL_INFO.lastUpdated}
             </p>
           </div>
           <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 gap-1 shrink-0">

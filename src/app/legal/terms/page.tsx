@@ -16,9 +16,9 @@ import {
 import { LegalLayout, LegalSection } from "../_components/legal-layout";
 
 export const metadata = {
-  title: "Terms of Service — ChandraCycle",
+  title: "Terms of Service — Nuvia",
   description:
-    "The terms and conditions that govern your use of ChandraCycle, the AI-powered women's health companion.",
+    "The terms and conditions that govern your use of Nuvia, the AI-powered women's health companion.",
 };
 
 const EFFECTIVE_DATE = "July 4, 2026";
@@ -28,7 +28,7 @@ export default function TermsOfServicePage() {
     <LegalLayout
       active="terms"
       title="Terms of Service"
-      subtitle={`Effective ${EFFECTIVE_DATE}. These terms govern your use of ChandraCycle. Please read them carefully — by creating an account you agree to them.`}
+      subtitle={`Effective ${EFFECTIVE_DATE}. These terms govern your use of Nuvia. Please read them carefully — by creating an account you agree to them.`}
     >
       {/* Health disclaimer banner up top */}
       <Card className="border-amber-200 bg-amber-50/70 dark:bg-amber-950/20 dark:border-amber-900">
@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
           <div className="text-sm">
             <p className="font-semibold text-amber-900 dark:text-amber-200">
-              ChandraCycle is informational, not medical advice.
+              Nuvia is informational, not medical advice.
             </p>
             <p className="mt-1 text-amber-800/90 dark:text-amber-200/80">
               Our AI insights are general guidance for healthy adults. They are{" "}
@@ -54,9 +54,9 @@ export default function TermsOfServicePage() {
         <LegalSection id="acceptance" title="1. Acceptance of Terms">
           <p>
             These Terms of Service (&ldquo;Terms&rdquo;) form a binding
-            agreement between you and ChandraCycle Health Pvt. Ltd.
-            (&ldquo;ChandraCycle&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;,
-            &ldquo;our&rdquo;) governing your use of the ChandraCycle mobile and web
+            agreement between you and Nuvia Health Pvt. Ltd.
+            (&ldquo;Nuvia&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;,
+            &ldquo;our&rdquo;) governing your use of the Nuvia mobile and web
             application (&ldquo;the Service&rdquo;). By creating an account,
             signing in, or otherwise using the Service, you confirm that you
             have read, understood, and agree to be bound by these Terms and our{" "}
@@ -66,13 +66,13 @@ export default function TermsOfServicePage() {
             >
               Privacy Policy
             </Link>
-            . If you do not agree, do not use ChandraCycle.
+            . If you do not agree, do not use Nuvia.
           </p>
         </LegalSection>
 
         <LegalSection id="service" title="2. Description of the Service">
           <p>
-            ChandraCycle is an AI-powered women&apos;s health companion. The Service
+            Nuvia is an AI-powered women&apos;s health companion. The Service
             helps you:
           </p>
           <ul className="ml-4 list-disc space-y-2">
@@ -102,7 +102,7 @@ export default function TermsOfServicePage() {
 
         <LegalSection id="eligibility" title="3. Eligibility">
           <p>
-            You may use ChandraCycle only if:
+            You may use Nuvia only if:
           </p>
           <ul className="ml-4 list-disc space-y-2">
             <li>
@@ -112,7 +112,7 @@ export default function TermsOfServicePage() {
             </li>
             <li>
               You are a resident of <span className="font-medium">India</span>.
-              ChandraCycle is currently offered only to users in India, and
+              Nuvia is currently offered only to users in India, and
               subscriptions are billed in Indian Rupees (₹) inclusive of 18%
               GST.
             </li>
@@ -157,7 +157,7 @@ export default function TermsOfServicePage() {
 
         <LegalSection id="subscriptions" title="5. Subscriptions &amp; Billing">
           <p>
-            ChandraCycle offers a free Basic plan and a paid Premium plan with two
+            Nuvia offers a free Basic plan and a paid Premium plan with two
             billing options:
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -243,7 +243,7 @@ export default function TermsOfServicePage() {
           <p>You agree not to:</p>
           <ul className="ml-4 list-disc space-y-2">
             <li>
-              Use ChandraCycle in any way that violates Indian law or the rights of
+              Use Nuvia in any way that violates Indian law or the rights of
               others.
             </li>
             <li>
@@ -264,7 +264,7 @@ export default function TermsOfServicePage() {
               prescription drugs.
             </li>
             <li>
-              <span className="font-medium">Rely on ChandraCycle as medical
+              <span className="font-medium">Rely on Nuvia as medical
               advice</span> — the Service is informational only. See the Health
               Disclaimer below.
             </li>
@@ -285,7 +285,7 @@ export default function TermsOfServicePage() {
                 <HeartPulse className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
                 <p>
                   <span className="font-semibold text-rose-900 dark:text-rose-100">
-                    ChandraCycle provides general information, not medical advice.
+                    Nuvia provides general information, not medical advice.
                   </span>{" "}
                   Our insights, predictions, AI coaching, and community content
                   are intended to support &mdash; not replace &mdash; the
@@ -315,8 +315,8 @@ export default function TermsOfServicePage() {
 
         <LegalSection id="ip" title="8. Intellectual Property">
           <p>
-            ChandraCycle and its licensors own all rights, title, and interest in
-            the Service, including the ChandraCycle name and logo, the app design,
+            Nuvia and its licensors own all rights, title, and interest in
+            the Service, including the Nuvia name and logo, the app design,
             the AI models, written content, illustrations, and software code.
             You may not copy, modify, distribute, or create derivative works
             from any part of the Service without our written permission.
@@ -324,7 +324,7 @@ export default function TermsOfServicePage() {
           <p>
             Content you post in the community (cycle reflections, comments,
             photos you choose to share) remains yours. By posting it, you grant
-            ChandraCycle a worldwide, royalty-free licence to host, display, and
+            Nuvia a worldwide, royalty-free licence to host, display, and
             process that content solely to operate the community features. You
             can delete your content at any time.
           </p>
@@ -359,7 +359,7 @@ export default function TermsOfServicePage() {
 
         <LegalSection id="liability" title="10. Limitation of Liability">
           <p>
-            To the fullest extent permitted by law, neither ChandraCycle nor its
+            To the fullest extent permitted by law, neither Nuvia nor its
             officers, employees, or affiliates shall be liable for any
             indirect, incidental, special, consequential, or punitive damages
             arising out of your use of the Service &mdash; including but not
@@ -396,7 +396,7 @@ export default function TermsOfServicePage() {
             We may update these Terms from time to time. We will notify you by
             email at least 7 days before material changes take effect, and post
             the new version with an updated effective date on this page.
-            Continued use of ChandraCycle after the effective date means you accept
+            Continued use of Nuvia after the effective date means you accept
             the updated Terms. If you do not agree, you may cancel your
             subscription and stop using the Service.
           </p>
@@ -409,7 +409,7 @@ export default function TermsOfServicePage() {
           <div className="rounded-xl border border-rose-200 bg-white p-4 dark:bg-rose-950/20 dark:border-rose-900">
             <p className="flex items-center gap-2 font-semibold text-rose-900 dark:text-rose-100">
               <Scale className="h-4 w-4 text-rose-600" />
-              ChandraCycle Health Pvt. Ltd. — Legal
+              Nuvia Health Pvt. Ltd. — Legal
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               Email:{" "}

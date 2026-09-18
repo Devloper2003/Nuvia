@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * WelcomeTour — first-time onboarding tour for ChandraCycle.
+ * WelcomeTour — first-time onboarding tour for Nuvia.
  *
  * How it works
  * ─────────────
@@ -72,7 +72,7 @@ export function getTourSeenKey(userId?: string | null): string {
 const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Welcome to ChandraCycle',
+    title: 'Welcome to Nuvia',
     body: "Your AI-powered women's health companion. Let's take a quick 60-second tour to show you around — you can skip any time.",
     targetSelector: null,
     placement: 'center',
@@ -103,12 +103,12 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'period',
     title: 'Log Your Period',
-    body: 'Tap here to log your period. Once you log your first period, ChandraCycle predicts ovulation, fertile windows, and your next period automatically. This is the most important first step!',
+    body: 'Tap here to log your period. Once you log your first period, Nuvia predicts ovulation, fertile windows, and your next period automatically. This is the most important first step!',
     targetSelector: '[data-tour="period"]',
     placement: 'right',
     emoji: '🩸',
     mobileBody:
-      'Tap the "Period" tab in the bottom navigation to log your cycle. Once logged, ChandraCycle predicts ovulation, fertile windows, and your next period automatically — this is the most important first step!',
+      'Tap the "Period" tab in the bottom navigation to log your cycle. Once logged, Nuvia predicts ovulation, fertile windows, and your next period automatically — this is the most important first step!',
     mobileTargetSelector: '[data-tour="mobile-period"]',
     mobilePlacement: 'top',
   },
@@ -127,12 +127,12 @@ const TOUR_STEPS: TourStep[] = [
   {
     id: 'symptoms',
     title: 'Track Daily Symptoms',
-    body: 'Log your mood, energy, sleep, water intake, and physical symptoms daily. ChandraCycle uses this to find patterns in your cycle.',
+    body: 'Log your mood, energy, sleep, water intake, and physical symptoms daily. Nuvia uses this to find patterns in your cycle.',
     targetSelector: '[data-tour="symptoms"]',
     placement: 'right',
     emoji: '💓',
     mobileBody:
-      'Open the "More" menu and tap "Symptoms" to log your mood, energy, sleep, water intake, and physical symptoms daily. ChandraCycle uses this to find patterns in your cycle.',
+      'Open the "More" menu and tap "Symptoms" to log your mood, energy, sleep, water intake, and physical symptoms daily. Nuvia uses this to find patterns in your cycle.',
     mobileTargetSelector: null,
     mobilePlacement: 'center',
   },
@@ -156,7 +156,7 @@ const TOUR_STEPS: TourStep[] = [
     placement: 'top',
     emoji: '👑',
     mobileBody:
-      'Open the "More" menu and tap "Unlock ChandraCycle Premium" for advanced insights, unlimited AI coaching, and an ad-free experience.',
+      'Open the "More" menu and tap "Unlock Nuvia Premium" for advanced insights, unlimited AI coaching, and an ad-free experience.',
     mobileTargetSelector: null,
     mobilePlacement: 'center',
   },
@@ -394,7 +394,7 @@ export default function WelcomeTour({ open, onClose }: WelcomeTourProps) {
       className="fixed inset-0 z-[60]"
       role="dialog"
       aria-modal="true"
-      aria-label="ChandraCycle onboarding tour"
+      aria-label="Nuvia onboarding tour"
     >
       {/* ── Dark overlay (when no spotlight is active) ─────────────────────── */}
       {!rect && (

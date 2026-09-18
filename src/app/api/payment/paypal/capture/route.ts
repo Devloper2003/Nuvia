@@ -25,8 +25,8 @@ const PLAN_PRICES_USD: Record<'premium' | 'plus', { monthly: number; yearly: num
 }
 
 const PLAN_NAMES: Record<'premium' | 'plus', string> = {
-  premium: 'ChandraCycle Premium',
-  plus: 'ChandraCycle Premium Plus',
+  premium: 'Nuvia Premium',
+  plus: 'Nuvia Premium Plus',
 }
 
 const GST_RATE = 0.18
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     const receipt = {
       transactionId: capture.captureId,
       paypalOrderId: capture.orderId,
-      merchant: 'ChandraCycle Health Technologies Pvt. Ltd.',
+      merchant: 'Nuvia Health Technologies Pvt. Ltd.',
       planId,
       planName,
       billingCycle,

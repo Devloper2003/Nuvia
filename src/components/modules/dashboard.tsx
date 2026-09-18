@@ -845,7 +845,7 @@ export default function DashboardModule() {
               <EmptyState
                 icon={Activity}
                 title="No hormone insights yet"
-                description="Log a couple of cycles and ChandraCycle will visualize your estrogen and progesterone patterns across your cycle."
+                description="Log a couple of cycles and Nuvia will visualize your estrogen and progesterone patterns across your cycle."
                 ctaLabel="Log your period"
                 onCta={() => setActiveModule('period')}
               />
@@ -871,7 +871,7 @@ export default function DashboardModule() {
               <EmptyState
                 icon={Sparkles}
                 title="Personalized insights coming soon"
-                description="Once you start logging your cycle, mood, and symptoms, ChandraCycle's AI will surface personalized recommendations for your current phase."
+                description="Once you start logging your cycle, mood, and symptoms, Nuvia's AI will surface personalized recommendations for your current phase."
                 ctaLabel="Start tracking"
                 onCta={() => setActiveModule('period')}
               />
@@ -891,7 +891,7 @@ export default function DashboardModule() {
                   <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/5 via-transparent to-fuchsia-500/5 p-4 space-y-2.5">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                      ChandraCycle AI is reading your week…
+                      Nuvia AI is reading your week…
                     </div>
                     <div className="space-y-2">
                       <div className="h-3 rounded-full bg-muted animate-pulse w-11/12" />

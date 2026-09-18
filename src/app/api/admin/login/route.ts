@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       await db.adminUser.create({
         data: {
           email: 'admin@chandracycle.app',
-          name: 'ChandraCycle Admin',
+          name: 'Nuvia Admin',
           passwordHash: await hashPassword('chandra-admin'),
           role: 'super_admin',
         },

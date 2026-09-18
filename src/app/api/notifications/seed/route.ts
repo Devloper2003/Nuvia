@@ -56,12 +56,12 @@ export async function POST(request: NextRequest) {
       // De-duped by title: the welcome should only ever exist ONCE per user,
       // no matter how many times the panel re-seeds after the user reads it.
       const welcomeExists = await db.notification.findFirst({
-        where: { userId: sessionUser.id, title: 'Welcome to ChandraCycle! 🌸' },
+        where: { userId: sessionUser.id, title: 'Welcome to Nuvia! 🌸' },
       })
       if (!welcomeExists) {
         seeds.push({
           userId: sessionUser.id,
-          title: 'Welcome to ChandraCycle! 🌸',
+          title: 'Welcome to Nuvia! 🌸',
           message: 'Log your first period to unlock personalised cycle predictions, ovulation tracking, and AI insights.',
           // NOT 'period_reminder' — that type participates in the 24h reminder
           // cooldown (src/lib/reminders.ts) and would suppress real period

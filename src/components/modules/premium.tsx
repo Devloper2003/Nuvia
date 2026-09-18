@@ -466,7 +466,7 @@ export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void
             className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-sm font-semibold mb-5 border border-white/30"
           >
             <Crown className="h-4 w-4" />
-            ChandraCycle Premium
+            Nuvia Premium
           </motion.div>
 
           <motion.h1

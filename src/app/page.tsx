@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback, useSyncExternalStore } from 'react'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import AuthScreen, { type SessionUser } from '@/components/auth/auth-screen'
+import { BrandMark, BrandTagline } from '@/components/brand/brand-logo'
 import { useAppStore } from '@/lib/store'
 
 // AppShell (sidebar + 20 modules) only loads AFTER authentication + onboarding.
@@ -27,16 +28,17 @@ function useMounted() {
 
 // Static, hydration-safe loading screen. Rendered identically on server
 // and client (no time/random/locale dependencies) so React never complains
-// about a hydration mismatch.
+// about a hydration mismatch. Brand animations are pure CSS → same DOM.
 function AppLoader() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-2xl">
-        C
-      </div>
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        <span>Loading ChandraCycle…</span>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-5">
+      <BrandMark size="lg" />
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading Nuvia…</span>
+        </div>
+        <BrandTagline className="text-[10px] font-medium tracking-[0.16em] text-muted-foreground/80" dotClassName="h-[3px] w-[3px]" />
       </div>
     </div>
   )
@@ -114,13 +116,13 @@ export default function Home() {
     } catch {
       setAuthUser((prev) => prev ? { ...prev, onboardingComplete: true } : prev)
     }
-    toast.success('Welcome to ChandraCycle! 🌸')
+    toast.success('Welcome to Nuvia! 🌸')
   }, [])
 
   // Loading screen (prevents hydration mismatch).
   // NOTE: We render the EXACT same JSX on server and client during the
-  // loading state so hydration matches byte-for-byte. The brand mark "C"
-  // and the text "Loading ChandraCycle…" are static literals — no
+  // loading state so hydration matches byte-for-byte. The brand mark and
+  // the text "Loading Nuvia…" are static literals — no
   // Date.now(), no Math.random(), no locale-dependent formatting.
   if (!mounted || authChecking) {
     return <AppLoader />

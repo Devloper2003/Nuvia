@@ -25,9 +25,9 @@ import {
 import { LegalLayout, LegalSection } from "../_components/legal-layout";
 
 export const metadata = {
-  title: "Help & Support — ChandraCycle",
+  title: "Help & Support — Nuvia",
   description:
-    "Get help with your ChandraCycle account, subscription, data, and technical issues. Email, phone, and FAQs.",
+    "Get help with your Nuvia account, subscription, data, and technical issues. Email, phone, and FAQs.",
 };
 
 const faqs: {
@@ -122,7 +122,7 @@ const faqs: {
         the page. If that doesn&apos;t work, sign out and back in. Still
         broken? Email us with: (1) what you were trying to do, (2) what
         happened instead, (3) a screenshot if possible, and (4) your device
-        type and ChandraCycle app version (visible in Settings → About). Our team
+        type and Nuvia app version (visible in Settings → About). Our team
         typically responds within 24–48 hours on business days.
       </>
     ),
@@ -287,7 +287,7 @@ export default function SupportPage() {
             <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-rose-600" />
             <div className="text-sm">
               <p className="font-semibold text-rose-900 dark:text-rose-100">
-                ChandraCycle Support cannot help with medical emergencies.
+                Nuvia Support cannot help with medical emergencies.
               </p>
               <p className="mt-1 text-rose-800/90 dark:text-rose-200/80">
                 If you experience severe bleeding, severe abdominal or chest
@@ -300,7 +300,7 @@ export default function SupportPage() {
                 an email or phone response from our team.
               </p>
               <p className="mt-1 text-rose-800/90 dark:text-rose-200/80">
-                ChandraCycle is an informational companion, not a medical service,
+                Nuvia is an informational companion, not a medical service,
                 and our support team is not trained to provide medical advice.
               </p>
             </div>

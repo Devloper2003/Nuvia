@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * ChandraCycle Onboarding — simplified, calm, conversational.
+ * Nuvia Onboarding — simplified, calm, conversational.
  *
  * Design philosophy: "itne option hain ki user confused ho jayega" → cut the
  * noise. We ask only two real questions in a friendly tone:
@@ -9,7 +9,7 @@
  *   Step 1 — Welcome          (brand intro + 3 highlights)
  *   Step 2 — Last period date (with friendly "I'm not sure / Skip")
  *   Step 3 — Main goal        (single-select, 6 big tappable cards)
- *   Step 4 — Celebration      (Confetti + Enter ChandraCycle)
+ *   Step 4 — Celebration      (Confetti + Enter Nuvia)
  *
  * Smart defaults handle everything else so the user is never blocked:
  *   • Cycle length     → 28 days (auto-learned from logged cycles over time)
@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
+import { BrandMark } from '@/components/brand/brand-logo'
 import {
   ArrowLeft,
   ArrowRight,
@@ -226,10 +227,7 @@ function StepWelcome({ onNext }: StepProps) {
         transition={{ type: 'spring', stiffness: 200, damping: 18 }}
         className="relative mb-8"
       >
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-500 to-fuchsia-500 blur-2xl opacity-50" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-pink-500 to-fuchsia-500 shadow-xl shadow-rose-500/40">
-          <span className="text-5xl font-serif font-bold text-white">C</span>
-        </div>
+        <BrandMark size="xl" />
       </motion.div>
 
       <motion.h1
@@ -239,7 +237,7 @@ function StepWelcome({ onNext }: StepProps) {
         className="text-4xl sm:text-5xl font-serif font-bold tracking-tight mb-3"
       >
         <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-fuchsia-600 bg-clip-text text-transparent">
-          Welcome to ChandraCycle
+          Welcome to Nuvia
         </span>
       </motion.h1>
 
@@ -476,7 +474,7 @@ function StepGoal({ data, setData, onNext, onBack }: StepProps) {
 
 /**
  * Step 4 — Celebration (final).
- * Confetti burst + summary card + Enter ChandraCycle button.
+ * Confetti burst + summary card + Enter Nuvia button.
  */
 function StepCelebration({ data, onComplete }: { data: OnboardingData; onComplete: () => void }) {
   const selectedGoalId = data.goals[0]
@@ -521,7 +519,7 @@ function StepCelebration({ data, onComplete }: { data: OnboardingData; onComplet
         className="w-full flex items-center justify-center gap-2 mb-6"
       >
         <Sparkles className="h-4 w-4 text-rose-500" />
-        <p className="text-xs text-muted-foreground">ChandraCycle will learn more about you with every cycle</p>
+        <p className="text-xs text-muted-foreground">Nuvia will learn more about you with every cycle</p>
       </motion.div>
 
       <motion.div
@@ -536,7 +534,7 @@ function StepCelebration({ data, onComplete }: { data: OnboardingData; onComplet
           className="w-full h-12 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 hover:from-rose-600 hover:via-pink-600 hover:to-fuchsia-600 text-white font-semibold text-base shadow-lg shadow-rose-500/30 border-0"
         >
           <PartyPopper className="h-5 w-5" />
-          Enter ChandraCycle
+          Enter Nuvia
         </Button>
       </motion.div>
     </div>
@@ -762,10 +760,8 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
         <div className="mx-auto max-w-3xl">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-fuchsia-500 shadow-sm">
-                <span className="text-xs font-serif font-bold text-white">C</span>
-              </div>
-              <span className="text-sm font-semibold text-rose-900 dark:text-rose-100">ChandraCycle</span>
+              <BrandMark size="xs" float={false} />
+              <span className="text-sm font-semibold text-rose-900 dark:text-rose-100">Nuvia</span>
             </div>
             {showProgress ? (
               <div className="flex items-center gap-1.5">

@@ -26,22 +26,23 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "ChandraCycle — AI Women's Health Companion",
+  title: "Nuvia — Track • Understand • Thrive",
   description: "Your intelligent women's health ecosystem. Track cycles, hormones, fertility, pregnancy, and more with AI-powered insights.",
   keywords: ["women's health", "period tracker", "fertility", "pregnancy", "PCOS", "AI health coach", "hormone tracking"],
-  authors: [{ name: "ChandraCycle Health" }],
+  authors: [{ name: "Nuvia Health" }],
   manifest: "/manifest.json",
-  applicationName: "ChandraCycle",
+  applicationName: "Nuvia",
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/brand/nuvia-mark-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/nuvia-mark-512.png", type: "image/png", sizes: "512x512" },
     ],
-    apple: [{ url: "/icon-maskable.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/brand/nuvia-mark-192.png", type: "image/png", sizes: "192x192" }],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ChandraCycle",
+    title: "Nuvia",
   },
   formatDetection: {
     telephone: false,

@@ -21,8 +21,8 @@ const PLAN_PRICES_USD: Record<'premium' | 'plus', { monthly: number; yearly: num
 }
 
 const PLAN_NAMES: Record<'premium' | 'plus', string> = {
-  premium: 'ChandraCycle Premium',
-  plus: 'ChandraCycle Premium Plus',
+  premium: 'Nuvia Premium',
+  plus: 'Nuvia Premium Plus',
 }
 
 const GST_RATE = 0.18
@@ -143,7 +143,7 @@ export async function GET() {
   return NextResponse.json({
     endpoint: '/api/payment/paypal',
     method: 'POST',
-    description: 'Creates a real PayPal Order for ChandraCycle premium subscriptions.',
+    description: 'Creates a real PayPal Order for Nuvia premium subscriptions.',
     configured: isPaypalConfigured(),
     mode: PAYPAL_MODE,
     publicClientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || '',

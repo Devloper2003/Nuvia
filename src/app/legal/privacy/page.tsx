@@ -10,9 +10,9 @@ import { ShieldCheck, Lock, Mail, FileText, HeartPulse } from "lucide-react";
 import { LegalLayout, LegalSection } from "../_components/legal-layout";
 
 export const metadata = {
-  title: "Privacy Policy — ChandraCycle",
+  title: "Privacy Policy — Nuvia",
   description:
-    "How ChandraCycle collects, uses, stores, and protects your women's health data.",
+    "How Nuvia collects, uses, stores, and protects your women's health data.",
 };
 
 const EFFECTIVE_DATE = "July 4, 2026";
@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
     <LegalLayout
       active="privacy"
       title="Privacy Policy"
-      subtitle={`Effective ${EFFECTIVE_DATE}. This policy explains what health and account data ChandraCycle collects, how we use it, and the rights you have over it.`}
+      subtitle={`Effective ${EFFECTIVE_DATE}. This policy explains what health and account data Nuvia collects, how we use it, and the rights you have over it.`}
     >
       {/* At-a-glance summary card */}
       <Card className="border-rose-200 bg-rose-50/60 dark:bg-rose-950/20 dark:border-rose-900">
@@ -85,8 +85,8 @@ export default function PrivacyPolicyPage() {
       <div className="space-y-10">
         <LegalSection id="intro" title="1. Introduction">
           <p>
-            ChandraCycle Health Pvt. Ltd. (&ldquo;ChandraCycle&rdquo;, &ldquo;we&rdquo;,
-            &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates the ChandraCycle mobile and
+            Nuvia Health Pvt. Ltd. (&ldquo;Nuvia&rdquo;, &ldquo;we&rdquo;,
+            &ldquo;us&rdquo;, &ldquo;our&rdquo;) operates the Nuvia mobile and
             web application (&ldquo;the Service&rdquo;), an AI-powered
             women&apos;s health companion. We understand that the information you
             share with us &mdash; about your body, your cycle, your mood, and
@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <p>
             This policy applies to all users of the Service. By creating an
-            account or using ChandraCycle, you consent to the practices described
+            account or using Nuvia, you consent to the practices described
             here. We comply with the Digital Personal Data Protection Act, 2023
             (&ldquo;DPDP Act&rdquo;) of India.
           </p>
@@ -221,7 +221,7 @@ export default function PrivacyPolicyPage() {
 
         <LegalSection id="third-parties" title="5. Third Parties We Share Data With">
           <p>
-            We only share data with processors who help us run ChandraCycle. Each
+            We only share data with processors who help us run Nuvia. Each
             processor is bound by a Data Processing Agreement (DPA) and is
             limited to using your data only to provide the service we asked
             them to provide:
@@ -313,7 +313,7 @@ export default function PrivacyPolicyPage() {
 
         <LegalSection id="cookies" title="7. Cookies &amp; Local Storage">
           <p>
-            ChandraCycle uses minimal client-side storage so you can stay logged in
+            Nuvia uses minimal client-side storage so you can stay logged in
             and so the app remembers your preferences:
           </p>
           <ul className="ml-4 list-disc space-y-2">
@@ -342,11 +342,11 @@ export default function PrivacyPolicyPage() {
 
         <LegalSection id="children" title="8. Children&apos;s Privacy">
           <p>
-            ChandraCycle is designed for women aged{" "}
+            Nuvia is designed for women aged{" "}
             <span className="font-medium">16 and older</span>. We do not
             knowingly collect data from anyone under 16. If you believe a
             minor has created an account, please contact us and we will delete
-            it promptly. Teenagers aged 16–18 should use ChandraCycle with the
+            it promptly. Teenagers aged 16–18 should use Nuvia with the
             involvement of a parent or guardian.
           </p>
         </LegalSection>
@@ -369,7 +369,7 @@ export default function PrivacyPolicyPage() {
             <span className="font-medium">email you</span> at the address on
             file at least 7 days before the change takes effect, unless the
             change is required by law or benefits you. Continued use of
-            ChandraCycle after the effective date means you accept the updated
+            Nuvia after the effective date means you accept the updated
             policy.
           </p>
         </LegalSection>
@@ -381,7 +381,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <div className="rounded-xl border border-rose-200 bg-white p-4 dark:bg-rose-950/20 dark:border-rose-900">
             <p className="font-semibold text-rose-900 dark:text-rose-100">
-              ChandraCycle Health Pvt. Ltd. — Grievance Officer
+              Nuvia Health Pvt. Ltd. — Grievance Officer
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               Email:{" "}

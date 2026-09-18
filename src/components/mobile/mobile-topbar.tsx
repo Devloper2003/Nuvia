@@ -2,9 +2,10 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { Crown, Sparkles, HelpCircle } from 'lucide-react'
+import { Crown, HelpCircle } from 'lucide-react'
 import { useAppStore, ActiveModule } from '@/lib/store'
 import { cn } from '@/lib/utils'
+import { BrandMark } from '@/components/brand/brand-logo'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import NotificationPanel from '@/components/notifications/notification-panel'
 import { useLanguage } from '@/components/language-provider'
@@ -64,12 +65,9 @@ export default function MobileTopbar({ onTakeTour, userId, displayName }: Mobile
           aria-label="Go to dashboard"
           className="flex items-center gap-2.5 min-w-0"
         >
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-400 via-pink-500 to-rose-600 text-white font-bold shadow-md shadow-rose-500/30">
-            <span className="text-base font-serif">C</span>
-            <Sparkles className="absolute -top-0.5 -right-0.5 h-3 w-3 text-amber-400 fill-amber-400" />
-          </div>
+          <BrandMark size="xs" />
           <div className="flex flex-col min-w-0 leading-tight">
-            <span className="text-[10px] font-medium text-muted-foreground -mb-0.5">ChandraCycle</span>
+            <span className="text-[10px] font-medium text-muted-foreground -mb-0.5">Nuvia</span>
             <span className="text-sm font-semibold truncate max-w-[38vw]">{label}</span>
           </div>
         </motion.button>
@@ -83,7 +81,7 @@ export default function MobileTopbar({ onTakeTour, userId, displayName }: Mobile
               type="button"
               whileTap={{ scale: 0.9 }}
               onClick={() => setActiveModule('premium')}
-              aria-label="ChandraCycle Premium active"
+              aria-label="Nuvia Premium active"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 to-yellow-500 text-white shadow-sm"
             >
               <Crown className="h-4 w-4" />
@@ -93,7 +91,7 @@ export default function MobileTopbar({ onTakeTour, userId, displayName }: Mobile
               type="button"
               whileTap={{ scale: 0.9 }}
               onClick={() => setActiveModule('premium')}
-              aria-label="Upgrade to ChandraCycle Premium"
+              aria-label="Upgrade to Nuvia Premium"
               className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300"
             >
               <Crown className="h-4 w-4" />

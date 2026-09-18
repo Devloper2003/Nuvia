@@ -95,7 +95,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const result = await sendPushToUser(userId, {
-      title: '🔔 ChandraCycle reminders are live',
+      title: '🔔 Nuvia reminders are live',
       body: 'You will be notified before your period, about appointments and community activity. This is a test notification.',
       tag: 'chandracycle-test',
       url: '/dashboard',

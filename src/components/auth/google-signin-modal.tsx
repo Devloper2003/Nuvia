@@ -221,7 +221,7 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
                 Choose an account
               </h2>
               <p className="text-sm text-gray-600 mt-1 mb-4">
-                to continue to <span className="text-gray-900 font-medium">ChandraCycle</span>
+                to continue to <span className="text-gray-900 font-medium">Nuvia</span>
               </p>
 
               {/* Account list */}
@@ -289,7 +289,7 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500 leading-relaxed">
                   To continue, Google will share your name, email address, language preference, and
-                  profile picture with ChandraCycle. Before using this app, review its{' '}
+                  profile picture with Nuvia. Before using this app, review its{' '}
                   <span className="text-blue-600 cursor-pointer hover:underline">privacy policy</span>{' '}
                   and{' '}
                   <span className="text-blue-600 cursor-pointer hover:underline">terms of service</span>.
@@ -310,7 +310,7 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
               </button>
               <h2 className="text-[24px] leading-tight font-normal text-gray-900 mt-2">Sign in</h2>
               <p className="text-sm text-gray-600 mt-1 mb-4">
-                to continue to <span className="text-gray-900 font-medium">ChandraCycle</span>
+                to continue to <span className="text-gray-900 font-medium">Nuvia</span>
               </p>
 
               <div className="space-y-3">
@@ -393,7 +393,7 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
                 </div>
                 <div className="flex-1 pt-1">
                   <h2 className="text-[20px] leading-tight font-normal text-gray-900">
-                    ChandraCycle wants to access your Google Account
+                    Nuvia wants to access your Google Account
                   </h2>
                   <p className="text-xs text-gray-600 mt-1 flex items-center gap-1.5">
                     <span className="font-medium text-gray-800">
@@ -418,12 +418,12 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
                 <PermissionRow
                   icon="shield"
                   title="Secure sign-in"
-                  desc="ChandraCycle will receive a verified token — never your password"
+                  desc="Nuvia will receive a verified token — never your password"
                 />
               </div>
 
               <p className="text-xs text-gray-500 mt-3 leading-relaxed">
-                By allowing access, you agree to share the above information with ChandraCycle. You can
+                By allowing access, you agree to share the above information with Nuvia. You can
                 revoke access anytime in your Google Account settings.
               </p>
 
@@ -452,7 +452,7 @@ export default function GoogleSignInModal({ open, onClose, onSuccess }: GoogleSi
           {step === 'loading' && (
             <div className="px-6 py-16 flex flex-col items-center gap-4">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <p className="text-sm text-gray-700">Signing you in to ChandraCycle…</p>
+              <p className="text-sm text-gray-700">Signing you in to Nuvia…</p>
             </div>
           )}
 

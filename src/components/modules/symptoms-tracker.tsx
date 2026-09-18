@@ -948,7 +948,7 @@ export default function SymptomsModule() {
               <EmptyState
                 icon={Brain}
                 title="Personalized AI insights coming soon"
-                description="Once you've logged a few weeks of symptoms, moods, and cycle data, ChandraCycle will surface correlations and personalized recommendations here."
+                description="Once you've logged a few weeks of symptoms, moods, and cycle data, Nuvia will surface correlations and personalized recommendations here."
               />
             </CardContent>
           </Card>

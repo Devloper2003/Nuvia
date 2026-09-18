@@ -40,7 +40,7 @@ export function LegalLayout({
             </span>
             <span className="flex flex-col leading-none">
               <span className="font-serif text-lg font-semibold tracking-tight text-rose-900 dark:text-rose-100">
-                ChandraCycle
+                Nuvia
               </span>
               <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-rose-400 dark:text-rose-500">
                 Legal
@@ -53,7 +53,7 @@ export function LegalLayout({
             className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-white px-3.5 py-1.5 text-xs font-medium text-rose-700 shadow-sm transition-all hover:border-rose-300 hover:bg-rose-50 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-950/70"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Back to ChandraCycle
+            Back to Nuvia
           </Link>
         </div>
       </header>
@@ -62,7 +62,7 @@ export function LegalLayout({
       <section className="border-b border-rose-100 bg-gradient-to-b from-rose-100/60 to-transparent dark:from-rose-950/20">
         <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 sm:py-14">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-500 dark:text-rose-400">
-            ChandraCycle Legal
+            Nuvia Legal
           </p>
           <h1 className="mt-2 font-serif text-3xl font-bold tracking-tight text-rose-950 dark:text-rose-50 sm:text-4xl">
             {title}
@@ -88,7 +88,7 @@ export function LegalLayout({
               <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300">
                 <Flower2 className="h-4 w-4" />
                 <span className="font-serif text-base font-semibold">
-                  ChandraCycle
+                  Nuvia
                 </span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -129,7 +129,7 @@ export function LegalLayout({
 
           <div className="mt-8 border-t border-rose-100 pt-6 text-xs text-muted-foreground">
             <p>
-              © {new Date().getFullYear()} ChandraCycle Health Pvt. Ltd. All rights
+              © {new Date().getFullYear()} Nuvia Health Pvt. Ltd. All rights
               reserved.
             </p>
             <p className="mt-1">

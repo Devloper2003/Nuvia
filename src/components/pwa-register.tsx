@@ -9,7 +9,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 /**
- * Registers the ChandraCycle service worker (offline shell caching) and
+ * Registers the Nuvia service worker (offline shell caching) and
  * captures the browser's `beforeinstallprompt` event so an "Install app"
  * action can be offered anywhere via the `chandracycle-install` window event.
  *

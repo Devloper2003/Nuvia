@@ -34,7 +34,7 @@ export interface UserProfile {
 }
 
 /**
- * Modules that require an active ChandraCycle Premium subscription.
+ * Modules that require an active Nuvia Premium subscription.
  * Used by the mobile bottom-nav (and any future paywall logic) to decide
  * whether to show the upgrade sheet when a free user taps a premium feature.
  * 'premium' itself is the upgrade page — always accessible.

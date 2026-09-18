@@ -493,7 +493,7 @@ export default function HormoneModule() {
             <EmptyState
               icon={Sparkles}
               title="Personalized predictions coming soon"
-              description="Log a couple of cycles, moods, and symptoms — ChandraCycle will then forecast your mood, energy, sleep, stress, productivity, and cravings for the coming week."
+              description="Log a couple of cycles, moods, and symptoms — Nuvia will then forecast your mood, energy, sleep, stress, productivity, and cravings for the coming week."
               ctaLabel="Start tracking"
               onCta={() => setActiveModule('period')}
             />

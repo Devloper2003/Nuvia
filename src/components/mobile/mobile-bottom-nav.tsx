@@ -130,7 +130,7 @@ export default function MobileBottomNav() {
     if (tab.premium && !hasPremium) {
       openPaywall(tab.id)
       toast('Premium feature', {
-        description: 'Unlock AI Coach & Insights with ChandraCycle Premium.'
+        description: 'Unlock AI Coach & Insights with Nuvia Premium.'
       })
       return
     }
@@ -294,7 +294,7 @@ export default function MobileBottomNav() {
                     <Crown className="h-5 w-5" />
                   </div>
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-semibold">Unlock ChandraCycle Premium</div>
+                    <div className="text-sm font-semibold">Unlock Nuvia Premium</div>
                     <div className="text-[11px] text-white/90">All modules • AI tools • Ad-free</div>
                   </div>
                 </motion.button>
