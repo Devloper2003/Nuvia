@@ -524,3 +524,88 @@ Stage Summary:
   4. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider a
      visible "demo directory" notice.
   5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).
+
+---
+Task ID: 8
+Agent: Z.ai Code (webDevReview round 8)
+Task: Cron QA + development round — web push notifications with period reminder engine, community report
+de-duplication + author transparency badge, offline banner, notification seed de-dupe bugfix, styling round.
+
+Work Log:
+- QA baseline: lint 0/0, server healthy with live traffic (real user Shivam active), then server REAPED mid-round
+  again (curl 000) — setsid double-fork restart used. Prisma client had to be reloaded via restart after schema push
+  (db.pushSubscription was undefined in the old process → 500 on /api/push; restart fixed).
+- WEB PUSH NOTIFICATIONS (backlog #1, closed) — no external service account needed:
+  - Installed web-push@3.6.7; generated VAPID keys → .env (NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
+    VAPID_SUBJECT).
+  - Schema: PushSubscription model (endpoint unique, p256dh, auth, userAgent) + ContentReport model (below), db:push done.
+  - NEW src/lib/push.ts: VAPID config, sendPushToUser() fans out to all of a user's devices, prunes 404/410 dead
+    subs, returns {sent, pruned, failed, total} so callers distinguish "no devices" from "send failed".
+  - /api/push: GET (publicKey + subscribed status) · POST (upsert subscription) · DELETE (unsubscribe by endpoint)
+    · PUT (test push to all devices).
+  - sw.js: JSON push listener (title/body/tag/url, renotify, vibrate) + notificationclick (focus existing window
+    or open url); cache bumped to chandracycle-v3.
+  - NotificationPanel UI: "Enable reminders" pill (permission → pushManager.subscribe with urlBase64ToUint8Array →
+    POST save → confirmation test push), states prompt/subscribing/subscribed/denied/unsupported/unconfigured;
+    subscribed shows green "Reminders on" pill; denied shows actionable toast.
+  - E2E: GET configured:true+key, POST upsert → subscribed:true, UI state machine verified (prompt pill visible,
+    denied toast "Notifications are blocked…"), fake-sub PUT → 502 with accurate failed:1/total:1 accounting,
+    DELETE cleanup → subscribed:false. Headless Chromium can't grant notification permission, so the granted path
+    is code-verified only (standard boilerplate).
+- PERIOD REMINDER ENGINE (new, extends notifications):
+  - /api/notifications/check POST {userId}: same cycle math as dashboard (daysSince → daysUntilPeriod); fires
+    "expected today/in N days" (0–2 days) or "N days late" (≥2 overdue) reminders. Two-layer cooldown: identical
+    title 36h + ANY period_reminder 24h (covers seed route variants). Creates Notification row + web-push fan-out.
+  - Panel runs check on mount; on trigger refetches list and shows a local SW notification when permission granted.
+  - E2E VERIFIED with controlled data (shifted latest cycle start → due in 1 day): triggered:true with correct
+    title/message/daysUntilPeriod, push attempted (0 subs = correct), immediate repeat → cooldown. Data restored
+    after test.
+- COMMUNITY REPORT DE-DUPLICATION (backlog #2, closed) + author transparency:
+  - ContentReport model (reporterId+postId / reporterId+commentId unique) → one report per user per target.
+  - PATCH report (posts + comments): requires userId, blocks self-reporting (400), duplicate report → 409 "You
+    have already reported…" without inflating count; reportedCount now mirrors UNIQUE reporters; auto-hide still
+    at 3.
+  - Admin moderation restore/dismiss now deletes the target's ContentReports (users can re-report later; counts
+    reset cleanly). Post/comment deletion cascades reports via FK relations.
+  - Community UI: report bodies carry userId; 409 keeps the flagged content hidden for the reporter with an info
+    toast (no error revert); own posts with reports show an amber "🚩 N report(s) · under review" badge.
+  - E2E VERIFIED: first report → count 1; duplicate → 409 + count stays 1; self-report → 400; comment de-dupe same;
+    badge screenshot on own post (/tmp/r8-badge.png); all test reports deleted, counts reset, DB clean (0 reports).
+- BUG FIX — notification seed duplicates: the screenshot exposed 4 stacked "Welcome to ChandraCycle!" rows. Seed
+  route only checked unreadCount<2, so welcomes re-seeded after the user read them. Now de-duped by title
+  (welcome + period-soon variants exist at most once per user); existing duplicates purged for all users (6 rows).
+- OFFLINE/ONLINE BANNER: NEW src/components/offline-banner.tsx mounted in root layout — amber gradient ribbon
+  with ping dot while offline ("data shown may be out of date"), green "Back online — syncing your latest data"
+  confirmation that auto-dismisses in 3s; framer-motion slide, aria-live polite, lazy navigator.onLine init.
+  E2E VERIFIED desktop + mobile 390×844 via window offline/online events (/tmp/r8-offline.png,
+  /tmp/r8-mobile-offline.png).
+- STYLING DETAILS (mandatory):
+  - "Enable reminders" pill: hover-wiggle bell animation (new @keyframes bell-wiggle + .hover-wiggle/.wiggle-target,
+    reduced-motion respected).
+  - Unread period_reminder rows: soft rose tint distinct from other unread rows.
+  - Report flag button: icon scale+rotate micro-interaction on hover (group/flag).
+  - Report badge, offline/online banners styled as above; screenshots confirm polish on light UI.
+- NOTE on identity: earlier rounds' logs mapped ids correctly — cmu6iahpu…=Priya (test account used in headless
+  browser), cmu6idrlc…=Shivam (real preview user). This round I initially mixed them up while testing; caught it
+  because the own-post badge didn't render, and the misplaced test post was DELETED from Shivam's account
+  immediately. Final DB state has zero test artifacts.
+- STALE DEV OVERLAY: "1 Issue" badge for doctor-finder.tsx:57 "Loader2 defined multiple times" is a STALE HMR
+  artifact from before the restart — file verified single-import, dev.log has zero occurrences, GET / 200, fresh
+  console clean. Ignore if seen in old sessions; hard reload clears it.
+
+Stage Summary:
+- ✅ Shipped & verified: full web-push stack (VAPID → subscribe → fan-out → prune) + period reminder engine with
+  layered anti-spam cooldown, per-user report de-duplication with self-report guard and author transparency badge,
+  offline/online connectivity banner, notification seed de-dupe bugfix, mandatory styling round.
+- Lint: 0 errors 0 warnings. Fresh browser console: clean. dev.log: clean (after restart).
+- DB state changes: PushSubscription + ContentReport tables created (both empty), 6 duplicate notifications purged,
+  all test posts/reports/cycle-shifts reverted. Zero test artifacts on the real user's account.
+- Remaining backlog (next round):
+  1. Reminders scheduler: currently the reminder check runs when the panel mounts (app open). Add a periodic
+     server-side sweep (cron route or SW periodicsync) so push reminders arrive with the app closed.
+  2. i18n (hi/ta) for menstrual-health copy; remaining PWA polish (offline fallback page for navigations).
+  3. Doctor Finder: external Google Places still unconfigured — seeded fallback works; consider visible
+     "demo directory" notice.
+  4. Admin console: moderation stats over time; ContentReport reasons are stored but not yet surfaced in the
+     admin queue UI (show reasons + reporter count tooltip).
+  5. PayPal real keys / Google OAuth remain unconfigured (graceful degradation in place).

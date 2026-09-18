@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X } from 'lucide-react'
+import { Bell, BellRing, Check, CheckCheck, CalendarDays, Sparkles, Stethoscope, Users, Droplets, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -27,6 +27,19 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: 
   community: { icon: Users, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-950/40', label: 'Community' },
 }
 
+// RFC 7515-ish: the VAPID public key arrives base64url-encoded and must be
+// converted to the Uint8Array applicationServerKey that pushManager wants.
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+  const raw = atob(base64)
+  const output = new Uint8Array(raw.length)
+  for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i)
+  return output
+}
+
+type PushState = 'checking' | 'unsupported' | 'unconfigured' | 'prompt' | 'subscribing' | 'subscribed' | 'denied'
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime()
   const mins = Math.floor(diff / 60000)
@@ -44,6 +57,7 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [loading, setLoading] = useState(false)
   const [markingAll, setMarkingAll] = useState(false)
+  const [pushState, setPushState] = useState<PushState>('checking')
   const containerRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -63,6 +77,131 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
       setLoading(false)
     }
   }, [userId])
+
+  // ─── Period reminder engine (server-side) ───────────────────────────
+  // Runs once when the panel mounts: asks the server whether the user's
+  // period is due soon / late. If a reminder fires, the bell list refreshes
+  // and a local notification is shown (when permission was already granted).
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    const runCheck = async () => {
+      try {
+        const res = await fetch('/api/notifications/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        })
+        if (!res.ok) return
+        const data = await res.json()
+        if (cancelled || !data?.triggered) return
+        fetchNotifications()
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try {
+            const reg = await navigator.serviceWorker?.getRegistration()
+            if (reg) {
+              await reg.showNotification(data.notification.title, {
+                body: data.notification.message,
+                icon: '/icon-maskable.svg',
+                badge: '/icon.svg',
+                tag: 'chandracycle-period-reminder',
+              })
+            }
+          } catch {
+            /* local notification is best-effort */
+          }
+        }
+      } catch {
+        /* reminder check is best-effort */
+      }
+    }
+    runCheck()
+    return () => {
+      cancelled = true
+    }
+  }, [userId, fetchNotifications])
+
+  // ─── Push subscription status probe ─────────────────────────────
+  useEffect(() => {
+    let cancelled = false
+    const probe = async () => {
+      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+        if (!cancelled) setPushState('unsupported')
+        return
+      }
+      if (Notification.permission === 'denied') {
+        if (!cancelled) setPushState('denied')
+        return
+      }
+      try {
+        const res = await fetch(`/api/push?userId=${encodeURIComponent(userId)}`)
+        const data = await res.json()
+        if (cancelled) return
+        if (!data.configured || !data.publicKey) {
+          setPushState('unconfigured')
+        } else if (data.subscribed) {
+          setPushState('subscribed')
+        } else {
+          setPushState('prompt')
+        }
+      } catch {
+        if (!cancelled) setPushState('unconfigured')
+      }
+    }
+    probe()
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  // ─── Enable reminders: permission → subscribe → register → test ───────
+  const enableReminders = async () => {
+    if (pushState === 'subscribing') return
+    setPushState('subscribing')
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission === 'denied') {
+        setPushState('denied')
+        toast.error('Notifications are blocked. Enable them for this site in your browser settings.')
+        return
+      }
+
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      await navigator.serviceWorker.ready
+
+      const keyRes = await fetch('/api/push')
+      const { publicKey } = await keyRes.json()
+      if (!publicKey) throw new Error('Push is not configured on the server')
+
+      const existing = await reg.pushManager.getSubscription()
+      const subscription =
+        existing ??
+        (await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+        }))
+
+      const saveRes = await fetch('/api/push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, subscription: subscription.toJSON() }),
+      })
+      if (!saveRes.ok) throw new Error('Could not save your notification subscription')
+
+      setPushState('subscribed')
+      toast.success('Reminders enabled! You will be alerted before your period.')
+
+      // Friendly confirmation ping on the user's own device
+      void fetch('/api/push', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      }).catch(() => {})
+    } catch (e) {
+      setPushState(Notification.permission === 'granted' ? 'prompt' : 'denied')
+      toast.error(e instanceof Error ? e.message : 'Could not enable reminders')
+    }
+  }
 
   // Fetch on mount + when panel opens
   useEffect(() => {
@@ -179,6 +318,30 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
+                  {pushState === 'prompt' && (
+                    <button
+                      onClick={enableReminders}
+                      disabled={pushState === 'subscribing'}
+                      className="hover-wiggle text-[11px] font-medium text-primary hover:underline disabled:opacity-50 flex items-center gap-1 rounded-full bg-primary/10 hover:bg-primary/15 px-2 py-1 transition-colors"
+                      title="Get notified before your period, even when the app is closed"
+                    >
+                      {pushState === 'subscribing' ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <BellRing className="wiggle-target h-3 w-3 transition-transform" />
+                      )}
+                      <span>Enable reminders</span>
+                    </button>
+                  )}
+                  {pushState === 'subscribed' && (
+                    <span
+                      className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1"
+                      title="Push reminders are active on this device"
+                    >
+                      <BellRing className="h-3 w-3" />
+                      Reminders on
+                    </span>
+                  )}
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
@@ -230,7 +393,11 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
                           onClick={() => !n.read && markOneRead(n.id)}
                           className={cn(
                             'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors group relative',
-                            !n.read ? 'bg-primary/[0.03] hover:bg-primary/[0.06]' : 'hover:bg-accent/50'
+                            !n.read
+                              ? n.type === 'period_reminder'
+                                ? 'bg-rose-500/[0.05] hover:bg-rose-500/[0.09]'
+                                : 'bg-primary/[0.03] hover:bg-primary/[0.06]'
+                              : 'hover:bg-accent/50'
                           )}
                         >
                           {/* Unread indicator */}

@@ -185,12 +185,15 @@ export async function PATCH(request: NextRequest) {
             where: { id: targetId },
             data: { hidden: false, reportedCount: 0 },
           })
+          // Clear the individual reports so users can re-report if it happens again
+          await db.contentReport.deleteMany({ where: { postId: targetId } })
           message = `"${post.title}" restored to the community feed`
         } else if (action === 'dismiss') {
           await db.communityPost.update({
             where: { id: targetId },
             data: { reportedCount: 0, hidden: true },
           })
+          await db.contentReport.deleteMany({ where: { postId: targetId } })
           message = `Reports dismissed — "${post.title}" stays hidden`
         } else {
           await db.comment.deleteMany({ where: { postId: targetId } })
@@ -226,12 +229,14 @@ export async function PATCH(request: NextRequest) {
             where: { id: targetId },
             data: { hidden: false, reportedCount: 0 },
           })
+          await db.contentReport.deleteMany({ where: { commentId: targetId } })
         } else if (action === 'dismiss') {
           // Reports were false positives — clear them but keep a visible comment visible.
           await db.comment.update({
             where: { id: targetId },
             data: { reportedCount: 0 },
           })
+          await db.contentReport.deleteMany({ where: { commentId: targetId } })
         } else {
           await db.comment.delete({ where: { id: targetId } })
         }

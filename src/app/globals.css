@@ -568,3 +568,21 @@ html::-webkit-scrollbar-track {
 .safe-bottom {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
 }
+
+/* ─── Reminder CTA wiggle (notification panel "Enable reminders" pill) ────── */
+@keyframes bell-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-11deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  75% { transform: rotate(3deg); }
+}
+.hover-wiggle:hover .wiggle-target {
+  animation: bell-wiggle 0.7s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hover-wiggle:hover .wiggle-target {
+    animation: none !important;
+  }
+}

@@ -165,11 +165,14 @@ export async function DELETE(request: NextRequest) {
 }
 
 // ─── PATCH: like / unlike / report a post ───────────────────────────────────
-// Body: { postId: string, action: 'like' | 'unlike' | 'report', reason?: string }
-// 'report' increments reportedCount and auto-hides the post at 3 reports.
+// Body: { postId: string, action: 'like' | 'unlike' | 'report', reason?: string, userId?: string }
+// 'report' is DE-DUPLICATED per user via the ContentReport table — repeat
+// reports by the same user return 409 and never inflate reportedCount.
+// reportedCount therefore mirrors the number of UNIQUE reporters and the
+// post auto-hides at 3 unique reports.
 export async function PATCH(request: NextRequest) {
   try {
-    const { postId, action } = await request.json();
+    const { postId, action, userId, reason } = await request.json();
 
     if (!postId || !['like', 'unlike', 'report'].includes(action)) {
       return NextResponse.json(
@@ -184,6 +187,32 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (action === 'report') {
+      if (!userId) {
+        return NextResponse.json(
+          { error: 'userId is required to report a post' },
+          { status: 400 }
+        );
+      }
+      if (existing.userId === userId) {
+        return NextResponse.json(
+          { error: 'You cannot report your own post — you can delete it instead' },
+          { status: 400 }
+        );
+      }
+      // One report per user per post — repeating the same report is a no-op.
+      const alreadyReported = await db.contentReport.findUnique({
+        where: { reporterId_postId: { reporterId: userId, postId } },
+      });
+      if (alreadyReported) {
+        return NextResponse.json(
+          { error: 'You have already reported this post — our moderators are on it' },
+          { status: 409 }
+        );
+      }
+
+      await db.contentReport.create({
+        data: { reporterId: userId, postId, reason: reason?.slice(0, 500) ?? null },
+      });
       const nextReports = existing.reportedCount + 1;
       const shouldHide = nextReports >= 3;
       const post = await db.communityPost.update({
@@ -200,6 +229,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({
         post,
         hidden: shouldHide,
+        reportedCount: nextReports,
         message: shouldHide
           ? 'Post has been hidden pending moderator review'
           : 'Report recorded. Thank you for keeping the community safe.',

@@ -52,15 +52,22 @@ export async function POST(request: NextRequest) {
     })
 
     if (!latestCycle) {
-      // No cycle logged — gentle onboarding nudge
-      seeds.push({
-        userId: sessionUser.id,
-        title: 'Welcome to ChandraCycle! 🌸',
-        message: 'Log your first period to unlock personalised cycle predictions, ovulation tracking, and AI insights.',
-        type: 'period_reminder',
-        read: false,
-        createdAt: now,
+      // No cycle logged — gentle onboarding nudge.
+      // De-duped by title: the welcome should only ever exist ONCE per user,
+      // no matter how many times the panel re-seeds after the user reads it.
+      const welcomeExists = await db.notification.findFirst({
+        where: { userId: sessionUser.id, title: 'Welcome to ChandraCycle! 🌸' },
       })
+      if (!welcomeExists) {
+        seeds.push({
+          userId: sessionUser.id,
+          title: 'Welcome to ChandraCycle! 🌸',
+          message: 'Log your first period to unlock personalised cycle predictions, ovulation tracking, and AI insights.',
+          type: 'period_reminder',
+          read: false,
+          createdAt: now,
+        })
+      }
     } else {
       // Compute days until next predicted period
       const cycleLength = latestCycle.cycleLength || 28
@@ -70,17 +77,24 @@ export async function POST(request: NextRequest) {
       const daysUntil = Math.ceil((nextStart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
 
       if (daysUntil <= 3 && daysUntil >= -2) {
-        seeds.push({
-          userId: sessionUser.id,
-          title: daysUntil > 0 ? 'Period expected soon' : 'Period may have started',
-          message:
-            daysUntil > 0
-              ? `Based on your cycle history, your period is expected in ${daysUntil} day${daysUntil === 1 ? '' : 's'}.`
-              : 'Your period was predicted to start around now. Log it to keep your predictions accurate.',
-          type: 'period_reminder',
-          read: false,
-          createdAt: now,
+        const seedTitle = daysUntil > 0 ? 'Period expected soon' : 'Period may have started'
+        // De-dupe: never stack two copies of the same seed reminder
+        const seedExists = await db.notification.findFirst({
+          where: { userId: sessionUser.id, title: seedTitle },
         })
+        if (!seedExists) {
+          seeds.push({
+            userId: sessionUser.id,
+            title: seedTitle,
+            message:
+              daysUntil > 0
+                ? `Based on your cycle history, your period is expected in ${daysUntil} day${daysUntil === 1 ? '' : 's'}.`
+                : 'Your period was predicted to start around now. Log it to keep your predictions accurate.',
+            type: 'period_reminder',
+            read: false,
+            createdAt: now,
+          })
+        }
       }
     }
 

@@ -98,6 +98,7 @@ interface Post {
   liked: boolean
   isAnonymous: boolean
   isOwn: boolean
+  reportedCount: number
   createdAt: string
 }
 
@@ -215,6 +216,7 @@ interface ApiPost {
   category: string
   isAnonymous: boolean
   likes: number
+  reportedCount: number
   createdAt: string
   comments?: Array<{ id: string }>
   user?: { id: string; name: string | null; avatar: string | null }
@@ -240,6 +242,7 @@ function mapApiPost(p: ApiPost, currentUserId: string | undefined, likedIds: Set
     liked: likedIds.has(p.id),
     isAnonymous: p.isAnonymous,
     isOwn: !!isOwn,
+    reportedCount: p.reportedCount ?? 0,
     createdAt: p.createdAt,
   }
 }
@@ -540,7 +543,7 @@ export default function CommunityModule() {
       const res = await fetch('/api/community', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, action: 'report', reason }),
+        body: JSON.stringify({ postId, action: 'report', reason, userId: userProfile?.id }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -549,8 +552,14 @@ export default function CommunityModule() {
       const data = await res.json()
       toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
     } catch (e) {
-      setPosts(prevPosts)
-      toast.error(e instanceof Error ? e.message : 'Could not report post')
+      const msg = e instanceof Error ? e.message : 'Could not report post'
+      if (msg.toLowerCase().includes('already reported')) {
+        // De-duplicated server-side: keep it hidden for the reporter, no error.
+        toast.info(msg)
+      } else {
+        setPosts(prevPosts)
+        toast.error(msg)
+      }
     }
   }
 
@@ -563,7 +572,7 @@ export default function CommunityModule() {
       const res = await fetch('/api/community/comments', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ commentId, action: 'report', reason }),
+        body: JSON.stringify({ commentId, action: 'report', reason, userId: userProfile?.id }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -572,8 +581,13 @@ export default function CommunityModule() {
       const data = await res.json()
       toast.success(data.message || 'Report submitted. Thank you for keeping the community safe.')
     } catch (e) {
-      setCommentsList(prevList)
-      toast.error(e instanceof Error ? e.message : 'Could not report comment')
+      const msg = e instanceof Error ? e.message : 'Could not report comment'
+      if (msg.toLowerCase().includes('already reported')) {
+        toast.info(msg)
+      } else {
+        setCommentsList(prevList)
+        toast.error(msg)
+      }
     }
   }
 
@@ -923,6 +937,16 @@ export default function CommunityModule() {
                                   >
                                     {post.category}
                                   </Badge>
+                                  {post.isOwn && post.reportedCount > 0 && (
+                                    <Badge
+                                      variant="secondary"
+                                      className="text-[10px] border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 gap-1"
+                                      title="Some members flagged this post — a moderator will review it"
+                                    >
+                                      <Flag className="h-2.5 w-2.5" />
+                                      {post.reportedCount} report{post.reportedCount === 1 ? '' : 's'} · under review
+                                    </Badge>
+                                  )}
                                   <span className="text-[10px] text-muted-foreground">{post.timeAgo}</span>
                                 </div>
                                 <h3 className="font-semibold text-sm mt-1 leading-snug">{post.title}</h3>
@@ -956,9 +980,9 @@ export default function CommunityModule() {
                                       }}
                                       aria-label="Report post"
                                       title="Report post"
-                                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors h-9 px-1 rounded-md ml-auto"
+                                      className="group/flag flex items-center gap-1.5 text-xs text-muted-foreground hover:text-orange-500 transition-colors h-9 px-1 rounded-md ml-auto"
                                     >
-                                      <Flag className="h-3.5 w-3.5" />
+                                      <Flag className="h-3.5 w-3.5 transition-transform group-hover/flag:scale-125 group-hover/flag:-rotate-12" />
                                     </button>
                                   )}
                                   {post.isOwn && (

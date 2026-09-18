@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ChunkErrorRecovery } from "@/components/chunk-error-recovery";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PwaRegister } from "@/components/pwa-register";
+import OfflineBanner from "@/components/offline-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -68,6 +69,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <ChunkErrorRecovery />
           <PwaRegister />
+          <OfflineBanner />
           {children}
           <Toaster richColors position="top-right" />
         </ThemeProvider>

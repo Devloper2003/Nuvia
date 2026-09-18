@@ -71,13 +71,13 @@ export async function POST(request: NextRequest) {
 }
 
 // ─── PATCH /api/community/comments ───────────────────────────────────────────
-// Body: { commentId, action: 'report', reason?: string }
-// Increments reportedCount and auto-hides the comment at 3 reports — mirrors
-// the post reporting flow in PATCH /api/community so both content types share
-// the same moderation semantics.
+// Body: { commentId, action: 'report', reason?: string, userId?: string }
+// Reports are DE-DUPLICATED per user via the ContentReport table — a repeat
+// report by the same user returns 409 without inflating the count. The
+// comment auto-hides at 3 UNIQUE reports, mirroring post semantics.
 export async function PATCH(request: NextRequest) {
   try {
-    const { commentId, action } = await request.json();
+    const { commentId, action, userId, reason } = await request.json();
 
     if (!commentId || action !== 'report') {
       return NextResponse.json(
@@ -91,6 +91,32 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 });
     }
 
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'userId is required to report a comment' },
+        { status: 400 }
+      );
+    }
+    if (existing.userId === userId) {
+      return NextResponse.json(
+        { error: 'You cannot report your own comment' },
+        { status: 400 }
+      );
+    }
+    // One report per user per comment — repeating is a no-op.
+    const alreadyReported = await db.contentReport.findUnique({
+      where: { reporterId_commentId: { reporterId: userId, commentId } },
+    });
+    if (alreadyReported) {
+      return NextResponse.json(
+        { error: 'You have already reported this comment — our moderators are on it' },
+        { status: 409 }
+      );
+    }
+
+    await db.contentReport.create({
+      data: { reporterId: userId, commentId, reason: reason?.slice(0, 500) ?? null },
+    });
     const nextReports = existing.reportedCount + 1;
     const shouldHide = nextReports >= 3;
 
