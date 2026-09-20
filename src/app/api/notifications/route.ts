@@ -28,6 +28,39 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// DELETE /api/notifications
+// Body: { userId } (or ?userId= query) — clears all READ notifications for the user.
+// Unread notifications are never deleted, so nothing important is lost.
+export async function DELETE(request: NextRequest) {
+  try {
+    let userId: string | null = null;
+    try {
+      const body = await request.json();
+      userId = typeof body?.userId === 'string' ? body.userId : null;
+    } catch {
+      // no/invalid JSON body — fall back to query string
+    }
+    if (!userId) {
+      userId = request.nextUrl.searchParams.get('userId');
+    }
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    const deleted = await db.notification.deleteMany({
+      where: { userId, read: true },
+    });
+
+    return NextResponse.json({ ok: true, deleted: deleted.count });
+  } catch (error) {
+    console.error('Error clearing read notifications:', error);
+    return NextResponse.json(
+      { error: 'Failed to clear notifications' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
