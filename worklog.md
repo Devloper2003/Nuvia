@@ -1645,3 +1645,24 @@ Stage Summary:
 - ✅ 回答了用户"issue 很多地方都有"：找到并修复 1 个全 App 系统性 Tailwind 级联 bug（平板段内容被导航遮挡）+ 2 个聊天模块输入折叠线 bug + 1 个图表标签裁切 + SW 缓存保险。
 - 🛠 审计工具沉淀在 scripts/（ui-audit.js / ui-switch.js / run-audit.sh / audit-summary.ts），下轮 cron 可直接复用做回归。
 - 遗留 backlog（优先级序）：① 数据路由 userId 零鉴权（安全，最高）；② Fertility BBT/Menopause 服药等长表单在移动端可考虑抽屉化；③ i18n 深度、analytics 审计表、时区静默时段、PayPal/Google OAuth/Doctor Places 配置。
+
+---
+Task ID: 23
+Agent: Z.ai Code (main)
+Task: User: "iss tab ko thoda unique aur creative theme mai do humari actual theme ke sath" (screenshot of the Go Premium pricing cards) — restyle pricing tab with a unique creative theme native to Nuvia's plum & gold design system.
+
+Work Log:
+- Diagnosed the old pricing cards: generic template look — rose / amber→orange / purple→fuchsia gradient top bars, icon circles and CTA pills that clash with the app's Nuvia plum & gold brand kit (the rest of the module already used card-plum heroes + gold-shine).
+- Designed "The Bloom Tiers" concept — plans mapped onto Nuvia's bloom story, matching the reference deck (Track • Understand • Thrive):
+  - ✦ SEEDLING (Free): light card, blush heart medallion, soft blush→gold aurora top edge, blush check medallions, outline-plum pill CTA.
+  - ✦✦ FULL BLOOM (Premium — the hero): inverted deep-plum night card (same family as card-plum hero/final CTA panels): lotus-watermark overlay, gold crescent moon + ✦ sparkle constellation (top-right), gold aurora edge, gold-shine gilded serif price, gold medallion check rows (bg-gold/15 + ring-gold/35), gold-gradient "Choose Premium" pill with plum text, gilded uppercase "MOST POPULAR" crest with Sparkles + gold shadow, tier chip "✦✦ FULL BLOOM" in gold ring. Elevated lg:-mt-6 with stronger plum shadow + gold hover glow.
+  - ✦✦✦ CELESTIAL (Premium Plus): light card, plum gem medallion (from-plum-soft to-plum), plum→gold→plum aurora edge, gold-soft check medallions, btn-plum CTA, plum shadow hover.
+- Shared signatures across all three: brand gold-divider ✦ ornamental divider (replaces plain Separator), serif ₹ price with ✦ "billed annually" microcopy (gold tint on dark card, plum on light), squircle medallions (rounded-2xl) instead of plain circles, tier chip top-right (stacks with yearly "Save N%" gold badge below), 44px pill CTAs everywhere, on-theme hover shadows.
+- Billing toggle harmonized: active pill now bg-plum text-white (plum-soft in dark), "Save 30%" badge flips to solid gold when active.
+- Data refactor: Plan interface gained tierLabel/tierSparks/medallion/edge; old gradient/borderColor fields removed. Testimonial section untouched (still hidden — no fabricated testimonials).
+- Verified via agent-browser (desktop 1280 + mobile 390×844, light + dark): grid renders all three tiers with aurora edges, crest, crescent, watermarks; yearly mode shows ₹2,499/yr + ✦ ₹208/month microcopy + Save 30% badges on both paid cards; "Choose Premium" opens the PayPal checkout modal (graceful not-configured state intact); mobile stacks cleanly with no horizontal scroll; dark mode adapts (plum-soft toggle, blush medallion, gold chips); console clean; lint exit 0.
+- Environment note: sandbox DB rolled back to an earlier snapshot mid-session (file-sync artifact) — QA users from Task 22 vanished; code fixes unaffected (auth slim-token logic is in code, not DB). One new QA user theme-qa-22@test.com remains (DELETE /api/user returns 405 — route has no DELETE handler; cleanup path needs revisiting next round).
+
+Stage Summary:
+- Pricing tab now has a unique, creative, brand-native theme: the three plans read as a bloom progression (Seedling → Full Bloom → Celestial) built entirely from Nuvia's plum & gold signatures — no more generic rainbow gradients. Checkout interactions, responsiveness (mobile + desktop), dark mode, and the PayPal modal flow all verified.
+- Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth provider keys; ③ top-nav ↔ page-detail-bar gap fix; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ add DELETE handler to /api/user for QA cleanup.

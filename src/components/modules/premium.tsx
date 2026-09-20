@@ -62,8 +62,14 @@ interface Plan {
   monthlyPrice: number
   yearlyPrice: number
   icon: React.ElementType
-  gradient: string
-  borderColor: string
+  /** Bloom-tier identity — the creative theme maps plans to the Nuvia
+   *  bloom story: Seedling ✦ → Full Bloom ✦✦ → Celestial ✦✦✦ */
+  tierLabel: string
+  tierSparks: string
+  /** Icon medallion classes (on-theme plum/gold/blush only) */
+  medallion: string
+  /** Aurora top-edge gradient (replaces the old generic rainbow bars) */
+  edge: string
   badgeText?: string
   isPopular?: boolean
   features: { text: string; included: boolean }[]
@@ -94,8 +100,10 @@ const PLANS: Plan[] = [
     monthlyPrice: 0,
     yearlyPrice: 0,
     icon: Heart,
-    gradient: 'from-rose-200 to-rose-300',
-    borderColor: 'border-border',
+    tierLabel: 'Seedling',
+    tierSparks: '✦',
+    medallion: 'bg-blush text-primary ring-1 ring-primary/20',
+    edge: 'bg-[linear-gradient(90deg,transparent,oklch(0.86_0.07_350/0.8)_22%,oklch(0.72_0.115_85/0.7)_50%,oklch(0.86_0.07_350/0.8)_78%,transparent)]',
     cta: 'Current Plan',
     features: [
       { text: 'Basic period tracking', included: true },
@@ -117,8 +125,10 @@ const PLANS: Plan[] = [
     monthlyPrice: 299,
     yearlyPrice: 2499,
     icon: Crown,
-    gradient: 'from-amber-400 via-yellow-500 to-orange-500',
-    borderColor: 'border-amber-400 dark:border-amber-600',
+    tierLabel: 'Full Bloom',
+    tierSparks: '✦✦',
+    medallion: 'bg-gold/15 text-gold ring-1 ring-gold/40',
+    edge: 'bg-[linear-gradient(90deg,transparent,oklch(0.82_0.13_88)_18%,oklch(0.72_0.115_85)_50%,oklch(0.82_0.13_88)_82%,transparent)]',
     badgeText: 'Most Popular',
     isPopular: true,
     cta: 'Choose Premium',
@@ -142,8 +152,10 @@ const PLANS: Plan[] = [
     monthlyPrice: 599,
     yearlyPrice: 4999,
     icon: Gem,
-    gradient: 'from-purple-500 via-fuchsia-500 to-pink-500',
-    borderColor: 'border-fuchsia-300 dark:border-fuchsia-700',
+    tierLabel: 'Celestial',
+    tierSparks: '✦✦✦',
+    medallion: 'bg-gradient-to-br from-plum-soft to-plum text-white shadow-md shadow-plum/25',
+    edge: 'bg-[linear-gradient(90deg,transparent,oklch(0.42_0.075_335/0.65)_22%,oklch(0.72_0.115_85)_50%,oklch(0.42_0.075_335/0.65)_78%,transparent)]',
     cta: 'Choose Premium Plus',
     features: [
       { text: 'Everything in Premium', included: true },
@@ -259,12 +271,21 @@ function PremiumActiveBanner() {
   )
 }
 
-// ─── Plan Card Component ────────────────────────────────────────────────────
+// ─── Plan Card — "The Bloom Tiers" ──────────────────────────────────────────
+// Creative theme built from Nuvia's own design language (plum & gold kit):
+//   ✦ Seedling  → pillowy blush card, gold hairline aurora edge
+//   ✦✦ Full Bloom → the hero: deep-plum night card with lotus watermark,
+//     crescent + sparkles, gilded serif price and a gold-gradient CTA
+//   ✦✦✦ Celestial → light card with plum medallion and plum→gold aurora edge
+// Every card shares the gold-divider ✦ ornament and 44px pill CTA — the same
+// signatures as the hero/final-CTA card-plum panels, so the pricing grid now
+// feels native instead of a generic template.
 
 function PlanCard({ plan, billingCycle, onChoosePlan }: { plan: Plan; billingCycle: BillingCycle; onChoosePlan: (plan: Plan) => void }) {
   const hasPremium = useAppStore((s) => s.hasPremium())
   const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice
   const isFree = plan.id === 'free'
+  const dark = !!plan.isPopular // Full Bloom hero card
   // User is on "free" if they don't have premium; otherwise they're on "premium"
   const isCurrentPlan = hasPremium ? plan.id === 'premium' : plan.id === 'free'
   const yearlyPerMonth = plan.yearlyPrice / 12
@@ -279,127 +300,258 @@ function PlanCard({ plan, billingCycle, onChoosePlan }: { plan: Plan; billingCyc
       viewport={{ once: true }}
       transition={{ duration: 0.4 }}
       whileHover={{ y: -4 }}
-      className={cn('relative', plan.isPopular && 'lg:-mt-4 lg:mb-0')}
+      className={cn('relative', plan.isPopular ? 'z-10 lg:-mt-6' : '')}
     >
-      <Card className={cn(
-        'relative h-full overflow-hidden transition-all',
-        plan.isPopular
-          ? 'border-gold/60 shadow-xl shadow-gold/20 ring-2 ring-gold/40'
-          : plan.borderColor
-      )}>
-        {/* Popular badge */}
-        {plan.isPopular && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-500 to-orange-500 px-4 py-1.5 text-xs font-bold text-plum shadow-lg">
-              <Sparkles className="h-3 w-3" />
-              {plan.badgeText}
-            </div>
+      {/* ── Gilded "Most Popular" crest ─────────────────────────────── */}
+      {plan.isPopular && (
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+          <div className="flex items-center gap-1.5 rounded-full bg-[linear-gradient(120deg,oklch(0.85_0.125_92),oklch(0.72_0.115_85)_55%,oklch(0.6_0.098_78))] px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-plum shadow-[0_12px_30px_-10px_oklch(0.72_0.115_85/0.75)] ring-1 ring-white/50">
+            <Sparkles className="h-3 w-3" />
+            {plan.badgeText}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Gradient top */}
-        <div className={cn('h-2 bg-gradient-to-r', plan.gradient)} />
+      {dark ? (
+        /* ════ FULL BLOOM — deep-plum hero card ══════════════════════ */
+        <div
+          className={cn(
+            'relative flex h-full flex-col overflow-hidden rounded-3xl border border-gold/40 text-white transition-shadow duration-300',
+            'bg-[radial-gradient(130%_110%_at_85%_-10%,oklch(0.5_0.13_350/0.5),transparent_55%),radial-gradient(90%_70%_at_0%_100%,oklch(0.42_0.1_80/0.18),transparent_60%),linear-gradient(160deg,oklch(0.31_0.075_333)_0%,oklch(0.24_0.06_335)_55%,oklch(0.19_0.05_338)_100%)]',
+            'shadow-[0_30px_70px_-26px_oklch(0.25_0.07_335/0.8)] hover:shadow-[0_36px_84px_-26px_oklch(0.72_0.115_85/0.5)]'
+          )}
+        >
+          <div aria-hidden className="lotus-watermark absolute inset-0" />
 
-        <CardHeader className="pt-5 pb-3">
-          <div className="flex items-center justify-between">
-            <div className={cn('flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br text-white shadow-md', plan.gradient)}>
-              <plan.icon className="h-5 w-5" />
-            </div>
-            {savings > 0 && billingCycle === 'yearly' && (
-              <Badge variant="secondary" className="bg-gold-soft text-plum gap-1">
-                <Gift className="h-3 w-3" /> Save {savings}%
-              </Badge>
-            )}
+          {/* Crescent moon + sparkle constellation, top-right */}
+          <div aria-hidden className="pointer-events-none absolute -top-2 right-5 select-none">
+            <svg width="54" height="54" viewBox="0 0 54 54" fill="none" className="opacity-70">
+              <path d="M36 10a17 17 0 1 0 8.6 22.4A14 14 0 0 1 36 10Z" fill="oklch(0.82_0.13_88/0.5)" />
+            </svg>
+            <span className="absolute -left-4 top-4 text-[9px] text-gold/70">✦</span>
+            <span className="absolute -left-1 -top-1 text-[7px] text-gold/50">✦</span>
+            <span className="absolute left-1 bottom-2 text-[8px] text-gold/60">✦</span>
           </div>
-          <div className="mt-2">
-            <CardTitle className="font-serif text-xl">{plan.name}</CardTitle>
-            <CardDescription>{plan.tagline}</CardDescription>
-          </div>
-        </CardHeader>
 
-        <CardContent className="pb-3">
-          {/* Price */}
-          <div className="mb-4">
-            {isFree ? (
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-bold">₹0</span>
-                <span className="text-sm text-muted-foreground">forever</span>
+          {/* Gold aurora edge */}
+          <div className={cn('relative z-10 h-1 w-full', plan.edge)} />
+
+          <div className="relative z-10 flex flex-1 flex-col p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl backdrop-blur-sm', plan.medallion)}>
+                <plan.icon className="h-5.5 w-5.5" />
               </div>
-            ) : (
-              <div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold">₹{price.toLocaleString('en-IN')}</span>
-                  <span className="text-sm text-muted-foreground">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
-                </div>
-                {billingCycle === 'yearly' && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                    Just ₹{yearlyPerMonth.toFixed(0)}/month · billed annually
-                  </p>
+              <div className="flex flex-col items-end gap-1.5">
+                <span className="rounded-full bg-white/5 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-gold ring-1 ring-gold/30">
+                  {plan.tierSparks} {plan.tierLabel}
+                </span>
+                {savings > 0 && billingCycle === 'yearly' && (
+                  <Badge variant="secondary" className="gap-1 border-0 bg-gold/15 text-gold ring-1 ring-gold/30">
+                    <Gift className="h-3 w-3" /> Save {savings}%
+                  </Badge>
                 )}
               </div>
-            )}
+            </div>
+
+            <CardTitle className="mt-4 font-serif text-2xl font-bold">{plan.name}</CardTitle>
+            <CardDescription className="text-white/70">{plan.tagline}</CardDescription>
+
+            {/* Price — gilded serif */}
+            <div className="mt-5">
+              <div className="flex items-baseline gap-1.5">
+                <span className="gold-shine font-serif text-[2.6rem] font-bold leading-none">₹{price.toLocaleString('en-IN')}</span>
+                <span className="text-sm text-gold/80">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+              </div>
+              {billingCycle === 'yearly' && (
+                <p className="mt-1.5 flex items-center gap-1 text-xs text-gold/70">
+                  <span className="text-[8px]">✦</span> Just ₹{yearlyPerMonth.toFixed(0)}/month · billed annually
+                </p>
+              )}
+            </div>
+
+            {/* Ornamental divider */}
+            <div className="gold-divider my-5 text-[10px] text-gold/80" aria-hidden>
+              <span>✦</span>
+            </div>
+
+            {/* Features */}
+            <ul className="mb-6 flex-1 space-y-2.5">
+              {plan.features.map((feature) => (
+                <li key={feature.text} className="flex items-start gap-2.5">
+                  <div className={cn(
+                    'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+                    feature.included ? 'bg-gold/15 ring-1 ring-gold/35' : 'bg-white/10'
+                  )}>
+                    {feature.included ? (
+                      <Check className="h-3 w-3 text-gold" />
+                    ) : (
+                      <X className="h-2.5 w-2.5 text-white/40" />
+                    )}
+                  </div>
+                  <span className={cn(
+                    'text-sm leading-snug',
+                    feature.included ? 'text-white/90' : 'text-white/35 line-through'
+                  )}>
+                    {feature.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA — gold pill */}
+            <Button
+              className={cn(
+                'w-full rounded-full min-h-11 font-semibold tracking-wide',
+                isCurrentPlan
+                  ? 'bg-white/10 text-white/50 ring-1 ring-white/15'
+                  : 'bg-[linear-gradient(120deg,oklch(0.85_0.125_92),oklch(0.72_0.115_85)_55%,oklch(0.6_0.098_78))] text-plum shadow-[0_14px_34px_-12px_oklch(0.72_0.115_85/0.85)] hover:brightness-105 hover:shadow-[0_18px_40px_-12px_oklch(0.72_0.115_85/0.95)]'
+              )}
+              disabled={isCurrentPlan}
+              onClick={() => {
+                if (isCurrentPlan) return
+                onChoosePlan(plan)
+              }}
+            >
+              {isCurrentPlan ? (
+                <>
+                  <Check className="mr-1.5 h-4 w-4" /> Current Plan
+                </>
+              ) : (
+                <>
+                  {plan.cta}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </>
+              )}
+            </Button>
           </div>
+        </div>
+      ) : (
+        /* ════ SEEDLING & CELESTIAL — light cards ════════════════════ */
+        <Card
+          className={cn(
+            'relative flex h-full flex-col overflow-hidden transition-shadow duration-300',
+            plan.id === 'plus'
+              ? 'border-plum/20 shadow-[0_18px_44px_-22px_oklch(0.42_0.09_335/0.4)] hover:shadow-[0_26px_54px_-22px_oklch(0.42_0.09_335/0.5)]'
+              : 'border-border hover:shadow-[0_22px_48px_-24px_oklch(0.62_0.2_355/0.35)]'
+          )}
+        >
+          {/* Aurora edge */}
+          <div className={cn('h-1 w-full', plan.edge)} />
 
-          <Separator className="mb-4" />
+          <CardHeader className="pb-3 pt-5">
+            <div className="flex items-start justify-between">
+              <div className={cn('flex h-12 w-12 items-center justify-center rounded-2xl', plan.medallion)}>
+                <plan.icon className="h-5.5 w-5.5" />
+              </div>
+              <div className="flex flex-col items-end gap-1.5">
+                <span
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] ring-1',
+                    plan.id === 'plus'
+                      ? 'bg-plum-soft/5 text-plum ring-plum/25 dark:text-gold dark:ring-gold/30'
+                      : 'bg-blush/60 text-primary ring-primary/20'
+                  )}
+                >
+                  {plan.tierSparks} {plan.tierLabel}
+                </span>
+                {savings > 0 && billingCycle === 'yearly' && (
+                  <Badge variant="secondary" className="gap-1 bg-gold-soft text-plum ring-1 ring-gold/40">
+                    <Gift className="h-3 w-3" /> Save {savings}%
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <CardTitle className="mt-4 font-serif text-xl">{plan.name}</CardTitle>
+            <CardDescription>{plan.tagline}</CardDescription>
+          </CardHeader>
 
-          {/* Features */}
-          <ul className="space-y-2.5">
-            {plan.features.map((feature) => (
-              <li key={feature.text} className="flex items-start gap-2.5">
-                <div className={cn(
-                  'flex h-4 w-4 items-center justify-center rounded-full shrink-0 mt-0.5',
-                  feature.included
-                    ? plan.isPopular ? 'bg-gold-soft' : 'bg-blush'
-                    : 'bg-muted/50'
-                )}>
-                  {feature.included ? (
-                    <Check className={cn('h-3 w-3', plan.isPopular ? 'text-amber-600 dark:text-amber-400' : 'text-primary')} />
-                  ) : (
-                    <X className="h-2.5 w-2.5 text-muted-foreground" />
+          <CardContent className="flex flex-1 flex-col pb-3">
+            {/* Price */}
+            <div className="mb-1">
+              {isFree ? (
+                <div className="flex items-baseline gap-1">
+                  <span className="font-serif text-4xl font-bold">₹0</span>
+                  <span className="text-sm text-muted-foreground">forever</span>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-serif text-4xl font-bold">₹{price.toLocaleString('en-IN')}</span>
+                    <span className="text-sm text-muted-foreground">/{billingCycle === 'monthly' ? 'month' : 'year'}</span>
+                  </div>
+                  {billingCycle === 'yearly' && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs text-plum dark:text-gold">
+                      <span className="text-[8px]">✦</span> Just ₹{yearlyPerMonth.toFixed(0)}/month · billed annually
+                    </p>
                   )}
                 </div>
-                <span className={cn(
-                  'text-sm leading-snug',
-                  feature.included ? 'text-foreground' : 'text-muted-foreground/60 line-through'
-                )}>
-                  {feature.text}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
+              )}
+            </div>
 
-        <CardFooter className="pt-0">
-          <Button
-            className={cn(
-              'w-full rounded-full min-h-11 font-semibold',
-              isCurrentPlan
-                ? 'bg-muted text-muted-foreground'
-                : plan.isPopular
-                ? 'bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 hover:opacity-90 text-white shadow-md shadow-amber-500/30'
-                : plan.id === 'plus'
-                ? 'bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-500 hover:opacity-90 text-white shadow-md shadow-fuchsia-500/30'
-                : 'bg-foreground text-background hover:bg-foreground/90'
-            )}
-            disabled={isCurrentPlan}
-            onClick={() => {
-              if (isCurrentPlan) return
-              onChoosePlan(plan)
-            }}
-          >
-            {isCurrentPlan ? (
-              <>
-                <Check className="h-4 w-4 mr-1.5" /> Current Plan
-              </>
-            ) : (
-              <>
-                {plan.cta}
-                <ArrowRight className="h-4 w-4 ml-1.5" />
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
+            {/* Ornamental divider (brand gold ✦) */}
+            <div className="gold-divider my-5 text-[10px] text-gold" aria-hidden>
+              <span>✦</span>
+            </div>
+
+            {/* Features */}
+            <ul className="mb-6 flex-1 space-y-2.5">
+              {plan.features.map((feature) => (
+                <li key={feature.text} className="flex items-start gap-2.5">
+                  <div className={cn(
+                    'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+                    feature.included
+                      ? plan.id === 'plus'
+                        ? 'bg-gold-soft ring-1 ring-gold/50'
+                        : 'bg-blush ring-1 ring-primary/25'
+                      : 'bg-muted/50'
+                  )}>
+                    {feature.included ? (
+                      <Check className={cn('h-3 w-3', plan.id === 'plus' ? 'text-amber-600 dark:text-gold' : 'text-primary')} />
+                    ) : (
+                      <X className="h-2.5 w-2.5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <span className={cn(
+                    'text-sm leading-snug',
+                    feature.included ? 'text-foreground' : 'text-muted-foreground/60 line-through'
+                  )}>
+                    {feature.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* CTA */}
+            <Button
+              className={cn(
+                'w-full rounded-full min-h-11 font-semibold',
+                isCurrentPlan
+                  ? 'bg-muted text-muted-foreground'
+                  : plan.id === 'plus'
+                  ? 'btn-plum'
+                  : 'border border-plum/30 bg-transparent text-plum hover:bg-blush dark:border-gold/40 dark:text-gold dark:hover:bg-white/5'
+              )}
+              disabled={isCurrentPlan}
+              onClick={() => {
+                if (isCurrentPlan) return
+                onChoosePlan(plan)
+              }}
+            >
+              {isCurrentPlan ? (
+                <>
+                  <Check className="mr-1.5 h-4 w-4" /> Current Plan
+                </>
+              ) : (
+                <>
+                  {plan.cta}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </motion.div>
   )
 }
@@ -520,14 +672,16 @@ export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void
           <p className="text-muted-foreground text-sm">Cancel anytime · 7-day money-back guarantee on annual plans</p>
         </div>
 
-        {/* Billing toggle */}
+        {/* Billing toggle — plum active pill (brand pill signature) */}
         <div className="flex items-center justify-center mb-8">
           <div className="inline-flex items-center gap-1 p-1 rounded-full bg-muted/60 border border-border">
             <button
               onClick={() => setBillingCycle('monthly')}
               className={cn(
                 'px-5 py-2 min-h-11 rounded-full text-sm font-medium transition-all',
-                billingCycle === 'monthly' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+                billingCycle === 'monthly'
+                  ? 'bg-plum text-white shadow-md shadow-plum/25 dark:bg-plum-soft'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Monthly
@@ -536,11 +690,19 @@ export default function PremiumModule({ onSubscribe }: { onSubscribe: () => void
               onClick={() => setBillingCycle('yearly')}
               className={cn(
                 'px-5 py-2 min-h-11 rounded-full text-sm font-medium transition-all flex items-center gap-2',
-                billingCycle === 'yearly' ? 'bg-card shadow-sm text-foreground' : 'text-muted-foreground'
+                billingCycle === 'yearly'
+                  ? 'bg-plum text-white shadow-md shadow-plum/25 dark:bg-plum-soft'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               Yearly
-              <Badge variant="secondary" className="bg-gold-soft text-plum text-[10px] h-4 px-1.5">
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'text-[10px] h-4 px-1.5',
+                  billingCycle === 'yearly' ? 'bg-gold text-plum border-0' : 'bg-gold-soft text-plum'
+                )}
+              >
                 Save 30%
               </Badge>
             </button>
