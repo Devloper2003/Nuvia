@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
+import GoogleSetupDialog from './google-setup-dialog'
 
 // Type definitions for Google Identity Services (loaded from external script)
 declare global {
@@ -86,27 +87,26 @@ export default function GoogleOAuthButton({ onCredential, loading, setLoading }:
   const [clientId, setClientId] = useState<string>('')
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [scriptError, setScriptError] = useState<string | null>(null)
-  const [showSetupHelp, setShowSetupHelp] = useState(false)
+  const [setupOpen, setSetupOpen] = useState(false)
   const callbackRef = useRef<(idToken: string) => void>(onCredential)
   useEffect(() => {
     callbackRef.current = onCredential
   }, [onCredential])
 
-  // Fetch the client id from /api/auth/config
+  // Fetch the client id from /api/auth/config — on mount and after the setup
+  // dialog closes (credentials may have been saved while it was open).
   useEffect(() => {
     let cancelled = false
-    async function fetchConfig() {
-      try {
-        const res = await fetch('/api/auth/config')
-        const data = await res.json()
+    fetch('/api/auth/config')
+      .then((r) => r.json())
+      .then((data) => {
         if (!cancelled) setClientId(data.google?.clientId || '')
-      } catch {
-        if (!cancelled) setClientId('')
-      }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
     }
-    fetchConfig()
-    return () => { cancelled = true }
-  }, [])
+  }, [setupOpen])
 
   // Load Google Identity Services script when we have a clientId
   useEffect(() => {
@@ -179,33 +179,26 @@ export default function GoogleOAuthButton({ onCredential, loading, setLoading }:
     )
   }
 
-  // No client ID configured — show setup help
+  // No client ID configured — open the in-app setup dialog (paste real credentials)
   if (!clientId) {
     return (
-      <div className="w-full space-y-1.5">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-11 rounded-xl border-dashed border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 text-sm font-medium gap-2.5 hover:bg-amber-100 dark:hover:bg-amber-950/30"
-          onClick={() => setShowSetupHelp((s) => !s)}
-        >
-          <AlertCircle className="h-4 w-4" />
-          <span>Continue with Google — Setup Required</span>
-        </Button>
-        {showSetupHelp && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 p-3 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
-            <p className="font-semibold mb-1">To enable real Google Sign-In:</p>
-            <ol className="list-decimal list-inside space-y-0.5">
-              <li>Open <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noreferrer" className="underline">Google Cloud Console</a></li>
-              <li>Create an OAuth 2.0 Client ID (Web application)</li>
-              <li>Add this site to Authorized JavaScript origins</li>
-              <li>Add <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> to your <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">.env</code></li>
-              <li>Restart the dev server</li>
-            </ol>
-            <p className="mt-1.5 text-amber-700 dark:text-amber-400">Until configured, use email sign-up — it works fully.</p>
-          </div>
-        )}
-      </div>
+      <>
+        <div className="w-full space-y-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 rounded-xl border-dashed border-amber-300 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-300 text-sm font-medium gap-2.5 hover:bg-amber-100 dark:hover:bg-amber-950/30"
+            onClick={() => setSetupOpen(true)}
+          >
+            <Settings2 className="h-4 w-4" />
+            <span>Continue with Google — set it up</span>
+          </Button>
+          <p className="text-[11px] text-muted-foreground text-center">
+            Real Google sign-in needs a one-time OAuth setup — only takes ~3 minutes.
+          </p>
+        </div>
+        <GoogleSetupDialog open={setupOpen} onOpenChange={setSetupOpen} />
+      </>
     )
   }
 

@@ -24,7 +24,7 @@ import {
   Check,
 } from 'lucide-react'
 import GoogleOAuthButton from './google-oauth-button'
-import GoogleSignInModal from './google-signin-modal'
+import GoogleSetupDialog from './google-setup-dialog'
 import { BrandMark, BrandWordmark, BrandTagline } from '@/components/brand/brand-logo'
 
 type Mode = 'login' | 'signup'
@@ -79,7 +79,8 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
   const [loading, setLoading] = useState<null | 'email' | 'google'>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [googleConfigured, setGoogleConfigured] = useState(false)
-  const [googleModalOpen, setGoogleModalOpen] = useState(false)
+  const [googleCodeFlowReady, setGoogleCodeFlowReady] = useState(false)
+  const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
 
   // Fetch OAuth config (Google only)
   useEffect(() => {
@@ -89,6 +90,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
       .then((data) => {
         if (!cancelled) {
           setGoogleConfigured(!!data.google?.configured)
+          setGoogleCodeFlowReady(!!data.google?.codeFlowReady)
         }
       })
       .catch(() => {
@@ -165,49 +167,25 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
     }
   }, [remember, onAuthed])
 
-  // ─── Modal-based Google path (when GOOGLE_CLIENT_ID NOT configured) ─────────
-  // User enters their real Google email → sees permission screen → "Allow" →
-  // we sign them in with that email. This gives the real OAuth UX without
-  // requiring a Google Cloud project.
-  const handleGoogleModalSuccess = useCallback(async (account: { email: string; name: string; avatar: string }) => {
-    try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Tell backend this is a modal-based flow (no real Google ID token,
-          // but the user explicitly granted permission for this email).
-          modalAccount: account,
-        }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        toast.error(data.error || 'Google sign-in failed')
-        setLoading(null)
-        setGoogleModalOpen(false)
-        return
-      }
-      if (data.token && remember) {
-        localStorage.setItem('chandracycle_token', data.token)
-      }
-      toast.success(`Signed in as ${data.user.email}`)
-      setGoogleModalOpen(false)
-      onAuthed(data.user)
-    } catch {
-      toast.error('Network error during Google sign-in.')
-      setLoading(null)
-      setGoogleModalOpen(false)
-    }
-  }, [remember, onAuthed])
-
+  // ─── Real Google OAuth: three tiers, NO fake fallback ──────────────────
+  // 1. codeFlowReady (Client ID + Secret): full redirect through
+  //    accounts.google.com — the gold-standard real sign-in.
+  // 2. configured (Client ID only): official Google Identity Services popup,
+  //    verified server-side.
+  // 3. not configured: open the setup dialog so the owner can paste real
+  //    credentials. Entering an email is NEVER a sign-in.
   const handleGoogleClick = useCallback(() => {
     if (loading) return
+    if (googleCodeFlowReady) {
+      window.location.href = '/api/auth/google/authorize'
+      return
+    }
     if (googleConfigured) {
       // Real Google OAuth button is rendered below — it triggers its own flow
       return
     }
-    setGoogleModalOpen(true)
-  }, [loading, googleConfigured])
+    setGoogleSetupOpen(true)
+  }, [loading, googleConfigured, googleCodeFlowReady])
 
   return (
     <div className="relative min-h-dvh w-full flex flex-col lg:flex-row">
@@ -405,7 +383,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                     : 'Join thousands of women taking charge of their health.'}
                 </p>
 
-                {/* Google OAuth button: real OAuth if configured, else modal-based flow */}
+                {/* Google OAuth button: real redirect flow / GIS popup / setup dialog. */}
                 <div className="mt-4 sm:mt-6">
                   {googleConfigured ? (
                     <GoogleOAuthButton
@@ -579,15 +557,21 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
         </motion.div>
       </div>
 
-      {/* OAuth popup (keyed by open state so it remounts fresh each open) */}
-      {googleModalOpen && (
-        <GoogleSignInModal
-          key={`google-${googleModalOpen}`}
-          open={googleModalOpen}
-          onClose={() => setGoogleModalOpen(false)}
-          onSuccess={handleGoogleModalSuccess}
-        />
-      )}
+      {/* Google Sign-In setup — paste real OAuth credentials (no fake login path exists) */}
+      <GoogleSetupDialog
+        open={googleSetupOpen}
+        onOpenChange={setGoogleSetupOpen}
+        onConfigured={() => {
+          // Re-fetch config so the real Google button appears immediately
+          fetch('/api/auth/config')
+            .then((r) => r.json())
+            .then((data) => {
+              setGoogleConfigured(!!data.google?.configured)
+              setGoogleCodeFlowReady(!!data.google?.codeFlowReady)
+            })
+            .catch(() => {})
+        }}
+      />
     </div>
   )
 }

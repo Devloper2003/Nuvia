@@ -124,23 +124,42 @@ export function toSessionUser(user: {
 
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24 * 30 // 30 days
 
+// ─── Slim-token guard (prevents oversized session JWTs) ─────────────────────
+// Historical bug: a 44KB base64 avatar embedded in `u` ballooned the session
+// token to ~59KB → every Authorization header exceeded Node's 16KB HTTP header
+// limit → 431 responses → permanent login bounce. String fields longer than
+// MAX_EMBEDDED_FIELD_CHARS are dropped from the embedded user (they are always
+// available from the DB via /api/auth/me).
+const MAX_EMBEDDED_FIELD_CHARS = 512
+
+function sanitizeEmbeddedUser(u: Record<string, unknown>): Record<string, unknown> {
+  const clean: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(u)) {
+    if (typeof value === 'string' && value.length > MAX_EMBEDDED_FIELD_CHARS) continue
+    clean[key] = value
+  }
+  return clean
+}
+
 export function issueSessionToken(user: SessionUser): string {
-  return signToken({
-    sub: user.id,
-    exp: Date.now() + TOKEN_TTL_MS,
-    // Embed the full session user so /me can return without a DB hit.
-    u: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      provider: user.provider,
-      onboardingComplete: user.onboardingComplete,
-      cycleLength: user.cycleLength,
-      periodLength: user.periodLength,
-      lastPeriodStart: user.lastPeriodStart,
-    },
+  const embedded = sanitizeEmbeddedUser({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    provider: user.provider,
+    onboardingComplete: user.onboardingComplete,
+    cycleLength: user.cycleLength,
+    periodLength: user.periodLength,
+    lastPeriodStart: user.lastPeriodStart,
   })
+  const token = signToken({ sub: user.id, exp: Date.now() + TOKEN_TTL_MS, u: embedded })
+  if (token.length > 4096) {
+    console.warn(
+      `[auth] Session token is unusually large (${token.length} chars) — investigate embedded payload.`
+    )
+  }
+  return token
 }
 
 // Backwards-compat: old callers passed just a userId. Prefer issueSessionToken(user).
@@ -167,6 +186,22 @@ function userFromPayload(payload: Record<string, unknown>): SessionUser | null {
     }
   }
   return null
+}
+
+// Legacy tokens may still carry oversized fields (e.g. a 44KB avatar). Re-
+// sanitize them here and explicitly null-out anything that was dropped, so a
+// refreshed token is guaranteed to be slim.
+export function userFromPayloadSafe(payload: Record<string, unknown>): SessionUser | null {
+  const user = userFromPayload(payload)
+  if (!user) return null
+  const raw = (payload.u ?? {}) as Record<string, unknown>
+  const sanitized = sanitizeEmbeddedUser(raw)
+  return {
+    ...user,
+    name: 'name' in sanitized ? user.name : null,
+    avatar: 'avatar' in sanitized ? user.avatar : null,
+    lastPeriodStart: 'lastPeriodStart' in sanitized ? user.lastPeriodStart : null,
+  }
 }
 
 export async function getUserFromToken(token: string): Promise<SessionUser | null> {

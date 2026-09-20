@@ -104,6 +104,7 @@ import {
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
+import GoogleSetupDialog from '@/components/auth/google-setup-dialog'
 import { toast } from 'sonner'
 import ReminderPreferences from '@/components/settings/reminder-preferences'
 import { LanguageSegmented } from '@/components/language-switcher'
@@ -172,6 +173,88 @@ function SettingsSection({
         <CardContent className="pt-0">{children}</CardContent>
       </Card>
     </motion.div>
+  )
+}
+
+// ─── Google Sign-In (real OAuth) section ─────────────────────────────────────
+
+function GoogleSignInSection({ delay = 0 }: { delay?: number }) {
+  const [status, setStatus] = useState<{
+    configured: boolean
+    codeFlowReady: boolean
+    source: string
+    maskedClientId: string
+  } | null>(null)
+  const [setupOpen, setSetupOpen] = useState(false)
+
+  const loadStatus = useCallback(() => {
+    fetch('/api/auth/google/credentials')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return
+        setStatus({
+          configured: !!data.google?.configured,
+          codeFlowReady: !!data.google?.codeFlowReady,
+          source: data.google?.source || 'none',
+          maskedClientId: data.google?.maskedClientId || '',
+        })
+      })
+      .catch(() => {
+        /* leave status as-is */
+      })
+  }, [])
+
+  useEffect(() => {
+    loadStatus()
+  }, [loadStatus])
+
+  return (
+    <SettingsSection
+      title="Google Sign-In"
+      description="Real Google account authentication — no fake logins"
+      icon={KeyRound}
+      iconColor="bg-blush text-plum"
+      delay={delay}
+    >
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
+          <div className={cn('flex h-10 w-10 items-center justify-center rounded-full shrink-0', status?.configured ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400')}>
+            {status?.configured ? <ShieldCheck className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium">
+              {status === null ? (
+                'Checking status…'
+              ) : status.configured ? (
+                <>
+                  Active — {status.source === 'env' ? 'environment' : 'in-app credentials'}
+                  {status.codeFlowReady ? ' (full redirect flow)' : ' (popup flow)'}
+                </>
+              ) : (
+                'Not configured yet'
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground truncate font-mono">
+              {status?.maskedClientId || 'Paste a Google OAuth client to enable real sign-in'}
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9 shrink-0 rounded-full text-xs font-medium"
+            onClick={() => setSetupOpen(true)}
+          >
+            {status?.configured ? 'Manage' : 'Set up'}
+          </Button>
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Users can only sign in with a real, Google-verified account — there is no
+          email-only fallback for Google. Configure the OAuth client once and it works
+          for everyone.
+        </p>
+        <GoogleSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onConfigured={loadStatus} />
+      </div>
+    </SettingsSection>
   )
 }
 
@@ -1132,6 +1215,9 @@ export default function SettingsModule() {
           </AlertDialog>
         </div>
       </SettingsSection>
+
+      {/* ─── Google Sign-In (real OAuth) ─────────────────────────────────── */}
+      <GoogleSignInSection delay={0.31} />
 
       {/* ─── Content Moderation (operator console) ─────────────────── */}
       <SettingsSection

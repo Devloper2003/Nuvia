@@ -54,14 +54,76 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false
     async function checkSession() {
+      // ─── Google OAuth redirect bridge ───────────────────────────────────────
+      // The authorize/callback flow returns to /?auth=google (success, session
+      // cookie set) or /?auth_error=<code>. Clean the URL and act on it.
+      const params = new URLSearchParams(window.location.search)
+      const authError = params.get('auth_error')
+      const authOk = params.get('auth') === 'google'
+      if (authError || authOk) {
+        window.history.replaceState({}, '', window.location.pathname)
+        if (authError) {
+          const messages: Record<string, string> = {
+            google_not_configured: 'Google Sign-In is not configured yet — set it up in Settings.',
+            google_denied: 'Google sign-in was cancelled.',
+            google_state_mismatch: 'Sign-in session expired — please try again.',
+            google_missing_code: 'Google sign-in did not complete — please try again.',
+            google_redirect_mismatch: 'The redirect URI is not whitelisted in your Google Cloud client.',
+            google_invalid_client: 'That Google Client ID is not valid — check the credentials.',
+            google_callback_failed: 'Google sign-in failed — please try again.',
+          }
+          toast.error(messages[authError] || 'Google sign-in failed — please try again.')
+        }
+        if (authOk) {
+          // The session lives in an httpOnly cookie; /me echoes the token so we
+          // can persist it for Bearer requests too.
+          try {
+            const me = await fetch('/api/auth/me', { credentials: 'include' })
+            const meData = await me.json()
+            if (meData?.user) {
+              if (meData.token) localStorage.setItem('chandracycle_token', meData.token)
+              if (!cancelled) {
+                setAuthUser(meData.user)
+                setAuthChecking(false)
+              }
+              toast.success(`Signed in as ${meData.user.email}`)
+              return
+            }
+          } catch {
+            /* fall through to normal session check */
+          }
+        }
+      }
+
       const token = typeof window !== 'undefined' ? localStorage.getItem('chandracycle_token') : null
       if (!token) {
         if (!cancelled) setAuthChecking(false)
         return
       }
       try {
+        // Self-heal legacy oversized tokens (>8KB chars → 431 risk): swap them
+        // for a slim token via the refresh route (token travels in the BODY).
+        let activeToken = token
+        if (token.length > 8000) {
+          try {
+            const refreshRes = await fetch('/api/auth/refresh', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token }),
+            })
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json()
+              if (refreshData.token) {
+                activeToken = refreshData.token
+                localStorage.setItem('chandracycle_token', activeToken)
+              }
+            }
+          } catch {
+            /* keep the old token — /me will decide */
+          }
+        }
         const res = await fetch('/api/auth/me', {
-          headers: { authorization: `Bearer ${token}` },
+          headers: { authorization: `Bearer ${activeToken}` },
         })
         const data = await res.json()
         if (!cancelled) {
