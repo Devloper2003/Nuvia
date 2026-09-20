@@ -73,6 +73,16 @@ export default function Home() {
             google_callback_failed: 'Google sign-in failed — please try again.',
           }
           toast.error(messages[authError] || 'Google sign-in failed — please try again.')
+          // Configuration problems are fixable in-app: ask the auth screen to
+          // open the setup dialog (which shows the exact origin + redirect URI
+          // to whitelist in the Google Cloud Console). A sessionStorage flag
+          // survives the AuthScreen mount race — the listener may not exist
+          // yet when checkSession runs.
+          if (authError === 'google_redirect_mismatch' || authError === 'google_invalid_client') {
+            try {
+              sessionStorage.setItem('nuvia:open-google-setup', '1')
+            } catch { /* private mode */ }
+          }
         }
         if (authOk) {
           // The session lives in an httpOnly cookie; /me echoes the token so we

@@ -30,7 +30,9 @@ export async function GET(request: NextRequest) {
       try {
         const fresh = await db.user.findUnique({ where: { id: sub } })
         if (fresh) {
-          return NextResponse.json({ user: toSessionUser(fresh) })
+          // Echo the token so cookie-only sessions (Google OAuth redirect bridge,
+          // popup-flow polling) can persist it for Bearer-authenticated APIs.
+          return NextResponse.json({ user: toSessionUser(fresh), token })
         }
         // The DB answered but the user no longer exists (account deleted,
         // DB reset). The session is REVOKED — do NOT fall through to the JWT's
@@ -52,6 +54,7 @@ export async function GET(request: NextRequest) {
     const u = payload.u as Record<string, unknown> | undefined
     if (u && typeof u.email === 'string' && sub) {
       return NextResponse.json({
+        token,
         user: {
           id: sub,
           name: (u.name as string | null) ?? null,

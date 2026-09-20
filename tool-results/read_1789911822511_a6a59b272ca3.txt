@@ -1,0 +1,589 @@
+     1→'use client'
+     2→
+     3→import { useState, useCallback, useEffect } from 'react'
+     4→import { motion, AnimatePresence } from 'framer-motion'
+     5→import { Button } from '@/components/ui/button'
+     6→import { Input } from '@/components/ui/input'
+     7→import { Label } from '@/components/ui/label'
+     8→import { Checkbox } from '@/components/ui/checkbox'
+     9→import { toast } from 'sonner'
+    10→import {
+    11→  Sparkles,
+    12→  HeartPulse,
+    13→  Brain,
+    14→  Baby,
+    15→  Flower2,
+    16→  ShieldCheck,
+    17→  Loader2,
+    18→  Mail,
+    19→  KeyRound,
+    20→  User as UserIcon,
+    21→  Eye,
+    22→  EyeOff,
+    23→  ArrowRight,
+    24→  Check,
+    25→} from 'lucide-react'
+    26→import GoogleOAuthButton from './google-oauth-button'
+    27→import GoogleSetupDialog from './google-setup-dialog'
+    28→import { BrandMark, BrandWordmark, BrandTagline } from '@/components/brand/brand-logo'
+    29→
+    30→type Mode = 'login' | 'signup'
+    31→
+    32→export interface SessionUser {
+    33→  id: string
+    34→  name: string | null
+    35→  email: string
+    36→  avatar: string | null
+    37→  provider: string
+    38→  onboardingComplete: boolean
+    39→  cycleLength: number
+    40→  periodLength: number
+    41→  lastPeriodStart: string | null
+    42→}
+    43→
+    44→interface AuthScreenProps {
+    45→  onAuthed: (user: SessionUser) => void
+    46→}
+    47→
+    48→const features = [
+    49→  { icon: HeartPulse, title: 'Cycle & Hormone IQ', desc: 'AI-powered predictions for your unique rhythm' },
+    50→  { icon: Baby, title: 'Fertility & Pregnancy', desc: 'Track ovulation, conceive, and glow through every trimester' },
+    51→  { icon: Flower2, title: 'PCOS & Menopause Care', desc: 'Personalised plans for every life stage' },
+    52→  { icon: Brain, title: 'AI Health Coach', desc: '24/7 guidance tailored to your body' },
+    53→]
+    54→
+    55→// Staggered entrance variants for premium feel
+    56→const containerStagger = {
+    57→  hidden: { opacity: 0 },
+    58→  show: {
+    59→    opacity: 1,
+    60→    transition: { staggerChildren: 0.07, delayChildren: 0.05 },
+    61→  },
+    62→}
+    63→const fadeUp = {
+    64→  hidden: { opacity: 0, y: 14 },
+    65→  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const } },
+    66→}
+    67→
+    68→// Glass sphere blobs — pure CSS drift/float (prefers-reduced-motion covered
+    69→// globally in globals.css for .animate-drift-slow / .animate-float)
+    70→const sphereBase = 'absolute rounded-full pointer-events-none backdrop-blur-[2px] will-change-transform'
+    71→
+    72→export default function AuthScreen({ onAuthed }: AuthScreenProps) {
+    73→  const [mode, setMode] = useState<Mode>('login')
+    74→  const [name, setName] = useState('')
+    75→  const [email, setEmail] = useState('')
+    76→  const [password, setPassword] = useState('')
+    77→  const [showPassword, setShowPassword] = useState(false)
+    78→  const [remember, setRemember] = useState(true)
+    79→  const [loading, setLoading] = useState<null | 'email' | 'google'>(null)
+    80→  const [errors, setErrors] = useState<Record<string, string>>({})
+    81→  const [googleConfigured, setGoogleConfigured] = useState(false)
+    82→  const [googleCodeFlowReady, setGoogleCodeFlowReady] = useState(false)
+    83→  const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
+    84→
+    85→  // Fetch OAuth config (Google only)
+    86→  useEffect(() => {
+    87→    let cancelled = false
+    88→    fetch('/api/auth/config')
+    89→      .then((r) => r.json())
+    90→      .then((data) => {
+    91→        if (!cancelled) {
+    92→          setGoogleConfigured(!!data.google?.configured)
+    93→          setGoogleCodeFlowReady(!!data.google?.codeFlowReady)
+    94→        }
+    95→      })
+    96→      .catch(() => {
+    97→        if (!cancelled) setGoogleConfigured(false)
+    98→      })
+    99→    return () => { cancelled = true }
+   100→  }, [])
+   101→
+   102→  const switchMode = (newMode: Mode) => {
+   103→    setErrors({})
+   104→    setMode(newMode)
+   105→  }
+   106→
+   107→  const validate = (): boolean => {
+   108→    const e: Record<string, string> = {}
+   109→    if (mode === 'signup' && !name.trim()) e.name = 'Please enter your name'
+   110→    if (!email.trim()) e.email = 'Please enter your email'
+   111→    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email'
+   112→    if (!password) e.password = 'Please enter a password'
+   113→    else if (mode === 'signup' && password.length < 6) e.password = 'At least 6 characters'
+   114→    setErrors(e)
+   115→    return Object.keys(e).length === 0
+   116→  }
+   117→
+   118→  const handleEmailAuth = async () => {
+   119→    if (!validate()) return
+   120→    setLoading('email')
+   121→    try {
+   122→      const res = await fetch(`/api/auth/${mode}`, {
+   123→        method: 'POST',
+   124→        headers: { 'Content-Type': 'application/json' },
+   125→        body: JSON.stringify({ name, email, password }),
+   126→      })
+   127→      const data = await res.json()
+   128→      if (!res.ok) {
+   129→        toast.error(data.error || 'Something went wrong')
+   130→        setLoading(null)
+   131→        return
+   132→      }
+   133→      if (data.token && remember) {
+   134→        localStorage.setItem('chandracycle_token', data.token)
+   135→      }
+   136→      toast.success(mode === 'signup' ? 'Welcome to Nuvia!' : 'Welcome back!')
+   137→      onAuthed(data.user)
+   138→    } catch {
+   139→      toast.error('Network error. Please try again.')
+   140→      setLoading(null)
+   141→    }
+   142→  }
+   143→
+   144→  // ─── Real Google OAuth path (when GOOGLE_CLIENT_ID configured) ──────────────
+   145→  const handleGoogleCredential = useCallback(async (idToken: string) => {
+   146→    setLoading('google')
+   147→    try {
+   148→      const res = await fetch('/api/auth/google', {
+   149→        method: 'POST',
+   150→        headers: { 'Content-Type': 'application/json' },
+   151→        body: JSON.stringify({ credential: idToken }),
+   152→      })
+   153→      const data = await res.json()
+   154→      if (!res.ok) {
+   155→        toast.error(data.error || 'Google sign-in failed')
+   156→        setLoading(null)
+   157→        return
+   158→      }
+   159→      if (data.token && remember) {
+   160→        localStorage.setItem('chandracycle_token', data.token)
+   161→      }
+   162→      toast.success(`Signed in as ${data.user.email}`)
+   163→      onAuthed(data.user)
+   164→    } catch {
+   165→      toast.error('Network error during Google sign-in.')
+   166→      setLoading(null)
+   167→    }
+   168→  }, [remember, onAuthed])
+   169→
+   170→  // ─── Real Google OAuth: three tiers, NO fake fallback ──────────────────
+   171→  // 1. codeFlowReady (Client ID + Secret): full redirect through
+   172→  //    accounts.google.com — the gold-standard real sign-in.
+   173→  // 2. configured (Client ID only): official Google Identity Services popup,
+   174→  //    verified server-side.
+   175→  // 3. not configured: open the setup dialog so the owner can paste real
+   176→  //    credentials. Entering an email is NEVER a sign-in.
+   177→  const handleGoogleClick = useCallback(() => {
+   178→    if (loading) return
+   179→    if (googleCodeFlowReady) {
+   180→      window.location.href = '/api/auth/google/authorize'
+   181→      return
+   182→    }
+   183→    if (googleConfigured) {
+   184→      // Real Google OAuth button is rendered below — it triggers its own flow
+   185→      return
+   186→    }
+   187→    setGoogleSetupOpen(true)
+   188→  }, [loading, googleConfigured, googleCodeFlowReady])
+   189→
+   190→  return (
+   191→    <div className="relative min-h-dvh w-full flex flex-col lg:flex-row">
+   192→      {/* ─── Background layer (fixed so it stays put during page scroll) ────── */}
+   193→      {/* Wrapped in fixed+overflow-hidden so the negative-positioned orbs
+   194→          below can never cause horizontal document scroll, while the main
+   195→          content flows naturally via BODY scroll (the only reliable scroll
+   196→          model on iOS Safari). */}
+   197→      <div className="fixed inset-0 overflow-hidden pointer-events-none" aria-hidden>
+   198→        {/* Warm cream canvas — soft rose + peach radial washes (reference aesthetic) */}
+   199→        <div className="absolute inset-0 bg-[linear-gradient(165deg,oklch(0.985_0.015_85)_0%,oklch(0.98_0.017_350)_48%,oklch(0.975_0.024_55)_100%)] dark:bg-[linear-gradient(165deg,oklch(0.165_0.02_345)_0%,oklch(0.145_0.026_350)_48%,oklch(0.155_0.022_50)_100%)]" />
+   200→        <div className="absolute inset-0 bg-[radial-gradient(56rem_56rem_at_8%_-10%,oklch(0.92_0.06_355/0.6),transparent_62%),radial-gradient(48rem_48rem_at_108%_12%,oklch(0.93_0.06_55/0.55),transparent_60%),radial-gradient(52rem_52rem_at_50%_120%,oklch(0.9_0.06_305/0.32),transparent_62%)] dark:bg-[radial-gradient(56rem_56rem_at_8%_-10%,oklch(0.5_0.14_350/0.2),transparent_62%),radial-gradient(48rem_48rem_at_108%_12%,oklch(0.5_0.12_55/0.14),transparent_60%),radial-gradient(52rem_52rem_at_50%_120%,oklch(0.46_0.14_305/0.16),transparent_62%)]" />
+   201→
+   202→        {/* ─── Organic glass spheres (CSS drift — reduced-motion safe) ───────── */}
+   203→        <div
+   204→          aria-hidden
+   205→          className={`${sphereBase} animate-drift-slow top-[-9%] left-[-5%] h-[22rem] w-[22rem] sm:h-[27rem] sm:w-[27rem] border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/85 via-rose-100/70 to-rose-200/55 dark:from-white/10 dark:via-rose-400/10 dark:to-fuchsia-400/10 shadow-[inset_0_2px_20px_oklch(1_0_0/0.75),inset_0_-16px_32px_oklch(0.86_0.08_355/0.35),0_30px_70px_-30px_oklch(0.62_0.2_355/0.35)] opacity-80 sm:opacity-90`}
+   206→        >
+   207→          <span className="absolute left-[16%] top-[14%] h-20 w-20 rounded-full bg-white/85 blur-xl dark:bg-white/15" />
+   208→        </div>
+   209→        <div
+   210→          aria-hidden
+   211→          style={{ animationDelay: '-9s' }}
+   212→          className={`${sphereBase} animate-drift-slow bottom-[-11%] right-[-7%] h-[24rem] w-[24rem] sm:h-[30rem] sm:w-[30rem] border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/85 via-amber-100/70 to-rose-200/50 dark:from-white/10 dark:via-amber-400/10 dark:to-rose-400/10 shadow-[inset_0_2px_20px_oklch(1_0_0/0.75),inset_0_-16px_32px_oklch(0.88_0.08_60/0.35),0_30px_70px_-30px_oklch(0.7_0.16_55/0.35)] opacity-75 sm:opacity-90`}
+   213→        >
+   214→          <span className="absolute right-[18%] top-[12%] h-16 w-16 rounded-full bg-white/85 blur-xl dark:bg-white/15" />
+   215→        </div>
+   216→        <div
+   217→          aria-hidden
+   218→          style={{ animationDelay: '-2.2s' }}
+   219→          className={`${sphereBase} animate-float hidden md:block top-[16%] right-[30%] xl:right-[26%] h-36 w-36 xl:h-44 xl:w-44 border border-white/70 dark:border-white/10 bg-gradient-to-br from-white/80 via-lilac/60 to-rose-100/60 dark:from-white/10 dark:via-lilac/15 dark:to-rose-300/10 shadow-[inset_0_2px_14px_oklch(1_0_0/0.7),inset_0_-10px_20px_oklch(0.85_0.06_305/0.3),0_22px_50px_-26px_oklch(0.6_0.18_305/0.35)] opacity-70`}
+   220→        >
+   221→          <span className="absolute left-[20%] top-[18%] h-8 w-8 rounded-full bg-white/85 blur-lg dark:bg-white/15" />
+   222→        </div>
+   223→      </div>
+   224→
+   225→      {/* ─── Left brand panel (hidden on mobile) ──────────────────────────── */}
+   226→      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+   227→        <div className="relative z-10 flex flex-col justify-between p-12 xl:p-16 w-full">
+   228→          {/* Brand row — glass chip with the animated Nuvia mark */}
+   229→          <motion.div
+   230→            initial={{ opacity: 0, y: -12 }}
+   231→            animate={{ opacity: 1, y: 0 }}
+   232→            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+   233→            className="glass rounded-2xl px-4 py-2.5 inline-flex items-center gap-3 self-start"
+   234→          >
+   235→            <BrandMark size="md" />
+   236→            <div className="flex flex-col leading-tight gap-1">
+   237→              <BrandWordmark size="md" />
+   238→              <BrandTagline
+   239→                className="text-[10px] font-medium tracking-[0.14em] text-muted-foreground"
+   240→                dotClassName="h-[3px] w-[3px]"
+   241→              />
+   242→            </div>
+   243→          </motion.div>
+   244→
+   245→          {/* Hero content in a premium glass card */}
+   246→          <motion.div
+   247→            initial="hidden"
+   248→            animate="show"
+   249→            variants={containerStagger}
+   250→            className="max-w-xl"
+   251→          >
+   252→            <motion.div variants={fadeUp} className="glass-premium rounded-3xl p-7 xl:p-9 text-foreground">
+   253→              <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[11px] font-medium text-rose-700 dark:text-rose-300 border border-rose-500/20 mb-5">
+   254→                <Sparkles className="h-3 w-3" />
+   255→                Your private AI health companion
+   256→              </span>
+   257→              <motion.h1
+   258→                variants={fadeUp}
+   259→                className="text-4xl xl:text-5xl font-bold leading-[1.1] tracking-tight font-serif"
+   260→              >
+   261→                Your body,{' '}
+   262→                <span className="gradient-text-shimmer">understood.</span>
+   263→              </motion.h1>
+   264→              <motion.p
+   265→                variants={fadeUp}
+   266→                className="mt-4 text-base xl:text-lg leading-relaxed text-muted-foreground"
+   267→              >
+   268→                An intelligent ecosystem for your cycle, hormones, fertility, pregnancy and beyond — powered by AI that learns your rhythm.
+   269→              </motion.p>
+   270→            </motion.div>
+   271→
+   272→            {/* Feature cards grid */}
+   273→            <motion.div
+   274→              variants={fadeUp}
+   275→              className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3"
+   276→            >
+   277→              {features.map((f) => (
+   278→                <motion.div
+   279→                  key={f.title}
+   280→                  whileHover={{ y: -4 }}
+   281→                  transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+   282→                  className="glass-premium rounded-2xl p-4 flex items-start gap-3 group cursor-default"
+   283→                >
+   284→                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500/15 to-fuchsia-500/15 border border-rose-500/20 text-rose-600 dark:text-rose-300 transition-all duration-300 group-hover:glow-rose">
+   285→                    <f.icon className="h-5 w-5" />
+   286→                  </div>
+   287→                  <div className="min-w-0">
+   288→                    <p className="font-semibold text-sm leading-tight">{f.title}</p>
+   289→                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{f.desc}</p>
+   290→                  </div>
+   291→                </motion.div>
+   292→              ))}
+   293→            </motion.div>
+   294→
+   295→            {/* Dark contrast promo card — the one bold accent against the cream */}
+   296→            <motion.div
+   297→              variants={fadeUp}
+   298→              className="relative mt-5 max-w-lg overflow-hidden rounded-3xl bg-foreground p-5 text-background shadow-[0_24px_60px_-28px_oklch(0.2_0.03_345/0.55)] sm:p-6"
+   299→            >
+   300→              <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 h-44 w-44 rounded-full bg-rose-400/25 blur-2xl" />
+   301→              <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-10 h-36 w-36 rounded-full bg-amber-300/20 blur-2xl" />
+   302→              <p className="relative text-[10px] font-semibold uppercase tracking-[0.18em] text-background/55">
+   303→                New in Nuvia
+   304→              </p>
+   305→              <p className="relative mt-1.5 font-serif text-lg font-semibold leading-snug sm:text-xl">
+   306→                AI Health Coach is live — gentle 24/7 guidance tuned to your cycle.
+   307→              </p>
+   308→              <button
+   309→                type="button"
+   310→                onClick={() => switchMode('signup')}
+   311→                className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-background/10 px-3.5 py-1.5 text-xs font-semibold text-background transition-colors hover:bg-background/20"
+   312→              >
+   313→                Discover
+   314→                <ArrowRight className="h-3.5 w-3.5" />
+   315→              </button>
+   316→            </motion.div>
+   317→          </motion.div>
+   318→
+   319→          {/* Trust footer — glass chip with foreground text */}
+   320→          <motion.div
+   321→            initial={{ opacity: 0 }}
+   322→            animate={{ opacity: 1 }}
+   323→            transition={{ duration: 0.8, delay: 0.6 }}
+   324→            className="glass rounded-2xl px-5 py-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/80"
+   325→          >
+   326→            <div className="flex items-center gap-1.5">
+   327→              <ShieldCheck className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+   328→              <span>Private &amp; encrypted end-to-end</span>
+   329→            </div>
+   330→            <div className="flex items-center gap-1.5">
+   331→              <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+   332→              <span>AI-powered, human-centred</span>
+   333→            </div>
+   334→            <span className="text-foreground/60 italic font-serif">Crafted with care for women across India.</span>
+   335→          </motion.div>
+   336→        </div>
+   337→      </div>
+   338→
+   339→      {/* ─── Right form panel ──────────────────────────────────────────────── */}
+   340→      {/* Uses natural BODY scroll (not a nested overflow-y-auto container)
+   341→          because nested scroll containers are unreliable on iOS Safari.
+   342→          min-h-dvh on root + items-center here centers the form when it fits
+   343→          the viewport; when it is taller than the viewport the root grows and
+   344→          the page scrolls from the top with no top-clipping. */}
+   345→      <div className="flex-1 lg:w-1/2 min-h-dvh flex items-center justify-center p-4 sm:p-10 relative z-10">
+   346→        <motion.div
+   347→          initial="hidden"
+   348→          animate="show"
+   349→          variants={containerStagger}
+   350→          className="w-full max-w-md py-4 sm:py-10"
+   351→        >
+   352→          {/* Mobile premium header — animated Nuvia lockup */}
+   353→          <motion.div
+   354→            variants={fadeUp}
+   355→            className="lg:hidden flex flex-col items-center text-center mb-4 sm:mb-7"
+   356→          >
+   357→            <div className="mb-3">
+   358→              <BrandMark size="lg" />
+   359→            </div>
+   360→            <BrandWordmark size="lg" className="mb-1.5" />
+   361→            <BrandTagline
+   362→              className="text-[11px] font-medium tracking-[0.16em] text-muted-foreground"
+   363→              dotClassName="h-[3.5px] w-[3.5px]"
+   364→            />
+   365→          </motion.div>
+   366→
+   367→          {/* Premium form card */}
+   368→          <motion.div variants={fadeUp} className="glass-premium rounded-3xl p-4 sm:p-8">
+   369→            <AnimatePresence mode="wait">
+   370→              <motion.div
+   371→                key={mode}
+   372→                initial={{ opacity: 0, y: 12 }}
+   373→                animate={{ opacity: 1, y: 0 }}
+   374→                exit={{ opacity: 0, y: -12 }}
+   375→                transition={{ duration: 0.25 }}
+   376→              >
+   377→                <h2 className="text-xl sm:text-3xl font-bold tracking-tight font-serif">
+   378→                  {mode === 'login' ? 'Welcome back' : 'Create your account'}
+   379→                </h2>
+   380→                <p className="mt-1.5 sm:mt-2 text-sm text-muted-foreground">
+   381→                  {mode === 'login'
+   382→                    ? 'Sign in to continue your wellness journey.'
+   383→                    : 'Join thousands of women taking charge of their health.'}
+   384→                </p>
+   385→
+   386→                {/* Google OAuth button: real redirect flow / GIS popup / setup dialog. */}
+   387→                <div className="mt-4 sm:mt-6">
+   388→                  {googleConfigured ? (
+   389→                    <GoogleOAuthButton
+   390→                      onCredential={handleGoogleCredential}
+   391→                      loading={loading === 'google'}
+   392→                      setLoading={(v) => setLoading(v ? 'google' : null)}
+   393→                    />
+   394→                  ) : (
+   395→                    <Button
+   396→                      type="button"
+   397→                      variant="outline"
+   398→                      className="w-full h-11 rounded-full border-border bg-white/60 backdrop-blur-sm hover:bg-accent hover:border-rose-300 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-rose-700 text-sm font-medium gap-2.5 transition-all hover:shadow-md"
+   399→                      onClick={handleGoogleClick}
+   400→                      disabled={loading !== null}
+   401→                    >
+   402→                      {loading === 'google' ? (
+   403→                        <Loader2 className="h-4 w-4 animate-spin" />
+   404→                      ) : (
+   405→                        <GoogleIcon className="h-5 w-5" />
+   406→                      )}
+   407→                      <span>Continue with Google</span>
+   408→                    </Button>
+   409→                  )}
+   410→                </div>
+   411→
+   412→                {/* Divider */}
+   413→                <div className="relative my-4 sm:my-6">
+   414→                  <div className="absolute inset-0 flex items-center">
+   415→                    <div className="w-full border-t border-border" />
+   416→                  </div>
+   417→                  <div className="relative flex justify-center">
+   418→                    <span className="glass rounded-full px-3.5 py-1 text-xs text-muted-foreground uppercase tracking-wider">
+   419→                      or
+   420→                    </span>
+   421→                  </div>
+   422→                </div>
+   423→
+   424→                {/* Email / password form */}
+   425→                <div className="space-y-3 sm:space-y-4">
+   426→                  {mode === 'signup' && (
+   427→                    <div className="space-y-1.5">
+   428→                      <Label htmlFor="name" className="text-sm font-medium">Full name</Label>
+   429→                      <div className="relative">
+   430→                        <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+   431→                          <UserIcon className="h-4 w-4" />
+   432→                        </div>
+   433→                        <Input
+   434→                          id="name"
+   435→                          type="text"
+   436→                          placeholder="Your name"
+   437→                          value={name}
+   438→                          onChange={(e) => setName(e.target.value)}
+   439→                          className="h-11 rounded-full border-border bg-white/55 pl-11 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
+   440→                          onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+   441→                        />
+   442→                      </div>
+   443→                      {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+   444→                    </div>
+   445→                  )}
+   446→
+   447→                  <div className="space-y-1.5">
+   448→                    <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
+   449→                    <div className="relative">
+   450→                      <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+   451→                        <Mail className="h-4 w-4" />
+   452→                      </div>
+   453→                      <Input
+   454→                        id="email"
+   455→                        type="email"
+   456→                        placeholder="you@example.com"
+   457→                        value={email}
+   458→                        onChange={(e) => setEmail(e.target.value)}
+   459→                        className="h-11 rounded-full border-border bg-white/55 pl-11 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
+   460→                        onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+   461→                      />
+   462→                    </div>
+   463→                    {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+   464→                  </div>
+   465→
+   466→                  <div className="space-y-1.5">
+   467→                    <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+   468→                    <div className="relative">
+   469→                      <div className="pointer-events-none absolute left-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-white/80 bg-white/70 text-rose-600 shadow-sm dark:border-white/10 dark:bg-white/10 dark:text-rose-300">
+   470→                        <KeyRound className="h-4 w-4" />
+   471→                      </div>
+   472→                      <Input
+   473→                        id="password"
+   474→                        type={showPassword ? 'text' : 'password'}
+   475→                        placeholder={mode === 'signup' ? 'At least 6 characters' : 'Enter your password'}
+   476→                        value={password}
+   477→                        onChange={(e) => setPassword(e.target.value)}
+   478→                        className="h-11 rounded-full border-border bg-white/55 pl-11 pr-28 focus-visible:border-rose-400 transition-colors dark:bg-white/[0.07]"
+   479→                        onKeyDown={(e) => e.key === 'Enter' && handleEmailAuth()}
+   480→                      />
+   481→                      <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1">
+   482→                        <button
+   483→                          type="button"
+   484→                          onClick={() => setShowPassword(!showPassword)}
+   485→                          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/70 hover:text-foreground dark:hover:bg-white/10"
+   486→                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+   487→                        >
+   488→                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+   489→                        </button>
+   490→                        {mode === 'login' && (
+   491→                          <button
+   492→                            type="button"
+   493→                            className="flex h-7 items-center rounded-full border border-white/80 bg-white/75 px-2.5 text-[11px] font-medium text-foreground/75 shadow-sm transition-colors hover:text-rose-700 dark:border-white/10 dark:bg-white/10 dark:text-foreground/80 dark:hover:text-rose-300"
+   494→                            onClick={() => toast.info('Password reset link would be sent to your email.')}
+   495→                          >
+   496→                            I forgot
+   497→                          </button>
+   498→                        )}
+   499→                      </div>
+   500→                    </div>
+   501→                    {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+   502→                  </div>
+   503→
+   504→                  {mode === 'login' && (
+   505→                    <label className="flex items-center gap-2 cursor-pointer select-none">
+   506→                      <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
+   507→                      <span className="text-xs text-muted-foreground">Keep me signed in on this device</span>
+   508→                    </label>
+   509→                  )}
+   510→
+   511→                  <Button
+   512→                    type="button"
+   513→                    className="btn-premium glow-rose w-full h-11 rounded-full text-sm font-semibold gap-1.5"
+   514→                    onClick={handleEmailAuth}
+   515→                    disabled={loading !== null}
+   516→                  >
+   517→                    {loading === 'email' ? (
+   518→                      <Loader2 className="h-4 w-4 animate-spin" />
+   519→                    ) : (
+   520→                      <>
+   521→                        {mode === 'login' ? 'Sign in' : 'Create account'}
+   522→                        <ArrowRight className="h-4 w-4" />
+   523→                      </>
+   524→                    )}
+   525→                  </Button>
+   526→                </div>
+   527→
+   528→                {/* Sign in / Sign up toggle */}
+   529→                <p className="mt-4 sm:mt-6 text-center text-sm text-muted-foreground">
+   530→                  {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+   531→                  <button
+   532→                    type="button"
+   533→                    className="font-medium text-primary hover:underline"
+   534→                    onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+   535→                  >
+   536→                    {mode === 'login' ? 'Sign up' : 'Sign in'}
+   537→                  </button>
+   538→                </p>
+   539→
+   540→                <div className="hidden sm:block mt-4 sm:mt-5 rounded-2xl border border-white/60 bg-white/45 p-3 dark:border-white/10 dark:bg-white/[0.06]">
+   541→                  <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+   542→                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500 mt-0.5" />
+   543→                    <span>
+   544→                      <span className="font-medium text-foreground">Secure sign-in:</span> Continue with Google
+   545→                      opens a secure permission popup. Your password is never shared with Nuvia.
+   546→                    </span>
+   547→                  </p>
+   548→                </div>
+   549→              </motion.div>
+   550→            </AnimatePresence>
+   551→          </motion.div>
+   552→
+   553→          <p className="mt-4 sm:mt-6 text-center text-[11px] text-muted-foreground leading-relaxed pb-[env(safe-area-inset-bottom)]">
+   554→            By continuing you agree to Nuvia&apos;s Terms of Service and Privacy Policy.
+   555→            <br />Your health data is encrypted and never sold.
+   556→          </p>
+   557→        </motion.div>
+   558→      </div>
+   559→
+   560→      {/* Google Sign-In setup — paste real OAuth credentials (no fake login path exists) */}
+   561→      <GoogleSetupDialog
+   562→        open={googleSetupOpen}
+   563→        onOpenChange={setGoogleSetupOpen}
+   564→        onConfigured={() => {
+   565→          // Re-fetch config so the real Google button appears immediately
+   566→          fetch('/api/auth/config')
+   567→            .then((r) => r.json())
+   568→            .then((data) => {
+   569→              setGoogleConfigured(!!data.google?.configured)
+   570→              setGoogleCodeFlowReady(!!data.google?.codeFlowReady)
+   571→            })
+   572→            .catch(() => {})
+   573→        }}
+   574→      />
+   575→    </div>
+   576→  )
+   577→}
+   578→
+   579→function GoogleIcon({ className }: { className?: string }) {
+   580→  return (
+   581→    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+   582→      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1Z" />
+   583→      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
+   584→      <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z" />
+   585→      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z" />
+   586→    </svg>
+   587→  )
+   588→}
+   589→

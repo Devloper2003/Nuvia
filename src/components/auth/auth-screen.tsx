@@ -22,6 +22,7 @@ import {
   EyeOff,
   ArrowRight,
   Check,
+  Settings2,
 } from 'lucide-react'
 import GoogleOAuthButton from './google-oauth-button'
 import GoogleSetupDialog from './google-setup-dialog'
@@ -80,7 +81,23 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [googleConfigured, setGoogleConfigured] = useState(false)
   const [googleCodeFlowReady, setGoogleCodeFlowReady] = useState(false)
-  const [googleSetupOpen, setGoogleSetupOpen] = useState(false)
+  const [googleSetupOpen, setGoogleSetupOpen] = useState(() => {
+    // Consume the "open setup" flag planted by page.tsx when Google bounced
+    // the OAuth flow back with a configuration error (redirect URI not
+    // whitelisted, invalid client). AuthScreen mounts purely client-side
+    // (after the session check), so a lazy initializer is hydration-safe.
+    if (typeof window === 'undefined') return false
+    try {
+      if (sessionStorage.getItem('nuvia:open-google-setup') === '1') {
+        sessionStorage.removeItem('nuvia:open-google-setup')
+        return true
+      }
+    } catch {
+      /* private mode */
+    }
+    return false
+  })
+  const [pollingGoogle, setPollingGoogle] = useState(false)
 
   // Fetch OAuth config (Google only)
   useEffect(() => {
@@ -174,18 +191,73 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
   //    verified server-side.
   // 3. not configured: open the setup dialog so the owner can paste real
   //    credentials. Entering an email is NEVER a sign-in.
-  const handleGoogleClick = useCallback(() => {
-    if (loading) return
-    if (googleCodeFlowReady) {
+  // Inside a framed preview (iframe) Google refuses to render its consent
+  // page, so tier 1 opens a REAL browser tab instead and polls /api/auth/me —
+  // the OAuth callback sets an httpOnly cookie this same origin can read,
+  // and /me now echoes the session token back.
+  const startGoogleCodeFlow = useCallback(() => {
+    if (loading || pollingGoogle) return
+    let inIframe = false
+    try {
+      inIframe = window.self !== window.top
+    } catch {
+      inIframe = true // cross-origin window.top access threw — we are framed
+    }
+    if (!inIframe) {
+      setLoading('google')
       window.location.href = '/api/auth/google/authorize'
       return
     }
-    if (googleConfigured) {
-      // Real Google OAuth button is rendered below — it triggers its own flow
+    const win = window.open('/api/auth/google/authorize', '_blank', 'noopener,noreferrer')
+    if (!win) {
+      toast.error('Please allow pop-ups for this site so Google sign-in can open in a new tab.')
       return
     }
+    setPollingGoogle(true)
+  }, [loading, pollingGoogle])
+
+  // Watch for the OAuth tab finishing (framed-preview path only).
+  useEffect(() => {
+    if (!pollingGoogle) return
+    let stopped = false
+    const startedAt = Date.now()
+    const timer = setInterval(async () => {
+      if (stopped) return
+      // Give up after 3 minutes — the user probably closed the Google tab.
+      if (Date.now() - startedAt > 180_000) {
+        stopped = true
+        setPollingGoogle(false)
+        return
+      }
+      try {
+        const res = await fetch('/api/auth/me', { credentials: 'include' })
+        const data = await res.json()
+        if (data?.user && data?.token && !stopped) {
+          stopped = true
+          setPollingGoogle(false)
+          try {
+            localStorage.setItem('chandracycle_token', data.token)
+          } catch {
+            /* private mode — cookie session still works */
+          }
+          toast.success(`Signed in as ${data.user.email}`)
+          onAuthed(data.user)
+        }
+      } catch {
+        /* network hiccup — keep polling */
+      }
+    }, 1500)
+    return () => {
+      stopped = true
+      clearInterval(timer)
+    }
+  }, [pollingGoogle, onAuthed])
+
+  // Not configured — the only button that opens the owner's setup dialog.
+  const handleGoogleSetupClick = useCallback(() => {
+    if (loading) return
     setGoogleSetupOpen(true)
-  }, [loading, googleConfigured, googleCodeFlowReady])
+  }, [loading])
 
   return (
     <div className="relative min-h-dvh w-full flex flex-col lg:flex-row">
@@ -386,25 +458,56 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                 {/* Google OAuth button: real redirect flow / GIS popup / setup dialog. */}
                 <div className="mt-4 sm:mt-6">
                   {googleConfigured ? (
-                    <GoogleOAuthButton
-                      onCredential={handleGoogleCredential}
-                      loading={loading === 'google'}
-                      setLoading={(v) => setLoading(v ? 'google' : null)}
-                    />
+                    googleCodeFlowReady ? (
+                      <div className="w-full space-y-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-11 rounded-full border-border bg-white/60 backdrop-blur-sm hover:bg-accent hover:border-rose-300 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-rose-700 text-sm font-medium gap-2.5 transition-all hover:shadow-md"
+                          onClick={startGoogleCodeFlow}
+                          disabled={loading !== null || pollingGoogle}
+                        >
+                          {pollingGoogle ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <GoogleIcon className="h-5 w-5" />
+                          )}
+                          <span>Continue with Google</span>
+                        </Button>
+                        {pollingGoogle && (
+                          <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                            <span className="relative flex h-1.5 w-1.5" aria-hidden>
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
+                              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-rose-500" />
+                            </span>
+                            <span>Finish signing in inside the Google tab — we&apos;ll detect it automatically.</span>
+                            <button
+                              type="button"
+                              onClick={() => setPollingGoogle(false)}
+                              className="underline underline-offset-2 hover:text-foreground transition-colors"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <GoogleOAuthButton
+                        onCredential={handleGoogleCredential}
+                        loading={loading === 'google'}
+                        setLoading={(v) => setLoading(v ? 'google' : null)}
+                      />
+                    )
                   ) : (
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full h-11 rounded-full border-border bg-white/60 backdrop-blur-sm hover:bg-accent hover:border-rose-300 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-rose-700 text-sm font-medium gap-2.5 transition-all hover:shadow-md"
-                      onClick={handleGoogleClick}
+                      className="w-full h-11 rounded-full border-dashed border-amber-300 bg-amber-50/80 backdrop-blur-sm text-amber-700 dark:border-amber-500/40 dark:bg-amber-950/20 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-950/30 text-sm font-medium gap-2.5 transition-all"
+                      onClick={handleGoogleSetupClick}
                       disabled={loading !== null}
                     >
-                      {loading === 'google' ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <GoogleIcon className="h-5 w-5" />
-                      )}
-                      <span>Continue with Google</span>
+                      <Settings2 className="h-4 w-4" />
+                      <span>Continue with Google — set it up</span>
                     </Button>
                   )}
                 </div>
@@ -541,8 +644,9 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
                   <p className="text-[11px] text-muted-foreground flex items-start gap-1.5">
                     <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500 mt-0.5" />
                     <span>
-                      <span className="font-medium text-foreground">Secure sign-in:</span> Continue with Google
-                      opens a secure permission popup. Your password is never shared with Nuvia.
+                      <span className="font-medium text-foreground">Secure sign-in:</span> Continue with
+                      Google redirects you to Google&apos;s own sign-in page. Your password is never
+                      shared with Nuvia.
                     </span>
                   </p>
                 </div>
