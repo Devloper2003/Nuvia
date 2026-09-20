@@ -1685,3 +1685,25 @@ Work Log:
 Stage Summary:
 - Notification tab is now fully device-compatible: native-feeling bottom sheet on phones, elegant anchored dropdown on desktop, and a real grouped/filterable notifications center on both — all in Nuvia's plum & gold kit with proper a11y (Radix titles, keyboard rows, aria states) and safe-area/dvh handling.
 - Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth provider keys; ③ top-nav ↔ page-detail-bar gap fix; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ DELETE handler on /api/user for QA cleanup.
+---
+Task ID: 25
+Agent: Z.ai Code (main)
+Task: User: "google authentication ko fix kro real auth ko accept kre bss fake nhi toh usse fix kro" — Google sign-in must be REAL only, no fake paths.
+
+Work Log:
+- Root cause discovery: sandbox checkpoint commits (935df20/5987280, pre-Task-23) had silently REVERTED the entire Task 22 auth stack — its commit is absent from history. Consequences on disk: lib/google-oauth.ts gone, /api/auth/google/authorize + callback gone, /api/auth/refresh gone, auth.ts back to fat-token version (431 bug resurrected), /api/auth/google still accepted `modalAccount` (sign in with ANY email, no password — the "fake" the user saw).
+- Rebuilt (stronger than Task 22):
+  - /api/auth/google POST: ONLY verified Google ID tokens (google-auth-library verifyIdToken + audience). modalAccount → 400 with explicit "entering an email is not sign-in". /api/auth/accounts + google-signin-modal.tsx DELETED.
+  - Real code flow restored: authorize → accounts.google.com (state cookie, prompt=select_account) → callback (state check, server-side token exchange, secret never leaves backend) → slim cookie → /?auth=google; every failure → /?auth_error=<code> with friendly toasts.
+  - NEW self-service credentials: SiteSetting-based storage (google_client_id/secret), env takes precedence, 30s cache + invalidation. /api/auth/google/credentials GET (origin + redirectUri to whitelist, masked client id, never returns secret) / POST (shape-validated: *.apps.googleusercontent.com + GOCSPX-) / DELETE, all session-gated.
+  - GoogleSetupDialog component (shared by auth screen + new Settings → Google Sign-In card): copyable authorized origin + redirect URI, paste ID/secret, save → real GSI button renders immediately. Fixes "user can't edit .env" blocker.
+  - auth-screen 3-tier: codeFlowReady → redirect; clientId-only → GIS popup; none → setup dialog. page.tsx: ?auth=google cookie-bridge via /me echo, ?auth_error toasts, >8KB legacy token auto-refresh via POST /api/auth/refresh (token in BODY).
+  - auth.ts: sanitizeEmbeddedUser + userFromPayloadSafe + 4KB watchdog restored.
+  - Fixed self-inflicted cache split-brain: getGoogleClientId no longer clobbers cached clientSecret with stale ''.
+- QA E2E (curl + agent-browser): modalAccount 400; garbage token 503; authorize unconfigured → auth_error bounce; save creds → config codeFlowReady:true → authorize 307 to REAL accounts.google.com with proxy-derived redirect_uri; official GSI iframe renders on auth screen; settings card "Not configured yet" → "Active — in-app credentials (full redirect flow)" with masked id; secret never in any response; legacy 59,148-char token → 455 chars via refresh; browser console 0 errors; lint exit 0. Test credentials cleared after QA. NOTE: hit a tooling hazard (parallel same-file Edits corrupted settings.tsx mid-task; caught and repaired — single-file edits only from now on).
+- Committed ae013ec.
+
+Stage Summary:
+- Google sign-in is now REAL-only: every Google session is a Google-issued, server-verified identity. The fake email-modal is impossible. Setup is self-service (Settings → Google Sign-In) — user pastes their own Google Cloud OAuth client (3 min) and the full redirect flow works immediately, including behind the preview proxy.
+- USER ACTION REQUIRED for live Google login: Settings → Google Sign-In → follow the dialog (paste Client ID + Secret). Until then "Continue with Google" opens the setup dialog, and email/password sign-in remains fully functional.
+- Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth keys; ③ top-nav ↔ detail-bar gap; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ DELETE /api/user for QA cleanup.
