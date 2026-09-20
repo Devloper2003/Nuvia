@@ -1707,3 +1707,28 @@ Stage Summary:
 - Google sign-in is now REAL-only: every Google session is a Google-issued, server-verified identity. The fake email-modal is impossible. Setup is self-service (Settings → Google Sign-In) — user pastes their own Google Cloud OAuth client (3 min) and the full redirect flow works immediately, including behind the preview proxy.
 - USER ACTION REQUIRED for live Google login: Settings → Google Sign-In → follow the dialog (paste Client ID + Secret). Until then "Continue with Google" opens the setup dialog, and email/password sign-in remains fully functional.
 - Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth keys; ③ top-nav ↔ detail-bar gap; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ DELETE /api/user for QA cleanup.
+---
+Task ID: 25
+Agent: Z.ai Code (main)
+Task: Google authentication — real credentials setup + redirect-flow-first sign-in (user request: "google authentication ko fix kro real auth ko accept kre bss fake nhi toh usse fix kro" + credentials upload)
+
+Work Log:
+- User uploaded real OAuth credentials (client_secret JSON in upload/): project nuvia-509213
+- Verified fake-login paths were ALREADY fully removed in a prior round: /api/auth/google only accepts Google-signed id_token (400 otherwise); auth-screen has 3 tiers with NO email modal fallback; unconfigured → setup dialog only
+- Wrote GOOGLE_CLIENT_ID + GOOGLE_CLIENT_SECRET into .env (untracked from git afterwards), restarted dev server twice (OOM crashes during QA — setsid NODE_OPTIONS=1536 pattern)
+- /api/auth/config now returns { configured: true, codeFlowReady: true, clientId }
+- auth-screen.tsx upgrades:
+  * Tier-1 (codeFlowReady): branded "Continue with Google" button → /api/auth/google/authorize redirect (GIS popup demoted to ID-only tier — One Tap is unreliable in framed previews)
+  * Iframe-aware: window.self!==window.top → window.open real tab + poll /api/auth/me (1.5s, 3min cap) with Cancel affordance; popup-blocked → actionable toast
+  * /api/auth/me now ECHOES the session token (both Bearer and cookie paths) — fixes the ?auth=google bridge and poller previously unable to persist localStorage token for Bearer APIs
+  * google_redirect_mismatch / google_invalid_client → sessionStorage flag consumed by lazy useState initializer (react-hooks/set-state-in-effect compliant) → setup dialog auto-opens with exact origin + redirect URI to whitelist
+  * Copy fix: "secure permission popup" → redirect-flow wording; Settings2 icon imported
+- agent-browser E2E: click → real 302 to accounts.google.com with correct client_id; Google returns redirect_uri_mismatch (expected — callback URI not yet whitelisted user-side); CSRF paths verified (state mismatch → google_state_mismatch, access_denied → google_denied); /me token echo verified via signup user (Bearer + cookie)
+- Fixed dev-server crash confusion: page stuck at "Loading Nuvia…" was hang-from-crash, not SW (sw.js API pass-through is correct; unregistered SW + caches during diagnosis, re-registers naturally)
+- Git hygiene: 6fa8c61 feat commit; then 0366c4b untracked .env + upload/ (secrets out of git, files kept on disk)
+
+Stage Summary:
+- Real Google sign-in is FULLY armed: credentials live in .env, code flow redirects to Google, server verifies id_token (audience check), session cookie + token echo complete the loop
+- USER ACTION REQUIRED (only remaining step): in Google Cloud Console → APIs & Credentials → OAuth client (nuvia-509213) → add the EXACT "Authorized redirect URI": <preview-origin>/api/auth/google/callback (dialog shows the copyable URI; also http://localhost:3000/api/auth/google/callback for local). Until then Google shows redirect_uri_mismatch — now with auto-opening guidance
+- Recommend testing via "Open in New Tab" (preview iframe is supported via new-tab+poll, but direct tab is smoother)
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder timezone quiet hours, /api/user DELETE
