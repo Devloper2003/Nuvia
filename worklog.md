@@ -1666,3 +1666,22 @@ Work Log:
 Stage Summary:
 - Pricing tab now has a unique, creative, brand-native theme: the three plans read as a bloom progression (Seedling → Full Bloom → Celestial) built entirely from Nuvia's plum & gold signatures — no more generic rainbow gradients. Checkout interactions, responsiveness (mobile + desktop), dark mode, and the PayPal modal flow all verified.
 - Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth provider keys; ③ top-nav ↔ page-detail-bar gap fix; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ add DELETE handler to /api/user for QA cleanup.
+---
+Task ID: 24
+Agent: Z.ai Code (main)
+Task: User: "notification tab ko fix kro all device compatible bana kr do isse" (screenshot of the notification dropdown on mobile) — rebuild the notification panel to work beautifully on every device.
+
+Work Log:
+- Diagnosed issues from screenshot + code: unread dots floating half-outside the panel edge (absolute left-1.5), 380px dropdown awkward on phones, fixed 420px max-height overflowing short viewports (no dvh), header overflow risk at 360px, hard 2-line truncation with no recourse ("…cycle d…"), sub-36px touch targets, "View all notifications" was a dead toast(), and "Loading notifications…" plain text.
+- Rebuilt src/components/notifications/notification-panel.tsx (~960 lines) as an all-device suite:
+  - Mobile (<768px, useIsMobile hook): vaul bottom sheet — rounded-t-3xl, drag handle, max-h-85dvh, footer padded with env(safe-area-inset-bottom), swipe-to-dismiss, scroll-locked.
+  - Desktop/tablet (≥768px): anchored 400px glass dropdown (rounded-3xl, backdrop-blur, shadow-2xl), max-h-[min(480px,calc(100dvh-10rem))], outside-click + Escape close, aria-expanded on trigger.
+  - NotificationRow shared by both: integrated 3px gradient unread accent bar (from-rose-400 via-rose-500 to-primary) inside the row, 10px icon tiles with ring, expandable messages (More/Less real button — rows switched from nested-button <button> to div role=button + keyboard handler), "· read" suffix, min-h-68px rows, focus-visible inset rings.
+  - Real Notifications Center: mobile 92dvh sheet / desktop centered dialog (560px, rounded-3xl) with type filter chips (All/Cycle/Medication/Appointment/Insight/Community/Nuvia, aria-pressed), sticky Today/Yesterday/Earlier grouped sections, refresh icon button, per-filter empty states, gold-tinted header/footer brand gradients, btn-plum full-width CTA.
+- New backend: DELETE /api/notifications (body {userId} or ?userId=) — deleteMany of READ notifications only, optimistic client revert on failure.
+- Bug fixes found during QA: ① DialogContent double-close-X (built-in Radix X overlapped my header X → removed mine, kept built-in); ② Radix "missing DialogTitle" errors from BOTH Dialog and vaul Drawer (vaul is Radix-based!) → sr-only DialogTitle/DrawerTitle + descriptions everywhere — console went to 0 issues; ③ seed resurrected cleared nudges on every panel open → seed now only on mount fetch per page load (opts.seed).
+- Verified via agent-browser: desktop 1440 (light+dark dropdown & center, filters, mark-all-read toast, clear-read "Cleared 3 read notifications", expander), mobile 390×844 (44×44 bell measured, sheet + full center, no horizontal scroll sw=390=vw), tablet 800 (dropdown correctly anchored in mobile topbar, panel right=702 inside viewport), fresh console 0 errors/warnings across full flow, dev.log clean, lint exit 0. Committed 8063b06.
+
+Stage Summary:
+- Notification tab is now fully device-compatible: native-feeling bottom sheet on phones, elegant anchored dropdown on desktop, and a real grouped/filterable notifications center on both — all in Nuvia's plum & gold kit with proper a11y (Radix titles, keyboard rows, aria states) and safe-area/dvh handling.
+- Backlog (priority): ① userId-in-query data routes zero-auth sweep (security); ② wearable OAuth provider keys; ③ top-nav ↔ page-detail-bar gap fix; ④ i18n depth; ⑤ reminder timezone quiet hours; ⑥ DELETE handler on /api/user for QA cleanup.
