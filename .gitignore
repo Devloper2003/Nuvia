@@ -57,3 +57,7 @@ server.log
 .env.local
 .env*.local
 upload/
+
+# runtime database (created via: bun run db:push)
+db/*.db
+db/*.db-journal
