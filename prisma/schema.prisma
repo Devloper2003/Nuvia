@@ -3,13 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// UNIFIED SCHEMA — shared by both ChandraCycle (main app) and ChandraCycle-admin
-// Both apps connect to the same Neon PostgreSQL database.
+// UNIFIED SCHEMA — hosted on Neon PostgreSQL (ep-small-sea-…, us-east-2).
+// Production (Vercel) and local dev both talk to this same database, so
+// accounts and data stay in sync everywhere.
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ---- End users (registered on main website, managed by admin) ----

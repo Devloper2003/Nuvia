@@ -1766,3 +1766,30 @@ Work Log:
 Stage Summary:
 - Vercel redeploy will now pass build. Remaining Vercel setup (user-side): env vars DATABASE_URL=file:/tmp/custom.db, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET; add https://<vercel-domain>/api/auth/google/callback to Google Console redirect URIs.
 - Known limitation: SQLite on Vercel is ephemeral — auth works via JWT fallback but durable data storage needs a hosted Postgres (Neon/Vercel Postgres) migration later.
+---
+Task ID: 27
+Agent: Z.ai Code (main)
+Task: Migrate database from local SQLite to user-provided Neon PostgreSQL (user: "ye iska db string h update kro isse usme") — unblocks durable Vercel deploys
+
+Work Log:
+- User supplied Neon pooled connection string (ep-small-sea-b5n3wdlq-pooler.c-7.us-east-2.aws.neon.tech/neondb). This closes Task 26.1's known limitation (SQLite ephemeral on Vercel).
+- prisma/schema.prisma: provider sqlite → postgresql. Schema was already Postgres-shaped (no @db natives, no enums, no raw SQL anywhere in src — grep verified), so the switch is metadata-only.
+- .env (gitignored) rewritten: DATABASE_URL = Neon string with `channel_binding=require` STRIPPED (libpq param Prisma's quaint engine doesn't parse) and `pgbouncer=true` ADDED (Neon -pooler endpoint is PgBouncer transaction mode; avoids prepared-statement collisions). Also restored GOOGLE_CLIENT_ID/SECRET (were lost from .env — app resolves env → SiteSetting fallback, so restoring env keeps local auth deterministic) + generated strong JWT_SECRET (openssl rand -hex 32).
+- CRITICAL SANDBOX GOTCHA: the shell exports DATABASE_URL=file:/home/z/my-project/db/custom.db globally; Bun/Next do NOT override pre-set env vars with .env values. Every prisma/bun/next invocation must pass DATABASE_URL explicitly on the command line. Dev server relaunched with explicit env (verified via /proc/<pid>/environ → Neon URL).
+- bunx prisma db push (WITHOUT --accept-data-loss; inspected DB first via $queryRawUnsafe: TABLE_COUNT=0, PostgreSQL 18.6 aarch64 — fresh DB, no shared-data risk): 29 tables created in 32s, "in sync".
+- Smoke test through Prisma Client on Neon: user create → count → findUnique → delete all OK (WRITE_OK, counts 1→0).
+- Dev server restart + agent-browser QA: / renders full landing + auth screen, console clean (only HMR logs), /api/auth/config → {configured:true, codeFlowReady:true}, "Continue with Google" click → real 302 to accounts.google.com with client_id + state + redirect_uri=http://localhost:3000/api/auth/google/callback (origin-derived, so Vercel domain auto-applies after deploy). Google shows "Access blocked" = redirect_uri not yet whitelisted (user-side, unchanged from Task 25).
+- Local SQLite db/custom.db kept on disk untouched (rollback safety); its test data NOT migrated — Neon starts clean, Google sign-in recreates accounts on first use.
+- Git: remote config had disappeared (only branch main existed). Re-added clean origin URL, pushed via one-shot tokened URL (pattern: never persist token in config).
+
+Stage Summary:
+- Nuvia now runs on Neon PostgreSQL everywhere: local dev + future Vercel prod share ONE durable database. Schema fully in sync (29 tables).
+- Pushed to GitHub main → Vercel auto-redeploy will now (a) pass build (fix from 26.1) and (b) have durable storage.
+- USER ACTION REQUIRED (Vercel dashboard → Settings → Environment Variables, all environments):
+  * DATABASE_URL = postgresql://neondb_owner:***@ep-small-sea-b5n3wdlq-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&pgbouncer=true   (the exact string now in local .env)
+  * JWT_SECRET = 389686…c1 (openssl rand -hex 32 — full value only in local .env + Vercel dashboard)
+  * GOOGLE_CLIENT_ID = 275443784840-…apps.googleusercontent.com (full value in local .env)
+  * GOOGLE_CLIENT_SECRET = GOCSPX-*** (full value in local .env only)
+  * Optional/feature-flagged (safe to omit): VAPID_PRIVATE_KEY + NEXT_PUBLIC_VAPID_PUBLIC_KEY (push notifications), PAYPAL_* (billing), GOOGLE_PLACES_API_KEY (doctor search), CRON_SECRET (reminder cron), SMS_GATEWAY_API_KEY (OTP)
+- USER ACTION REQUIRED (Google Console → OAuth client nuvia-509213 → Authorized redirect URIs): add https://<vercel-domain>/api/auth/google/callback (exact domain visible after first successful deploy) — localhost one already known.
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours timezone, /api/user DELETE.
