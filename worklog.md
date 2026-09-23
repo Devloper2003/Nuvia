@@ -1867,3 +1867,26 @@ Stage Summary:
 - Existing sessions survive: cookie via middleware, storage via the sweep.
 - Operator credentials changed with the rebrand: admin@nuvia.app / nuvia-admin (shown in the Settings first-run hint).
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
+---
+Task ID: 31
+Agent: Z.ai Code (main)
+Task: Secret hidden "Basement" superadmin control centre — full-app & per-user tracking/monitoring, completely hidden from the surface UI, next-level ops interface (user: "internal basement structure banao secret aur hidden for admin use only jo fully protected ho...")
+
+Work Log:
+- Backend (all SUPER_ADMIN-bearer gated via new src/lib/admin-guard.ts requireSuperAdmin: AdminSession token + un-revoked + un-expired + admin.active + role=super_admin; generic 401, zero info leak):
+  * GET /api/admin/overview — 27 KPIs (users growth/active/tier/status splits, content+moderation state, engagement depth, push devices), 14-day signups/community series, latest signups & posts, DB latency probe + session expiry.
+  * GET /api/admin/users — paginated searchable directory (q/status/tier filters, per-user aggregates) + ?detail= full dossier (profile, 13 aggregates, device sessions w/ IP, recent posts/comments/cycles/symptoms, notes). Passwords never selected.
+  * POST /api/admin/actions — suspend/ban/activate/flag/note/grant_premium(monthly|yearly)/revoke_premium/force_logout(revokes AuthSessions)/delete_user(cascade, audit-first)/broadcast(Notification to all non-banned)/revoke_own_session; every action audit-logged with operator + IP.
+  * GET /api/admin/audit — searchable audit-trail viewer.
+- Login hardening: /api/admin/login now rate-limited (6 failures / 15 min / IP, in-memory sliding window, 429 w/ retry-after; success resets; periodic sweep). Verified live: 6×401 then 429.
+- Frontend (src/components/basement/*): gate (dark terminal aesthetic, scanlines, amber CTA) + control centre (plum-black ops theme, live clock, session countdown, Lock, 5 tabs) + user explorer (debounced search, status chips, pagination, spring dossier drawer with full actions incl. delete confirm) + moderation/audit/broadcast tabs. Zero new deps — charts are hand-rolled divs.
+- Secret entry (app-shell): ① Ctrl/Cmd+Shift+B ② 7 rapid sidebar-brand taps ③ #basement hash (scrubbed via history.replaceState after trigger). No nav item, no link, no tooltip anywhere; bundle is dynamically imported (ssr:false) so surface users never even download it.
+- Session continuity: operator token in sessionStorage (tab-scoped), optimistic resume with 401→auto-clear; Lock revokes the AdminSession server-side.
+- Robustness fix found during E2E: /api/auth/me now tries cookie token THEN Bearer (stale cookie pointing at a deleted account no longer masks a live Bearer token).
+- E2E (agent-browser): hash trigger → gate → login → centre (operator badge, session 23h57m) → overview KPIs live (DB 1092ms) → users search → dossier (all sections) → grant_premium → audit shows basement:grant_premium plan=monthly ends=2026-10-23 → broadcast sent to 3 users (audit-logged) → Lock → gate back. Fixed Prisma relation name (symptoms) hit during test. QA user + test broadcast notifications cleaned up; lint clean.
+
+Stage Summary:
+- The basement is live and invisible: surface app shows nothing; entry is secret-gesture only; every API is super_admin-session gated + audit-logged + brute-force rate-limited.
+- Superadmin can now: monitor platform-wide KPIs/growth/health, explore & search every user with full dossiers (tracking depth, devices, content, billing), suspend/ban/flag/force-logout/delete users, grant/revoke premium, review the full audit trail, and broadcast platform-wide announcements.
+- Operator credentials (rebranded): admin@nuvia.app / nuvia-admin.
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/auth'
+import { loginThrottleStatus, recordLoginFailure, clearLoginFailures, sweepThrottleMap } from '@/lib/admin-guard'
 
 // ─── POST /api/admin/login ───────────────────────────────────────────────────
 // Operator sign-in for the in-app moderation console. Verifies credentials
@@ -13,6 +14,17 @@ import { verifyPassword } from '@/lib/auth'
 // console is usable out of the box in this sandbox deployment.
 export async function POST(request: NextRequest) {
   try {
+    // Brute-force protection: too many recent failures from this IP → refuse
+    // (generic response, no information leak).
+    sweepThrottleMap()
+    const throttle = loginThrottleStatus(request)
+    if (throttle.blocked) {
+      return NextResponse.json(
+        { error: `Too many attempts. Try again in ${Math.ceil(throttle.retryAfterSec / 60)} min.` },
+        { status: 429, headers: { 'retry-after': String(throttle.retryAfterSec) } }
+      )
+    }
+
     const { email, password } = await request.json()
 
     if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
@@ -41,6 +53,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!admin || !admin.active) {
+      recordLoginFailure(request)
       return NextResponse.json(
         { error: 'Invalid admin credentials' },
         { status: 401 }
@@ -49,11 +62,14 @@ export async function POST(request: NextRequest) {
 
     const passwordOk = await verifyPassword(password, admin.passwordHash)
     if (!passwordOk) {
+      recordLoginFailure(request)
       return NextResponse.json(
         { error: 'Invalid admin credentials' },
         { status: 401 }
       )
     }
+
+    clearLoginFailures(request)
 
     // Create a DB-backed session valid for 24 hours.
     const token = randomBytes(32).toString('hex')

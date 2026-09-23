@@ -43,7 +43,7 @@ import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { SessionUser } from '@/components/auth/auth-screen'
 import NotificationPanel from '@/components/notifications/notification-panel'
 import MobileTopbar from '@/components/mobile/mobile-topbar'
@@ -55,6 +55,9 @@ import type { TranslationKey } from '@/lib/i18n/translations'
 
 // ─── Lazy-load all feature modules ───────────────────────────────────────────
 const DashboardModule = dynamic(() => import('@/components/modules/dashboard'), { loading: () => <ModuleSkeleton /> })
+// Secret superadmin control centre — kept OUT of the main bundle and mounted
+// only when a hidden trigger fires. Zero visible affordance anywhere.
+const Basement = dynamic(() => import('@/components/basement').then((m) => m.Basement), { ssr: false })
 const PeriodModule = dynamic(() => import('@/components/modules/period-tracker'), { loading: () => <ModuleSkeleton /> })
 const HormoneModule = dynamic(() => import('@/components/modules/hormone-intelligence'), { loading: () => <ModuleSkeleton /> })
 const SymptomsModule = dynamic(() => import('@/components/modules/symptoms-tracker'), { loading: () => <ModuleSkeleton /> })
@@ -116,6 +119,9 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentTime, setCurrentTime] = useState('')
   const [tourOpen, setTourOpen] = useState(false)
+  // Basement (secret admin level) — never linked from any nav
+  const [basementOpen, setBasementOpen] = useState(false)
+  const brandTaps = useRef<{ count: number; firstAt: number }>({ count: 0, firstAt: 0 })
   const [installable, setInstallable] = useState(false)
 
   // ── Keyboard shortcut: "[" toggles the sidebar (desktop productivity nicety).
@@ -228,6 +234,47 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
     }
   }
 
+  // ── Secret basement entry (invisible by design) ─────────────────────────
+  // Three undiscoverable triggers: ① Ctrl/Cmd+Shift+B anywhere, ② seven rapid
+  // taps on the sidebar brand, ③ #basement hash. No menu item, no link, no
+  // tooltip — the surface app gives nothing away.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+        e.preventDefault()
+        setBasementOpen(true)
+      }
+    }
+    const onHash = () => {
+      if (window.location.hash === '#basement') {
+        history.replaceState(null, '', window.location.pathname) // scrub the hash
+        setBasementOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('hashchange', onHash)
+    onHash()
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('hashchange', onHash)
+    }
+  }, [])
+
+  const handleBrandTap = () => {
+    const now = Date.now()
+    const state = brandTaps.current
+    if (now - state.firstAt > 4000) {
+      state.count = 1
+      state.firstAt = now
+      return
+    }
+    state.count++
+    if (state.count >= 7) {
+      state.count = 0
+      setBasementOpen(true)
+    }
+  }
+
   const activeItem = navItems.find(item => item.id === activeModule)
 
   const handleNavClick = (id: ActiveModule) => {
@@ -282,7 +329,10 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
           )}
         >
           {/* Logo Area — Nuvia brand (animated mark + wordmark + tagline) */}
-          <div className="relative flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden h-[68px]">
+          <div
+            className="relative flex items-center gap-3 px-4 py-5 border-b border-border overflow-hidden h-[68px] select-none"
+            onClick={handleBrandTap}
+          >
             {/* Decorative rose glow */}
             <div className="absolute inset-0 bg-gradient-to-r from-rose-500/5 via-fuchsia-500/5 to-transparent pointer-events-none" />
             <BrandMark size="sm" className={cn(sidebarOpen ? 'ml-0' : 'mx-auto')} />
@@ -570,6 +620,9 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
           open={tourOpen}
           onClose={closeTour}
         />
+
+        {/* ─── Basement: hidden superadmin control centre ──────────────────── */}
+        <Basement open={basementOpen} onClose={() => setBasementOpen(false)} />
       </div>
     </TooltipProvider>
   )
