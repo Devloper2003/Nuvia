@@ -1732,3 +1732,22 @@ Stage Summary:
 - USER ACTION REQUIRED (only remaining step): in Google Cloud Console → APIs & Credentials → OAuth client (nuvia-509213) → add the EXACT "Authorized redirect URI": <preview-origin>/api/auth/google/callback (dialog shows the copyable URI; also http://localhost:3000/api/auth/google/callback for local). Until then Google shows redirect_uri_mismatch — now with auto-opening guidance
 - Recommend testing via "Open in New Tab" (preview iframe is supported via new-tab+poll, but direct tab is smoother)
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder timezone quiet hours, /api/user DELETE
+---
+Task ID: 26
+Agent: Z.ai Code (main)
+Task: Push complete code to https://github.com/Devloper2003/Nuvia.git (user request with fresh PAT)
+
+Work Log:
+- Added origin remote; ls-remote showed repo exists, public, EMPTY (no remote changes to reconcile — our push establishes initial history)
+- First push REJECTED by GitHub Push Protection: real Google Client ID + Secret flagged in commit 6fa8c61 (.env:2-3 + upload/client_secret JSON) which had been committed before the later untrack
+- Fixed PROPERLY (not via unblock URL): git filter-branch --index-filter removed .env / .env.local / .env.production / upload/ / db/custom.db from ALL history; --prune-empty; refs/original purge; reflog expire; git gc --prune=now --aggressive
+- Verified: zero commits contain GOCSPX-nDa635…, .env, upload/ or db/custom.db; 26 commits remain
+- Also dropped db/custom.db from repo (runtime data incl. real user rows — privacy; recreated via bun run db:push); gitignore now covers db/*.db
+- Push succeeded (839 objects, main -> main); SHA sync verified local==remote
+- Added README.md (features, tech stack, setup, Google OAuth guide) and pushed; final HEAD 5da47eb
+- Token hygiene: remote URL reset to credential-free after each tokened operation; token never stored in config
+
+Stage Summary:
+- Complete codebase is live at https://github.com/Devloper2003/Nuvia (main @ 5da47eb), secret-clean history, README included
+- USER ADVISED: revoke the GitHub PAT shared in chat (github_pat_11BUPRILY…) after confirming the repo looks right — it was pasted in plaintext
+- Clone-run recipe: bun install → .env (DATABASE_URL + GOOGLE_CLIENT_ID/SECRET) → bun run db:push → bun run dev

@@ -61,3 +61,6 @@ upload/
 # runtime database (created via: bun run db:push)
 db/*.db
 db/*.db-journal
+
+# agent tooling temp files
+tool-results/
