@@ -42,12 +42,15 @@ bun install
 Create a `.env` file in the project root:
 
 ```bash
-# SQLite database
-DATABASE_URL=file:/absolute/path/to/db/custom.db
+# Neon PostgreSQL (recommended — durable, works on Vercel + local)
+DATABASE_URL="postgresql://USER:PASSWORD@HOST-pooler.REGION.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
 
 # Google OAuth (create at https://console.cloud.google.com/apis/credentials)
 GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+
+# Session signing secret (generate: openssl rand -hex 32)
+JWT_SECRET=your-random-hex-secret
 ```
 
 ### 3. Create the database
