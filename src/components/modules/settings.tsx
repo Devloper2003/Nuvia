@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useCallback, useState, useEffect, useSyncExternalStore } from 'react'
+import React, { useCallback, useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Settings as SettingsIcon,
   User,
   Mail,
   Calendar,
+  Camera,
   Ruler,
   Weight,
   Bell,
@@ -68,7 +69,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Select,
   SelectContent,
@@ -104,11 +105,44 @@ import {
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
-import GoogleSetupDialog from '@/components/auth/google-setup-dialog'
 import { toast } from 'sonner'
 import ReminderPreferences from '@/components/settings/reminder-preferences'
 import { LanguageSegmented } from '@/components/language-switcher'
 import { useLanguage } from '@/components/language-provider'
+
+// ─── Avatar helpers (client-side compression) ──────────────────────────────
+
+// Read a File into a 256×256 cover-cropped JPEG data URL. Vercel has no
+// writable filesystem, so avatars are stored in the User.avatar column as
+// compressed data URLs — small enough for API responses, and the slim-token
+// guard in lib/auth keeps them out of the session JWT (they are re-read from
+// the DB via /api/auth/me instead).
+async function compressAvatarToDataUrl(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new Error('Could not read the selected image.'))
+    reader.readAsDataURL(file)
+  })
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new window.Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('That file is not a valid image.'))
+    image.src = dataUrl
+  })
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('Canvas is not supported in this browser.')
+  // Cover-crop: scale so the image fully covers the square, centered.
+  const scale = Math.max(size / img.width, size / img.height)
+  const w = img.width * scale
+  const h = img.height * scale
+  ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h)
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -176,88 +210,6 @@ function SettingsSection({
   )
 }
 
-// ─── Google Sign-In (real OAuth) section ─────────────────────────────────────
-
-function GoogleSignInSection({ delay = 0 }: { delay?: number }) {
-  const [status, setStatus] = useState<{
-    configured: boolean
-    codeFlowReady: boolean
-    source: string
-    maskedClientId: string
-  } | null>(null)
-  const [setupOpen, setSetupOpen] = useState(false)
-
-  const loadStatus = useCallback(() => {
-    fetch('/api/auth/google/credentials')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) return
-        setStatus({
-          configured: !!data.google?.configured,
-          codeFlowReady: !!data.google?.codeFlowReady,
-          source: data.google?.source || 'none',
-          maskedClientId: data.google?.maskedClientId || '',
-        })
-      })
-      .catch(() => {
-        /* leave status as-is */
-      })
-  }, [])
-
-  useEffect(() => {
-    loadStatus()
-  }, [loadStatus])
-
-  return (
-    <SettingsSection
-      title="Google Sign-In"
-      description="Real Google account authentication — no fake logins"
-      icon={KeyRound}
-      iconColor="bg-blush text-plum"
-      delay={delay}
-    >
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 p-3 rounded-lg border border-border">
-          <div className={cn('flex h-10 w-10 items-center justify-center rounded-full shrink-0', status?.configured ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400')}>
-            {status?.configured ? <ShieldCheck className="h-4 w-4" /> : <KeyRound className="h-4 w-4" />}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium">
-              {status === null ? (
-                'Checking status…'
-              ) : status.configured ? (
-                <>
-                  Active — {status.source === 'env' ? 'environment' : 'in-app credentials'}
-                  {status.codeFlowReady ? ' (full redirect flow)' : ' (popup flow)'}
-                </>
-              ) : (
-                'Not configured yet'
-              )}
-            </div>
-            <div className="text-xs text-muted-foreground truncate font-mono">
-              {status?.maskedClientId || 'Paste a Google OAuth client to enable real sign-in'}
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-9 shrink-0 rounded-full text-xs font-medium"
-            onClick={() => setSetupOpen(true)}
-          >
-            {status?.configured ? 'Manage' : 'Set up'}
-          </Button>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          Users can only sign in with a real, Google-verified account — there is no
-          email-only fallback for Google. Configure the OAuth client once and it works
-          for everyone.
-        </p>
-        <GoogleSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onConfigured={loadStatus} />
-      </div>
-    </SettingsSection>
-  )
-}
-
 // ─── Language & Region Section (uses live translation for its own copy) ─────
 
 function LanguageSection({ delay = 0 }: { delay?: number }) {
@@ -292,6 +244,8 @@ export default function SettingsModule() {
   )
   const [isEditing, setIsEditing] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   // Form state — empty defaults for a brand-new user. Profile fields that
   // come from useAppStore (name, email, cycleLength, periodLength,
@@ -384,19 +338,121 @@ export default function SettingsModule() {
     }))
   }
 
-  const handleSave = () => {
+  // Shared profile update — persists via POST /api/user (Bearer session
+  // token), mirrors the fresh user into the zustand store, refreshes the
+  // session token, and syncs the auth state in page.tsx (which listens for
+  // 'nuvia:auth-user') so the sidebar/topbar avatars update instantly.
+  const saveProfile = async (patch: Record<string, unknown>) => {
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('chandracycle_token')
+      : null
+    const res = await fetch('/api/user', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(patch),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok || !data?.user) {
+      throw new Error(data?.error || 'Could not save your profile. Please try again.')
+    }
+    const u = data.user as {
+      id: string
+      name: string | null
+      email: string
+      avatar: string | null
+      provider?: string
+      cycleLength?: number
+      periodLength?: number
+      lastPeriodStart?: string | null
+    }
     setUserProfile({
-      id: userProfile?.id || 'local-user',
-      name: formData.name,
-      email: formData.email,
-      cycleLength: Number(formData.cycleLength),
-      periodLength: Number(formData.periodLength),
-      lastPeriodStart: formData.lastPeriod,
+      id: u.id,
+      name: u.name || userProfile?.name || 'Nuvia User',
+      email: u.email,
+      avatar: u.avatar || undefined,
+      cycleLength: u.cycleLength ?? userProfile?.cycleLength ?? 28,
+      periodLength: u.periodLength ?? userProfile?.periodLength ?? 5,
+      lastPeriodStart: u.lastPeriodStart ?? null,
+      provider: (u.provider as 'email' | 'google' | 'apple') ?? userProfile?.provider,
     })
+    if (data.token) localStorage.setItem('chandracycle_token', data.token)
+    window.dispatchEvent(new CustomEvent('nuvia:auth-user', { detail: data.user }))
+    return data.user
+  }
+
+  const handleAvatarFile = async (file: File | undefined) => {
+    if (!file) return
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please choose an image file (JPG, PNG or WebP).')
+      return
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('That photo is too large — please pick one under 15 MB.')
+      return
+    }
+    setUploadingAvatar(true)
+    try {
+      const dataUrl = await compressAvatarToDataUrl(file)
+      await saveProfile({ avatar: dataUrl })
+      toast.success('Profile photo updated ✨', {
+        description: 'Looking good! Your photo now shows across the app.',
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not upload your photo.')
+    } finally {
+      setUploadingAvatar(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
+
+  const removeAvatar = async () => {
+    if (uploadingAvatar) return
+    setUploadingAvatar(true)
+    try {
+      await saveProfile({ avatar: '' })
+      toast.success('Profile photo removed')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not remove your photo.')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  const handleSave = async () => {
+    try {
+      await saveProfile({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        dateOfBirth: formData.dob,
+        height: formData.height ? Number(formData.height) : undefined,
+        weight: formData.weight ? Number(formData.weight) : undefined,
+        cycleLength: Number(formData.cycleLength),
+        periodLength: Number(formData.periodLength),
+        lastPeriodStart: formData.lastPeriod,
+      })
+      toast.success('Profile updated', {
+        description: 'Your changes have been saved to your account.',
+      })
+    } catch {
+      // Offline / API hiccup — keep the local edit so nothing is lost.
+      setUserProfile({
+        id: userProfile?.id || 'local-user',
+        name: formData.name,
+        email: formData.email,
+        avatar: userProfile?.avatar,
+        cycleLength: Number(formData.cycleLength),
+        periodLength: Number(formData.periodLength),
+        lastPeriodStart: formData.lastPeriod,
+        provider: userProfile?.provider,
+      })
+      toast.warning('Saved on this device', {
+        description: 'We could not reach the server — changes are stored locally for now.',
+      })
+    }
     setIsEditing(false)
-    toast.success('Profile updated', {
-      description: 'Your changes have been saved successfully.',
-    })
   }
 
   const [exporting, setExporting] = useState(false)
@@ -854,13 +910,48 @@ export default function SettingsModule() {
           </div>
           <CardContent className="p-5 -mt-10">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              <div className="relative">
+              <div className="relative shrink-0">
                 <Avatar className="h-20 w-20 border-4 border-card shadow-lg ring-2 ring-gold/60 ring-offset-0">
+                  {userProfile?.avatar && (
+                    <AvatarImage src={userProfile.avatar} alt={`${formData.name}'s profile photo`} />
+                  )}
                   <AvatarFallback className="bg-gradient-to-br from-plum-soft to-plum text-gold text-xl font-bold">
                     {formData.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-card" title="Account active" />
+                {/* Upload / change photo — works without entering edit mode */}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  aria-label={userProfile?.avatar ? 'Change profile photo' : 'Upload profile photo'}
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-plum text-gold shadow-md ring-2 ring-card transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
+                >
+                  {uploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+                </button>
+                {/* Remove photo */}
+                {userProfile?.avatar && !uploadingAvatar && (
+                  <button
+                    type="button"
+                    onClick={() => void removeAvatar()}
+                    aria-label="Remove profile photo"
+                    className="absolute -top-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full bg-card text-muted-foreground shadow-md ring-1 ring-border transition-colors hover:text-rose-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+                {!userProfile?.avatar && (
+                  <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-emerald-500 ring-2 ring-card" title="Account active" />
+                )}
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  onChange={(e) => void handleAvatarFile(e.target.files?.[0])}
+                />
               </div>
               <div className="flex-1 min-w-0 pb-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1216,8 +1307,6 @@ export default function SettingsModule() {
         </div>
       </SettingsSection>
 
-      {/* ─── Google Sign-In (real OAuth) ─────────────────────────────────── */}
-      <GoogleSignInSection delay={0.31} />
 
       {/* ─── Content Moderation (operator console) ─────────────────── */}
       <SettingsSection

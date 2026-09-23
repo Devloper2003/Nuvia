@@ -156,6 +156,18 @@ export default function Home() {
     setAuthUser(user)
   }, [])
 
+  // Profile updates (avatar upload, settings save) broadcast the fresh user —
+  // keep the auth state (the source of truth AppShell receives) in sync
+  // without a reload.
+  useEffect(() => {
+    const onAuthUserUpdated = (e: Event) => {
+      const user = (e as CustomEvent<SessionUser>).detail
+      if (user && typeof user.id === 'string' && user.id) setAuthUser(user)
+    }
+    window.addEventListener('nuvia:auth-user', onAuthUserUpdated)
+    return () => window.removeEventListener('nuvia:auth-user', onAuthUserUpdated)
+  }, [])
+
   const handleLogout = useCallback(async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })

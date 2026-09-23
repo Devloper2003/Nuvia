@@ -71,7 +71,35 @@ export async function POST(request: NextRequest) {
       cycleLength,
       periodLength,
       lastPeriodStart,
+      avatar,
     } = body;
+
+    // ─── Avatar validation ─────────────────────────────────────────────────
+    // The client uploads a compressed square JPEG as a data URL (canvas-resized
+    // to 256×256, ~10-40KB). Storage is the User.avatar column — Vercel-safe
+    // (no filesystem). Oversized strings are auto-dropped from the session JWT
+    // by the slim-token guard in lib/auth, and /api/auth/me re-reads the full
+    // avatar from the DB, so tokens never balloon.
+    let avatarValue: string | null | undefined
+    if (avatar !== undefined && avatar !== null) {
+      if (avatar === '') {
+        avatarValue = null // explicit clear
+      } else if (typeof avatar !== 'string') {
+        return NextResponse.json({ error: 'Avatar must be a data URL string.' }, { status: 400 })
+      } else if (!/^data:image\/(png|jpe?g|webp);base64,/.test(avatar)) {
+        return NextResponse.json(
+          { error: 'Avatar must be a base64 data URL (png, jpeg or webp).' },
+          { status: 400 }
+        )
+      } else if (avatar.length > 300_000) {
+        return NextResponse.json(
+          { error: 'Avatar is too large — please choose a smaller photo.' },
+          { status: 413 }
+        )
+      } else {
+        avatarValue = avatar
+      }
+    }
 
     // Try to persist the update to the database. On Vercel serverless with
     // ephemeral SQLite, this may fail — in that case we still issue a fresh
@@ -90,6 +118,7 @@ export async function POST(request: NextRequest) {
           ...(typeof cycleLength === 'number' ? { cycleLength } : {}),
           ...(typeof periodLength === 'number' ? { periodLength } : {}),
           ...(lastPeriodStart ? { lastPeriodStart } : {}),
+          ...(avatarValue !== undefined ? { avatar: avatarValue } : {}),
           onboardingComplete: true,
         },
       });
@@ -137,6 +166,7 @@ export async function POST(request: NextRequest) {
         cycleLength: typeof cycleLength === 'number' ? cycleLength : sessionUser.cycleLength,
         periodLength: typeof periodLength === 'number' ? periodLength : sessionUser.periodLength,
         lastPeriodStart: lastPeriodStart ?? sessionUser.lastPeriodStart,
+        avatar: avatarValue !== undefined ? avatarValue : sessionUser.avatar,
         onboardingComplete: true,
       };
     }

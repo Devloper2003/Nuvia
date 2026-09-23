@@ -1811,3 +1811,23 @@ Stage Summary:
 - ONLY remaining user step: Google Cloud Console → OAuth client nuvia-509213 → Authorized redirect URI: https://nuvia-chi-snowy.vercel.app/api/auth/google/callback (+ JavaScript origin https://nuvia-chi-snowy.vercel.app; also whitelist the STABLE production domain from Vercel → Settings → Domains, since per-deployment URLs change on every push).
 - Next deploy (this commit) ships the improved dialog copy.
 - Backlog unchanged.
+---
+Task ID: 28
+Agent: Z.ai Code (main)
+Task: Profile tab — hide the owner-only Google Sign-In config card + add profile photo (avatar) upload/remove (user: "profile tab mai isko hide kro and profile picture and avatar add krne ka option add kro isme")
+
+Work Log:
+- Hid GoogleSignInSection from Settings (removed component def + usage + GoogleSetupDialog import via sed line surgery; verified KeyRound/ShieldCheck still used elsewhere so imports stay). Self-service credential entry remains available where it belongs: the auth-screen auto-opens the setup dialog when sign-in is unconfigured/mismatched.
+- Avatar upload end-to-end:
+  * POST /api/user now accepts `avatar`: data-URL whitelist (png/jpeg/webp), 300K-char cap, '' clears → null. Stored in User.avatar (Vercel-safe — no filesystem). Slim-token guard auto-drops >512-char avatar from the session JWT; /api/auth/me re-reads it from the DB.
+  * settings.tsx: compressAvatarToDataUrl (FileReader → Image → canvas 256×256 cover-crop → JPEG q0.85), saveProfile() shared helper (Bearer POST /api/user → setUserProfile + localStorage token refresh + dispatches 'nuvia:auth-user'), handleAvatarFile (15MB input cap, toasts), removeAvatar.
+  * Profile card UI: AvatarImage when avatar exists, plum camera FAB bottom-right (works without edit mode), X remove chip top-left, green status dot moved top-right, hidden file input.
+  * page.tsx: 'nuvia:auth-user' CustomEvent listener → setAuthUser, so sidebar/topbar avatars update instantly without reload.
+  * Bonus fix: Settings "Save Changes" (handleSave) previously ONLY wrote to the local zustand store — now persists to the DB via the same saveProfile path (with graceful local-only fallback + toast on API failure).
+- agent-browser E2E (QA user qa-avatar@nuvia-test.invalid on Neon): tour overlay skipped → Settings → Google card 0 hits ✓ → upload via input[type=file] (283KB PNG) → POST 200 → avatar in DB = 18,739-char data:image/jpeg (client compression ~15:1) → photo renders in profile card AND topbar instantly ✓ → remove → DB NULL_OK, UI reverts ✓. QA user deleted afterwards.
+- lint clean.
+
+Stage Summary:
+- Settings is now user-facing clean (no owner/OAuth config surfaces), and every user can upload a profile photo that persists in Neon and shows across the app (sidebar, topbar, profile).
+- Pushed to GitHub → Vercel auto-redeploys with these changes.
+- Backlog unchanged: userId-in-query zero-auth sweep (P1: GET /api/user findFirst fallback!), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours timezone, /api/user DELETE.
