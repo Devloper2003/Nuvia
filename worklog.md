@@ -1751,3 +1751,18 @@ Stage Summary:
 - Complete codebase is live at https://github.com/Devloper2003/Nuvia (main @ 5da47eb), secret-clean history, README included
 - USER ADVISED: revoke the GitHub PAT shared in chat (github_pat_11BUPRILY…) after confirming the repo looks right — it was pasted in plaintext
 - Clone-run recipe: bun install → .env (DATABASE_URL + GOOGLE_CLIENT_ID/SECRET) → bun run db:push → bun run dev
+---
+Task ID: 26.1
+Agent: Z.ai Code (main)
+Task: Vercel deploy build fix + local/remote history rescue
+
+Work Log:
+- Vercel build failed at `cp -r .next/static .next/standalone/...` — package.json build script assumed output:'standalone', but next.config deliberately omits it (Vercel uses its own runtime). next build itself succeeded (52 pages).
+- Fixed scripts: build = `prisma generate && next build`, start = `next start`
+- DISCOVERED: local repo had been reset by a cron webDevReview agent back onto PRE-REWRITE history (secrets in ancestry!) + a cron junk commit (tool-results dumps). Remote GitHub still had the CLEAN rewritten history.
+- Rescue: saved worklog + package.json → git reset --hard FETCH_HEAD (clean history) → restored changes → gitignored tool-results/ → committed 9446ff2 → pushed. local==remote @ 9446ff2.
+- WARNING for future agents: do NOT `git reset` main to local stale refs; remote github.com/Devloper2003/Nuvia main is the source of truth. Never commit tool-results/, upload/, .env, db/*.db.
+
+Stage Summary:
+- Vercel redeploy will now pass build. Remaining Vercel setup (user-side): env vars DATABASE_URL=file:/tmp/custom.db, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET; add https://<vercel-domain>/api/auth/google/callback to Google Console redirect URIs.
+- Known limitation: SQLite on Vercel is ephemeral — auth works via JWT fallback but durable data storage needs a hosted Postgres (Neon/Vercel Postgres) migration later.
