@@ -5,9 +5,11 @@
 // superadmin control centre. This module never imports app-store state —
 // the basement is fully self-contained by design.
 
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export interface BasementOperator {
   name: string
@@ -16,6 +18,9 @@ export interface BasementOperator {
 }
 
 export const ADMIN_TOKEN_KEY = 'nuvia_admin_token'
+
+// Shape of the authenticated fetcher handed to every HQ module.
+export type AdminFetch = <T>(url: string, init?: RequestInit) => Promise<T>
 
 // Fetch wrapper: attaches the operator bearer, normalizes errors, and fires
 // onExpired() when the server says the session is gone (401).
@@ -109,6 +114,61 @@ export function DarkBadge({ children, tone = 'zinc' }: { children: ReactNode; to
     <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider', tones[tone] ?? tones.zinc)}>
       {children}
     </span>
+  )
+}
+
+// Small dark section heading used by every HQ tab.
+export function SectionTitle({ children, icon }: { children: ReactNode; icon?: ReactNode }) {
+  return (
+    <p className="mb-2 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+      {icon}
+      {children}
+    </p>
+  )
+}
+
+// Two-step confirm button: first click arms it (rose), second click fires,
+// auto-disarms after 2.5s. Keeps destructive HQ ops one-component simple.
+export function ConfirmButton({
+  onConfirm, children, confirmLabel = 'Confirm?', disabled, className, tone = 'rose',
+}: {
+  onConfirm: () => void | Promise<void>
+  children: ReactNode
+  confirmLabel?: string
+  disabled?: boolean
+  className?: string
+  tone?: 'rose' | 'gold' | 'zinc'
+}) {
+  const [armed, setArmed] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
+
+  const click = async () => {
+    if (!armed) {
+      setArmed(true)
+      timer.current = setTimeout(() => setArmed(false), 2500)
+      return
+    }
+    if (timer.current) clearTimeout(timer.current)
+    setArmed(false)
+    await onConfirm()
+  }
+
+  const tones: Record<string, string> = {
+    rose: 'border-rose-400/30 bg-rose-400/10 text-rose-300 hover:bg-rose-400/20',
+    gold: 'border-amber-400/30 bg-amber-400/10 text-amber-300 hover:bg-amber-400/20',
+    zinc: 'border-white/15 bg-white/[0.04] text-zinc-300 hover:bg-white/10',
+  }
+  const armedCls = tone === 'gold'
+    ? 'border-amber-300 bg-amber-300 text-[#0a0810] hover:bg-amber-200'
+    : 'border-red-400 bg-red-500/80 text-white hover:bg-red-500'
+
+  return (
+    <Button variant="outline" size="sm" onClick={() => void click()} disabled={disabled}
+      className={cn('h-7 px-2 text-[11px] transition-colors', armed ? armedCls : tones[tone], className)}>
+      {armed ? confirmLabel : children}
+    </Button>
   )
 }
 

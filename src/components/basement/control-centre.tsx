@@ -8,8 +8,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Activity, Flame, Gauge, HeartPulse, Loader2, Lock, LogOut, MessageSquare,
-  Radio, RefreshCw, ScrollText, ShieldAlert, Smartphone, Sparkles, Users, X,
+  Activity, Building2, Flame, Gauge, HeartPulse, Loader2, Lock, LogOut, MessageSquare,
+  Newspaper, Radio, RefreshCw, ScrollText, Settings2, ShieldAlert, Smartphone, Sparkles, Users, Wallet, X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -20,13 +20,21 @@ import {
 } from './basement-shared'
 import { BasementUsers } from './basement-users'
 import { BasementModeration, BasementAudit, BasementBroadcast } from './basement-ops'
+import { BasementRevenue } from './basement-revenue'
+import { BasementContent } from './basement-content'
+import { BasementTeam } from './basement-team'
+import { BasementConfig } from './basement-config'
 
-type TabKey = 'overview' | 'users' | 'moderation' | 'audit' | 'broadcast'
+type TabKey = 'overview' | 'users' | 'moderation' | 'revenue' | 'content' | 'team' | 'config' | 'audit' | 'broadcast'
 
 const TABS: { key: TabKey; label: string; icon: typeof Gauge }[] = [
   { key: 'overview', label: 'Overview', icon: Gauge },
   { key: 'users', label: 'Users', icon: Users },
   { key: 'moderation', label: 'Moderation', icon: ShieldAlert },
+  { key: 'revenue', label: 'Revenue', icon: Wallet },
+  { key: 'content', label: 'Content', icon: Newspaper },
+  { key: 'team', label: 'Team HQ', icon: Building2 },
+  { key: 'config', label: 'Config', icon: Settings2 },
   { key: 'audit', label: 'Audit', icon: ScrollText },
   { key: 'broadcast', label: 'Broadcast', icon: Radio },
 ]
@@ -156,6 +164,7 @@ export function ControlCentre({
               {operator.name} · {operator.role}
             </span>
           </p>
+          <p className="hidden text-[10px] text-zinc-600 sm:block">HQ · full-platform command</p>
         </div>
 
         <div className="ml-auto flex items-center gap-2">
@@ -307,6 +316,10 @@ export function ControlCentre({
 
               {tab === 'users' && <BasementUsers adminFetch={adminFetch} onUsersChanged={loadOverview} />}
               {tab === 'moderation' && <BasementModeration adminFetch={adminFetch} />}
+              {tab === 'revenue' && <BasementRevenue adminFetch={adminFetch} />}
+              {tab === 'content' && <BasementContent adminFetch={adminFetch} />}
+              {tab === 'team' && <BasementTeam adminFetch={adminFetch} />}
+              {tab === 'config' && <BasementConfig adminFetch={adminFetch} />}
               {tab === 'audit' && <BasementAudit adminFetch={adminFetch} />}
               {tab === 'broadcast' && (
                 <BasementBroadcast adminFetch={adminFetch} estimatedRecipients={Math.max(0, (k?.users.total ?? 0) - (k?.users.banned ?? 0))} />

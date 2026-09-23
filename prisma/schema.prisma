@@ -95,8 +95,10 @@ model AdminUser {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  department  String?
   auditLogs AuditLog[]
   sessions AdminSession[]
+  assignedTasks TeamTask[] @relation("AssigneeTasks")
 }
 
 // ---- Admin login sessions (DB-backed) ----
@@ -572,4 +574,61 @@ model Notification {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId])
   @@index([read])
+}
+
+// ─── HQ: newsroom, departments, team workflow ────────────────────────────────
+
+// ---- Newsroom articles (managed from the basement, surfaced in-app) ----
+model NewsPost {
+  id          String    @id @default(cuid())
+  title       String
+  excerpt     String?
+  body        String
+  category    String    @default("update") // update | feature | health | company | press
+  coverUrl    String?
+  pinned      Boolean   @default(false)
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  authorName  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published])
+}
+
+// ---- Departments (internal org structure) ----
+model Department {
+  id          String   @id @default(cuid())
+  name        String
+  key         String   @unique
+  description String?
+  color       String   @default("#f43f5e")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tasks TeamTask[]
+
+  @@index([key])
+}
+
+// ---- Team workflow tasks (kanban: backlog → in_progress → review → done) ----
+model TeamTask {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  departmentId  String?
+  assigneeId    String?
+  status        String    @default("backlog") // backlog | in_progress | review | done
+  priority      String    @default("medium") // low | medium | high | urgent
+  dueDate       DateTime?
+  createdByName String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assignee   AdminUser?  @relation("AssigneeTasks", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  @@index([departmentId])
+  @@index([status])
+  @@index([assigneeId])
 }

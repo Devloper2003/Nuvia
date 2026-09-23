@@ -1907,3 +1907,29 @@ Stage Summary:
 - Entry paths to the basement: main login with operator credentials, secret triggers inside the app (7 brand taps / Ctrl+Shift+B / #basement), and the Settings moderation console (unchanged).
 - Known infra note: Neon pooler cold queries make some admin APIs take 4-20s on first hit; acceptable, cached pooler warms up quickly.
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
+---
+Task ID: 32
+Agent: Z.ai Code (main)
+Task: Founder request — basement ko full company HQ banao: complete app modification control, subscription management, payment-gateway sync/manage, internal team (departments + workflow), user modify, news & ads — sab hidden admin panel se. "mujhe super admin bana dena, I'm the founder."
+
+Work Log:
+- Schema (+db push): NewsPost (title/excerpt/body/category/pinned/published/author), Department (name/key/color), TeamTask (kanban status backlog→in_progress→review→done, priority, assignee→AdminUser SetNull, department→SetNull, dueDate), AdminUser.department field.
+- Founder designation: admin@nuvia.app operator renamed name="Founder" (role already super_admin). Control centre header now reads "Founder · super_admin · HQ · full-platform command".
+- 8 new SUPER_ADMIN-bearer APIs (all audit-logged, secrets masked):
+  * /api/admin/settings GET/PUT — SiteSetting KV with key validation; flags: ads_enabled, news_enabled, maintenance_mode(+message), community_enabled, ai_chat_enabled.
+  * /api/admin/team GET/POST/PATCH — roster w/ live-session+task+audit counts; invite (auto-password, one-time handoff); activate/deactivate (kills live AdminSessions), set_role (super_admin-mint guard), reset_password (revokes sessions), set_department; self-lockout guards.
+  * /api/admin/news GET/POST/PATCH/DELETE — newsroom CRUD + publish/pin.
+  * /api/admin/campaigns GET/POST/PATCH/DELETE — ads CRUD w/ position (top/feed/bottom/modal), audience (all/free/premium), budget/spent/impressions/clicks, status machine draft→active→paused/completed.
+  * /api/admin/departments GET/POST/PATCH/DELETE — org structure w/ task+member counts; delete refused while tasks attached.
+  * /api/admin/tasks GET/POST/PATCH/DELETE — workflow board w/ filters; optimistic move support.
+  * /api/admin/subscriptions GET/PATCH — revenue desk: per-user plan control (set_plan premium/plus/free, extend N months, cancel, reactivate, grant_trial 7d), Subscription ledger writes (GST split), MRR + lifetime revenue summary.
+  * /api/admin/payments GET/PUT/POST/PATCH — PaymentConfig (gateway/mode/keys — masked in responses), **live sync handshake with Razorpay API** (Basic auth → /v1/payments, lastSyncedAt/status/message persisted), manual transaction ledger, refund/mark-failed.
+- Public surface: GET /api/public/content (no auth) — active campaigns + published news + announcement + maintenance flag, all gated by HQ flags. New app-shell <HqStrip/> renders maintenance banner + top ad (with CTA) + latest news headline as slim dismissible strips (per-item localStorage dismissal) for every logged-in user.
+- Control centre now 9 tabs: Overview · Users · Moderation · Revenue (Subscriptions↔Payments sub-views) · Content (Newsroom↔Ads) · Team HQ (Members↔Departments↔Workflow board) · Config (flag toggles + maintenance msg + advanced KV) · Audit · Broadcast. Shared kit: AdminFetch type, SectionTitle, ConfirmButton (2-step arm→fire, auto-disarm).
+- E2E (curl + agent-browser): settings PUT → public content flags flip (ads off → ads:[] live); team invite (Priya/moderator/support, one-time creds shown once); news published → visible; campaign created→activated → visible in app; departments 5 seeded w/ member counts; task created→assigned→moved in_progress (board renders all 4 columns w/ move buttons); premium grant → ledger row ₹149 GST-split → reverted to free; gateway config saved (key masked rzp_te••••G5ag) → sync handshake reached real Razorpay endpoint (401 on fake keys = mechanism live; real keys → OK); manual txn recorded → refunded. HQ strip verified in-app as a fresh signup (ad + news visible). QA user cleaned; lint exit 0; commit pushed.
+
+Stage Summary:
+- The basement is now the founder's full HQ: app feature flags, newsroom, ads engine (real in-app placement), subscription & payment control with gateway health-check, internal team/departments/workflow kanban, full user dossiers & actions, audit trail — all behind the hidden gate (main login / secret gestures) and every action audit-logged.
+- Founder = admin@nuvia.app (super_admin) — login via the normal sign-in form drops straight into HQ. Team members log in the same way and get the same basement but role-guarded server-side (moderator/admin vs super_admin).
+- To go live with payments: Revenue → Payments & Gateway → paste real Razorpay key/secret → "Sync / test handshake" → expect green OK.
+- Backlog: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.

@@ -48,6 +48,7 @@ import type { SessionUser } from '@/components/auth/auth-screen'
 import NotificationPanel from '@/components/notifications/notification-panel'
 import MobileTopbar from '@/components/mobile/mobile-topbar'
 import MobileBottomNav from '@/components/mobile/mobile-bottom-nav'
+import HqStrip from '@/components/hq-strip'
 import WelcomeTour, { getTourSeenKey } from '@/components/onboarding/welcome-tour'
 import { useLanguage } from '@/components/language-provider'
 import { LanguageSwitcher } from '@/components/language-switcher'
@@ -469,6 +470,8 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
 
         {/* ─── Main Content ───────────────────────────────────────────────── */}
         <div className="flex-1 min-w-0 flex flex-col h-full">
+          {/* HQ strip: maintenance / ads / news managed from the hidden control centre */}
+          <HqStrip />
           {/* Desktop Top Bar (lg+ only) — luxury glass header */}
           <header className="hidden lg:flex shrink-0 z-30 items-center justify-between gap-4 border-b border-border bg-card/70 backdrop-blur-xl px-4 lg:px-5 py-2.5 relative">
             {/* Subtle top gradient line */}
