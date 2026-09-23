@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2, Copy, Check, ExternalLink, ShieldCheck, KeyRound, Trash2 } from 'lucide-react'
+import { Loader2, Copy, Check, ExternalLink, ShieldCheck, KeyRound, Trash2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 // ─── Google Sign-In setup dialog ─────────────────────────────────────────────
@@ -179,7 +179,10 @@ export default function GoogleSetupDialog({ open, onOpenChange, onConfigured }: 
             </div>
           </div>
 
-          {/* Step 2 — paste credentials */}
+          {/* Step 2 — paste credentials (only when Google is NOT already configured;
+              in the redirect-mismatch case the credentials exist and pasting again
+              would just confuse the owner — show a green guidance callout instead) */}
+          {!info?.google.configured ? (
           <div className="rounded-2xl border border-border bg-muted/30 p-3.5 space-y-2.5">
             <p className="text-xs font-semibold flex items-center gap-1.5">
               <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">2</span>
@@ -226,7 +229,24 @@ export default function GoogleSetupDialog({ open, onOpenChange, onConfigured }: 
               browser. Environment variables (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET) take
               precedence if set.
             </p>
+            <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">
+              Note: saving is owner-only and requires you to be signed in to Nuvia first (the
+              email sign-up below works). Visitors cannot change sign-in settings.
+            </p>
           </div>
+          ) : (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5 space-y-1.5 dark:border-emerald-900/60 dark:bg-emerald-950/30">
+            <p className="text-xs font-semibold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+              Google Sign-In is already configured — nothing to paste here
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              If Google showed &ldquo;Access blocked&rdquo;, the redirect URI isn&apos;t whitelisted
+              yet. Add the two URLs from Step 1 to your OAuth client in Google Cloud Console,
+              save, and try signing in again — Google can take a few minutes to register changes.
+            </p>
+          </div>
+          )}
 
           {/* Current status */}
           {info?.google && (

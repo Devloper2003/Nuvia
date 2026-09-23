@@ -1793,3 +1793,21 @@ Stage Summary:
   * Optional/feature-flagged (safe to omit): VAPID_PRIVATE_KEY + NEXT_PUBLIC_VAPID_PUBLIC_KEY (push notifications), PAYPAL_* (billing), GOOGLE_PLACES_API_KEY (doctor search), CRON_SECRET (reminder cron), SMS_GATEWAY_API_KEY (OTP)
 - USER ACTION REQUIRED (Google Console → OAuth client nuvia-509213 → Authorized redirect URIs): add https://<vercel-domain>/api/auth/google/callback (exact domain visible after first successful deploy) — localhost one already known.
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours timezone, /api/user DELETE.
+---
+Task ID: 27.1
+Agent: Z.ai Code (main)
+Task: Fix "deploy pr issue" — Google Sign-In dead on Vercel (user screenshot: setup dialog + "Sign in to configure Google Sign-In" toast on nuvia-chi-snowy.vercel.app)
+
+Work Log:
+- Probed live deployment: /api/auth/config → configured:false, clientId:"" (Google env vars NOT set on Vercel). authorize → 307 /?auth_error=google_not_configured.
+- Distinguished DB vs Google env state: signup probe with valid payload SUCCEEDED on Vercel (user row created in Neon + JWT returned) → DATABASE_URL + JWT_SECRET already set correctly by user; only GOOGLE_CLIENT_ID/SECRET missing. Probe user deleted after.
+- ROOT CAUSE of user's screenshot: app self-service dialog lets the owner paste credentials, but POST /api/auth/google/credentials is session-gated (by design — visitors must not be able to rewrite OAuth config) → unsigned visitor gets "Sign in to configure Google Sign-In" toast. Dead end for them.
+- FIX (zero user action): seeded Neon SiteSetting keys google_client_id / google_client_secret via prisma upsert (google-oauth.ts already falls back env → SiteSetting; Vercel connects to the same Neon DB).
+- VERIFIED LIVE: /api/auth/config on Vercel → configured:true, codeFlowReady:true, real clientId. /api/auth/google/authorize → 307 accounts.google.com with redirect_uri=https://nuvia-chi-snowy.vercel.app/api/auth/google/callback + CSRF state (origin derivation works behind Vercel proxy).
+- UX hardening in google-setup-dialog.tsx: Step-2 paste fields now render ONLY when Google is NOT configured; in the redirect-mismatch case a green callout explains "already configured — add the two Step-1 URLs in Google Cloud Console, changes can take a few minutes". Amber note added under Save: saving is owner-only, requires being signed in (email sign-up works). lint clean; agent-browser E2E (sessionStorage mismatch flag → dialog shows green callout, no paste fields) + screenshot verified.
+
+Stage Summary:
+- Google Sign-In is LIVE on the Vercel deployment right now, with no further Vercel env changes needed (DB-stored creds; env still takes precedence when present).
+- ONLY remaining user step: Google Cloud Console → OAuth client nuvia-509213 → Authorized redirect URI: https://nuvia-chi-snowy.vercel.app/api/auth/google/callback (+ JavaScript origin https://nuvia-chi-snowy.vercel.app; also whitelist the STABLE production domain from Vercel → Settings → Domains, since per-deployment URLs change on every push).
+- Next deploy (this commit) ships the improved dialog copy.
+- Backlog unchanged.
