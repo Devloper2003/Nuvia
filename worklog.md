@@ -1890,3 +1890,20 @@ Stage Summary:
 - Superadmin can now: monitor platform-wide KPIs/growth/health, explore & search every user with full dossiers (tracking depth, devices, content, billing), suspend/ban/flag/force-logout/delete users, grant/revoke premium, review the full audit trail, and broadcast platform-wide announcements.
 - Operator credentials (rebranded): admin@nuvia.app / nuvia-admin.
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
+---
+Task ID: 31-b
+Agent: Z.ai Code (main)
+Task: User reported "Invalid email or password" when entering operator credentials on the MAIN login page (screenshot) — admin login must work "normal login ki tarah". Wire the basement gate into the regular sign-in flow.
+
+Work Log:
+- Root cause: AdminUser lives in a separate table; /api/auth/login only checked the User table → operator credentials bounced with a generic 401.
+- /api/auth/login operator fast-path: throttle check (shared admin-guard sliding window) → AdminUser lookup (+ first-run bootstrap parity with /api/admin/login when table is empty) → active admin + password verify → DB-backed AdminSession (24h) + expired-session sweep + lastLoginAt + auditLog entry action="basement:entry" ("operator signed in via the main login page") → returns { adminAuth: true, token, admin }. Wrong admin password → same generic "Invalid email or password" + throttle failure recorded (no account-existence leak). Regular user path untouched below.
+- auth-screen.tsx: handleEmailAuth now branches on data.adminAuth → persists sessionStorage (nuvia_admin_token + nuvia_admin_operator) → toast "Operator verified — opening control centre" → conditionally mounts <Basement> (fresh mount re-reads sessionStorage → straight into ControlCentre, no double login). Added the same secret triggers as app-shell on the auth screen: Ctrl/Cmd+Shift+B and #basement hash. Bundle stays dynamic (ssr:false), zero surface trace.
+- Fixed during E2E: BasementAudit showed "No audit entries found." while the first (slow) fetch was in flight → proper "Reading the trail…" spinner state (Neon cold queries take 4-20s).
+- E2E via agent-browser: cookies cleared → main login page → admin@nuvia.app / nuvia-admin typed into the normal form → Sign in → POST /api/auth/login 200 (adminAuth) → control centre opened instantly ("BASEMENT · LEVEL −1 · Nuvia Admin · super_admin"). All 5 tabs verified live: Overview (27 KPIs, 14-day pulse, real signups, DB health), Users (directory + full dossier with Suspend/Ban/Flag/Premium/Force-logout/Delete), Moderation (empty queue state correct), Audit (basement:entry + historical entries render), Broadcast (≈2 recipients). Regression: QA email user signup → password login returns normal user JWT (NOT adminAuth) → wrong password 401 → QA user deleted (2 real users remain). Lint exit 0.
+
+Stage Summary:
+- ONE login form now serves both worlds: wellness users land in the app, operators swing straight into the hidden control centre — exactly the "admin login normal login ki tarah" requirement, and the reported login error is fixed.
+- Entry paths to the basement: main login with operator credentials, secret triggers inside the app (7 brand taps / Ctrl+Shift+B / #basement), and the Settings moderation console (unchanged).
+- Known infra note: Neon pooler cold queries make some admin APIs take 4-20s on first hit; acceptable, cached pooler warms up quickly.
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.

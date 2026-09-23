@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,6 +28,13 @@ import {
 import GoogleOAuthButton from './google-oauth-button'
 import GoogleSetupDialog from './google-setup-dialog'
 import { BrandMark, BrandWordmark, BrandTagline } from '@/components/brand/brand-logo'
+
+// Basement (secret operator control centre) — mounted ONLY on demand so the
+// bundle and the DOM never hint it exists. Conditional mount also guarantees a
+// fresh sessionStorage read each time it appears.
+const Basement = dynamic(() => import('@/components/basement').then((m) => m.Basement), {
+  ssr: false,
+})
 
 type Mode = 'login' | 'signup'
 
@@ -81,6 +89,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [googleConfigured, setGoogleConfigured] = useState(false)
   const [googleCodeFlowReady, setGoogleCodeFlowReady] = useState(false)
+  const [basementOpen, setBasementOpen] = useState(false)
   const [googleSetupOpen, setGoogleSetupOpen] = useState(() => {
     // Consume the "open setup" flag planted by page.tsx when Google bounced
     // the OAuth flow back with a configuration error (redirect URI not
@@ -116,6 +125,28 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
     return () => { cancelled = true }
   }, [])
 
+  // ─── Secret basement triggers (invisible by design) ─────────────────────────
+  // ① Ctrl/Cmd+Shift+B anywhere on the auth screen, ② #basement hash. No link,
+  // no button, no trace in the visible UI.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+        e.preventDefault()
+        setBasementOpen(true)
+      }
+    }
+    const onHash = () => {
+      if (window.location.hash === '#basement') setBasementOpen(true)
+    }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('hashchange', onHash)
+    onHash()
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('hashchange', onHash)
+    }
+  }, [])
+
   const switchMode = (newMode: Mode) => {
     setErrors({})
     setMode(newMode)
@@ -144,6 +175,22 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
       const data = await res.json()
       if (!res.ok) {
         toast.error(data.error || 'Something went wrong')
+        setLoading(null)
+        return
+      }
+      // ─── Operator credentials on the normal login form ─────────────────────
+      // The backend recognised an AdminUser: instead of entering the wellness
+      // app, persist the tab-scoped operator session and swing open the
+      // basement control centre.
+      if (data.adminAuth && data.token) {
+        try {
+          sessionStorage.setItem('nuvia_admin_token', data.token)
+          sessionStorage.setItem('nuvia_admin_operator', JSON.stringify(data.admin))
+        } catch {
+          /* private mode — basement will simply re-ask next time */
+        }
+        toast.success('Operator verified — opening control centre')
+        setBasementOpen(true)
         setLoading(null)
         return
       }
@@ -660,6 +707,9 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           </p>
         </motion.div>
       </div>
+
+      {/* ─── Basement: hidden operator control centre (conditionally mounted) ── */}
+      {basementOpen && <Basement open onClose={() => setBasementOpen(false)} />}
 
       {/* Google Sign-In setup — paste real OAuth credentials (no fake login path exists) */}
       <GoogleSetupDialog

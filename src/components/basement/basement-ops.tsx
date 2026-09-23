@@ -226,7 +226,11 @@ export function BasementAudit({ adminFetch }: { adminFetch: AdminFetch }) {
 
       <ScrollArea className="max-h-[calc(100dvh-300px)]">
         <div className={panelCls + ' divide-y divide-white/5'}>
-          {entries.length === 0 ? (
+          {loading && entries.length === 0 ? (
+            <p className="flex items-center justify-center gap-2 py-12 text-sm text-zinc-500">
+              <Loader2 className="h-4 w-4 animate-spin" /> Reading the trail…
+            </p>
+          ) : entries.length === 0 ? (
             <p className="py-12 text-center text-sm text-zinc-500">No audit entries found.</p>
           ) : (
             entries.map((e) => (
