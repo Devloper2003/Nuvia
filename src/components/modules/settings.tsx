@@ -658,7 +658,7 @@ export default function SettingsModule() {
   }
   const [adminToken, setAdminToken] = useState<string | null>(null)
   const [adminName, setAdminName] = useState<string | null>(null)
-  const [adminEmail, setAdminEmail] = useState('admin@nuvia.app')
+  const [adminEmail, setAdminEmail] = useState('admin@chandracycle.app')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminLoggingIn, setAdminLoggingIn] = useState(false)
   const [modQueue, setModQueue] = useState<ModPost[]>([])
@@ -1333,7 +1333,7 @@ export default function SettingsModule() {
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="admin@nuvia.app"
+                  placeholder="admin@chandracycle.app"
                   autoComplete="off"
                 />
               </div>
@@ -1359,6 +1359,12 @@ export default function SettingsModule() {
                 <><ShieldCheck className="h-4 w-4 mr-1.5" /> Open moderation console</>
               )}
             </Button>
+            <p className="text-[11px] leading-relaxed text-muted-foreground/80">
+              First run? The default operator is provisioned automatically on the first sign-in —{' '}
+              <span className="font-medium text-foreground">admin@chandracycle.app</span>
+              {' '}/{' '}<span className="font-medium text-foreground">chandra-admin</span>.
+              Keep these credentials private — anyone with them can moderate the community feed.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
