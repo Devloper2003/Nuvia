@@ -454,7 +454,7 @@ function NotificationCenterBody({
       </div>
 
       {/* Grouped list */}
-      <div className="flex-1 min-h-0 overflow-y-auto chandracycle-scroll overscroll-contain">
+      <div className="flex-1 min-h-0 overflow-y-auto nuvia-scroll overscroll-contain">
         <NotificationList
           items={filtered}
           loading={loading}
@@ -557,7 +557,7 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
                 body: data.notification.message,
                 icon: '/icon-maskable.svg',
                 badge: '/icon.svg',
-                tag: 'chandracycle-period-reminder',
+                tag: 'nuvia-period-reminder',
               })
             }
           } catch {
@@ -830,7 +830,7 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
             <DrawerTitle className="sr-only">Notifications</DrawerTitle>
             <DrawerDescription className="sr-only">Your latest cycle reminders and updates</DrawerDescription>
             <PanelHeader {...headerProps} />
-            <div className="flex-1 min-h-0 overflow-y-auto chandracycle-scroll overscroll-contain">
+            <div className="flex-1 min-h-0 overflow-y-auto nuvia-scroll overscroll-contain">
               <NotificationList
                 items={previewList}
                 loading={loading}
@@ -875,7 +875,7 @@ export default function NotificationPanel({ userId }: NotificationPanelProps) {
                 className="rounded-3xl border border-border bg-card/95 backdrop-blur-xl shadow-2xl shadow-black/10 overflow-hidden"
               >
                 <PanelHeader {...headerProps} showClose onClose={() => setOpen(false)} />
-                <div className="max-h-[min(480px,calc(100dvh-10rem))] overflow-y-auto chandracycle-scroll overscroll-contain">
+                <div className="max-h-[min(480px,calc(100dvh-10rem))] overflow-y-auto nuvia-scroll overscroll-contain">
                   <NotificationList
                     items={previewList}
                     loading={loading}

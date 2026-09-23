@@ -669,7 +669,7 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
     // persist it to localStorage before completing.
     try {
       const token = typeof window !== 'undefined'
-        ? localStorage.getItem('chandracycle_token')
+        ? localStorage.getItem('nuvia_token')
         : null
       // If the user picked a period date, send it. If they SKIPPED, we send
       // nothing — lastPeriodStart stays null in the DB so the dashboard shows
@@ -696,7 +696,7 @@ export default function Onboarding({ onComplete }: { onComplete: () => void }) {
       if (res.ok) {
         const data2 = await res.json().catch(() => ({}))
         if (data2?.token && typeof window !== 'undefined') {
-          localStorage.setItem('chandracycle_token', data2.token)
+          localStorage.setItem('nuvia_token', data2.token)
         }
       }
     } catch {

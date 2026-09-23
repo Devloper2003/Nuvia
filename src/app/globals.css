@@ -25,7 +25,7 @@ body {
   overscroll-behavior-y: contain;
 }
 /* Legacy iOS momentum scrolling inside app-level scroll containers */
-.chandracycle-scroll,
+.nuvia-scroll,
 [class*="overflow-y-"] {
   -webkit-overflow-scrolling: touch;
 }
@@ -651,24 +651,24 @@ a:focus-visible,
     0 0 0 5px oklch(0.72 0.115 85 / 40%);
 }
 
-/* ─── Luxury custom scrollbar (chandracycle-scroll) ───────────────────────── */
-.chandracycle-scroll {
+/* ─── Luxury custom scrollbar (nuvia-scroll) ───────────────────────── */
+.nuvia-scroll {
   scrollbar-width: thin;
   scrollbar-color: oklch(0.7 0.15 30) transparent;
 }
-.chandracycle-scroll::-webkit-scrollbar {
+.nuvia-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.chandracycle-scroll::-webkit-scrollbar-track {
+.nuvia-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
-.chandracycle-scroll::-webkit-scrollbar-thumb {
+.nuvia-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom, oklch(0.78 0.16 60), oklch(0.68 0.21 5), oklch(0.6 0.22 350));
   border-radius: 999px;
   border: 1px solid oklch(1 0 0 / 12%);
 }
-.chandracycle-scroll::-webkit-scrollbar-thumb:hover {
+.nuvia-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(to bottom, oklch(0.7 0.17 60), oklch(0.6 0.2 5), oklch(0.5 0.2 350));
 }
 

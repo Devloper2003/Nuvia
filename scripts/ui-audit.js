@@ -1,4 +1,4 @@
-// ChandraCycle comprehensive UI audit runner (agent-browser eval payload)
+// Nuvia comprehensive UI audit runner (agent-browser eval payload)
 // Usage: agent-browser eval "$(cat scripts/ui-audit.js)" — audits CURRENT module.
 // Caller switches module first, waits for render, then runs this.
 (async () => {

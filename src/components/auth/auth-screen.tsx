@@ -148,7 +148,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
         return
       }
       if (data.token && remember) {
-        localStorage.setItem('chandracycle_token', data.token)
+        localStorage.setItem('nuvia_token', data.token)
       }
       toast.success(mode === 'signup' ? 'Welcome to Nuvia!' : 'Welcome back!')
       onAuthed(data.user)
@@ -174,7 +174,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
         return
       }
       if (data.token && remember) {
-        localStorage.setItem('chandracycle_token', data.token)
+        localStorage.setItem('nuvia_token', data.token)
       }
       toast.success(`Signed in as ${data.user.email}`)
       onAuthed(data.user)
@@ -236,7 +236,7 @@ export default function AuthScreen({ onAuthed }: AuthScreenProps) {
           stopped = true
           setPollingGoogle(false)
           try {
-            localStorage.setItem('chandracycle_token', data.token)
+            localStorage.setItem('nuvia_token', data.token)
           } catch {
             /* private mode — cookie session still works */
           }

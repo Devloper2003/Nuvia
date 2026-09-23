@@ -293,7 +293,7 @@ export default function CoachModule() {
           {/* Quick Prompts — single horizontally-scrollable row on mobile
               (wrapping to 5 rows pushed the chat input below the fold) */}
           <div className="px-4 py-3">
-            <div className="flex gap-2 flex-nowrap overflow-x-auto chandracycle-scroll pb-1 lg:flex-wrap lg:overflow-x-visible lg:pb-0">
+            <div className="flex gap-2 flex-nowrap overflow-x-auto nuvia-scroll pb-1 lg:flex-wrap lg:overflow-x-visible lg:pb-0">
               {quickPrompts.map((prompt) => (
                 <Button
                   key={prompt.label}

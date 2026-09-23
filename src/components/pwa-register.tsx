@@ -11,7 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 /**
  * Registers the Nuvia service worker (offline shell caching) and
  * captures the browser's `beforeinstallprompt` event so an "Install app"
- * action can be offered anywhere via the `chandracycle-install` window event.
+ * action can be offered anywhere via the `nuvia-install` window event.
  *
  * Renders nothing — this component is purely behavioural.
  */
@@ -56,21 +56,21 @@ export function PwaRegister() {
       void installEvent.prompt()
       void installEvent.userChoice.then(({ outcome }) => {
         if (outcome === 'accepted') {
-          window.dispatchEvent(new CustomEvent('chandracycle-installed'))
+          window.dispatchEvent(new CustomEvent('nuvia-installed'))
         }
         setInstallEvent(null)
       })
     }
-    window.addEventListener('chandracycle-install-request', onRequest)
+    window.addEventListener('nuvia-install-request', onRequest)
     return () => {
-      window.removeEventListener('chandracycle-install-request', onRequest)
+      window.removeEventListener('nuvia-install-request', onRequest)
     }
   }, [installEvent])
 
   // Signal installability so the UI can show/hide the install entry point.
   useEffect(() => {
     window.dispatchEvent(
-      new CustomEvent('chandracycle-installable', { detail: { available: !!installEvent } })
+      new CustomEvent('nuvia-installable', { detail: { available: !!installEvent } })
     )
   }, [installEvent])
 

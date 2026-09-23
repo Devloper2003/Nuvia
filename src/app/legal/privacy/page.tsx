@@ -68,10 +68,10 @@ export default function PrivacyPolicyPage() {
               <p className="text-muted-foreground">
                 Email{" "}
                 <a
-                  href="mailto:support@chandracycle.health"
+                  href="mailto:support@nuvia.health"
                   className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
                 >
-                  support@chandracycle.health
+                  support@nuvia.health
                 </a>{" "}
                 for any privacy question.
               </p>
@@ -301,10 +301,10 @@ export default function PrivacyPolicyPage() {
           <p>
             To exercise any of these rights, email{" "}
             <a
-              href="mailto:support@chandracycle.health"
+              href="mailto:support@nuvia.health"
               className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
             >
-              support@chandracycle.health
+              support@nuvia.health
             </a>{" "}
             with the subject line &ldquo;Data Rights Request&rdquo;. We will
             respond within 30 days.
@@ -386,10 +386,10 @@ export default function PrivacyPolicyPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Email:{" "}
               <a
-                href="mailto:support@chandracycle.health"
+                href="mailto:support@nuvia.health"
                 className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
               >
-                support@chandracycle.health
+                support@nuvia.health
               </a>
             </p>
             <p className="text-sm text-muted-foreground">

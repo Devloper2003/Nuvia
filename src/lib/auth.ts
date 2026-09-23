@@ -20,7 +20,7 @@ function getJwtSecret(): string {
     // dev secret so login doesn't fully break — but log a warning.
     console.warn('WARNING: JWT_SECRET is not set. Using insecure dev fallback.')
   }
-  return 'chandracycle-dev-secret-change-in-production-2024'
+  return 'nuvia-dev-secret-change-in-production-2024'
 }
 
 // ─── Token helpers (simple HMAC-signed JWT-like token) ───────────────────────
@@ -228,7 +228,7 @@ export async function getUserFromToken(token: string): Promise<SessionUser | nul
 
 // ─── Cookie helpers (for server-side) ────────────────────────────────────────
 
-export const SESSION_COOKIE = 'chandracycle_session'
+export const SESSION_COOKIE = 'nuvia_session'
 
 // Cookie options that work on both localhost (HTTP) and Vercel (HTTPS).
 // `secure` is auto-set by the runtime when sameSite is 'lax' on HTTPS origins;

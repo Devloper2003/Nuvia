@@ -1,4 +1,9 @@
 import { create } from 'zustand'
+import { migrateLegacyBrandKeys } from '@/lib/legacy-keys'
+
+// Migrate any pre-rebrand `chandracycle_*` storage keys to `nuvia_*` BEFORE
+// anything reads them (this module loads before every component's effects).
+if (typeof window !== 'undefined') migrateLegacyBrandKeys()
 
 export type ActiveModule =
   | 'dashboard'
@@ -76,7 +81,7 @@ const todayISO = () => {
 
 // Sidebar collapse preference — persisted so the layout survives reloads.
 // SSR-safe: falls back to open on the server and when storage is unavailable.
-const SIDEBAR_PREF_KEY = 'chandracycle_sidebar_open'
+const SIDEBAR_PREF_KEY = 'nuvia_sidebar_open'
 const readSidebarPref = (): boolean => {
   if (typeof window === 'undefined') return true
   try {
@@ -127,7 +132,7 @@ function createStore() {
 
 const globalForStore = globalThis as Record<string, unknown>
 export const useAppStore =
-  (globalForStore.__CHANDRACYCLE_STORE__ as ReturnType<typeof createStore> | undefined) ?? createStore()
+  (globalForStore.__NUVIA_STORE__ as ReturnType<typeof createStore> | undefined) ?? createStore()
 if (process.env.NODE_ENV !== 'production') {
-  globalForStore.__CHANDRACYCLE_STORE__ = useAppStore
+  globalForStore.__NUVIA_STORE__ = useAppStore
 }

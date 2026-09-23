@@ -20,10 +20,10 @@ const MAX_ATTEMPTS = 5
 
 type OtpStore = Map<string, OtpEntry>
 
-const globalForOtp = globalThis as unknown as { __CHANDRACYCLE_OTP_STORE__?: OtpStore }
+const globalForOtp = globalThis as unknown as { __NUVIA_OTP_STORE__?: OtpStore }
 
 const store: OtpStore =
-  globalForOtp.__CHANDRACYCLE_OTP_STORE__ ?? (globalForOtp.__CHANDRACYCLE_OTP_STORE__ = new Map())
+  globalForOtp.__NUVIA_OTP_STORE__ ?? (globalForOtp.__NUVIA_OTP_STORE__ = new Map())
 
 export interface OtpSendResult {
   ok: boolean

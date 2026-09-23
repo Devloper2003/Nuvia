@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const customId = `chandracycle_${userId || 'guest'}_${planId}_${billingCycle}_${Date.now()}`
+    const customId = `nuvia_${userId || 'guest'}_${planId}_${billingCycle}_${Date.now()}`
     const planName = PLAN_NAMES[planId]
 
     // ─── Create the REAL PayPal Order (in USD) ───────────────────────────────

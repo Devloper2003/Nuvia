@@ -1,4 +1,4 @@
-// ─── ChandraCycle reminder-scheduler mini-service ────────────────────────────
+// ─── Nuvia reminder-scheduler mini-service ────────────────────────────
 //
 // Purpose: period reminders must arrive even when the app is closed. The
 // Next.js app only checks reminders when a client mounts the notification

@@ -208,7 +208,7 @@ export default function ReportsModule() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `nuvia-${period}-report-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     toast.success('CSV report downloaded')
@@ -273,7 +273,7 @@ export default function ReportsModule() {
       insights['!cols'] = [{ wch: 6 }, { wch: 80 }]
       XLSX.utils.book_append_sheet(wb, insights, 'Insights')
 
-      XLSX.writeFile(wb, `chandracycle-${period}-report-${new Date().toISOString().split('T')[0]}.xlsx`)
+      XLSX.writeFile(wb, `nuvia-${period}-report-${new Date().toISOString().split('T')[0]}.xlsx`)
       toast.success('Excel workbook downloaded', {
         description: '6 sheets: Summary, Trends, Symptoms, Mood, Cycle Log, Insights.',
       })

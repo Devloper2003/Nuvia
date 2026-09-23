@@ -160,7 +160,7 @@ export async function maybeCreatePeriodReminder(
       : await sendPushToUser(userId, {
           title,
           body: message,
-          tag: 'chandracycle-period-reminder',
+          tag: 'nuvia-period-reminder',
           url: '/dashboard',
           type: 'period_reminder',
         })

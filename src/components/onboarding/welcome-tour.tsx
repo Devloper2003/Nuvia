@@ -19,7 +19,7 @@
  * • Mobile-aware — uses window.innerWidth < 1024 to detect mobile and swaps
  *   in alternative targets (MobileTopbar avatar, MobileBottomNav grid/Coach
  *   FAB) and shorter, mobile-appropriate copy.
- * • Stores the "seen" flag in localStorage at `chandracycle_tour_seen` —
+ * • Stores the "seen" flag in localStorage at `nuvia_tour_seen` —
  *   AppShell calls onClose which sets the flag; Settings can clear it to
  *   replay. The "Take Tour" button in the sidebar/mobile topbar reopens the
  *   tour without touching the seen flag.
@@ -61,7 +61,7 @@ export interface TourStep {
 /** localStorage key prefix — shared with Settings "Replay tour" button.
  *  Per-user so a new signup always sees the tour even if another user
  *  dismissed it on the same browser. */
-export const TOUR_SEEN_KEY = 'chandracycle_tour_seen'
+export const TOUR_SEEN_KEY = 'nuvia_tour_seen'
 
 /** Initial height ESTIMATE for the tooltip card, used until the real rendered
  *  height has been measured (see cardH state inside WelcomeTour). */

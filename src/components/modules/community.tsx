@@ -915,7 +915,7 @@ export default function CommunityModule() {
                   </CardContent>
                 </Card>
               ) : (
-                <ScrollArea className="max-h-[600px] chandracycle-scroll">
+                <ScrollArea className="max-h-[600px] nuvia-scroll">
                   <div className="space-y-3">
                     {filteredPosts.map((post, idx) => (
                       <motion.div
@@ -1318,7 +1318,7 @@ export default function CommunityModule() {
             <DialogDescription>Support others with a kind reply</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 pt-1">
-            <ScrollArea className="max-h-64 chandracycle-scroll">
+            <ScrollArea className="max-h-64 nuvia-scroll">
               {commentsLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />

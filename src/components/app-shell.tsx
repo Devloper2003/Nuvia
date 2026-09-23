@@ -139,12 +139,12 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
       setInstallable(Boolean(detail?.available))
     }
     const onInstalled = () => setInstallable(false)
-    window.addEventListener('chandracycle-installable', onInstallable)
-    window.addEventListener('chandracycle-installed', onInstalled)
+    window.addEventListener('nuvia-installable', onInstallable)
+    window.addEventListener('nuvia-installed', onInstalled)
     window.addEventListener('appinstalled', onInstalled)
     return () => {
-      window.removeEventListener('chandracycle-installable', onInstallable)
-      window.removeEventListener('chandracycle-installed', onInstalled)
+      window.removeEventListener('nuvia-installable', onInstallable)
+      window.removeEventListener('nuvia-installed', onInstalled)
       window.removeEventListener('appinstalled', onInstalled)
     }
   }, [])
@@ -203,8 +203,8 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
     try {
       seen = localStorage.getItem(tourKey) === '1'
       // Also clear any stale legacy global flag so it can't shadow new users.
-      if (localStorage.getItem('chandracycle_tour_seen') === '1' && !seen) {
-        localStorage.removeItem('chandracycle_tour_seen')
+      if (localStorage.getItem('nuvia_tour_seen') === '1' && !seen) {
+        localStorage.removeItem('nuvia_tour_seen')
       }
     } catch {
       // localStorage may be disabled (private mode) — skip auto-start.
@@ -306,7 +306,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
           </div>
 
           {/* Navigation — native scroll with custom scrollbar */}
-          <nav className="flex-1 overflow-y-auto chandracycle-scroll py-3 px-3 space-y-1">
+          <nav className="flex-1 overflow-y-auto nuvia-scroll py-3 px-3 space-y-1">
             {navItems.map((item) => {
               const isActive = activeModule === item.id
               return (
@@ -371,7 +371,7 @@ export default function AppShell({ user, onLogout }: AppShellProps) {
           <div className="border-t border-border p-3 space-y-1.5">
             {installable && (
               <button
-                onClick={() => window.dispatchEvent(new CustomEvent('chandracycle-install-request'))}
+                onClick={() => window.dispatchEvent(new CustomEvent('nuvia-install-request'))}
                 aria-label="Install Nuvia on this device"
                 className="group flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
               >

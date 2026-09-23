@@ -1058,7 +1058,7 @@ function PeriodPredictions({
 
         events.push(
           'BEGIN:VEVENT',
-          `UID:period-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `UID:period-${cycleNum}-${toIcsDate(pStart)}@nuvia.app`,
           `DTSTAMP;VALUE=DATE:${stamp}`,
           `DTSTART;VALUE=DATE:${toIcsDate(pStart)}`,
           `DTEND;VALUE=DATE:${toIcsDate(pEndExclusive)}`,
@@ -1067,7 +1067,7 @@ function PeriodPredictions({
           'CATEGORIES:HEALTH',
           'END:VEVENT',
           'BEGIN:VEVENT',
-          `UID:fertile-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `UID:fertile-${cycleNum}-${toIcsDate(pStart)}@nuvia.app`,
           `DTSTAMP;VALUE=DATE:${stamp}`,
           `DTSTART;VALUE=DATE:${toIcsDate(fertileStart)}`,
           `DTEND;VALUE=DATE:${toIcsDate(fertileEndExclusive)}`,
@@ -1076,7 +1076,7 @@ function PeriodPredictions({
           'CATEGORIES:HEALTH',
           'END:VEVENT',
           'BEGIN:VEVENT',
-          `UID:ovulation-${cycleNum}-${toIcsDate(pStart)}@chandracycle.app`,
+          `UID:ovulation-${cycleNum}-${toIcsDate(pStart)}@nuvia.app`,
           `DTSTAMP;VALUE=DATE:${stamp}`,
           `DTSTART;VALUE=DATE:${toIcsDate(ovulation)}`,
           `DTEND;VALUE=DATE:${toIcsDate(addDays(ovulation, 1))}`,
@@ -1102,7 +1102,7 @@ function PeriodPredictions({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `chandracycle-predictions-${format(new Date(), 'yyyy-MM-dd')}.ics`
+      a.download = `nuvia-predictions-${format(new Date(), 'yyyy-MM-dd')}.ics`
       document.body.appendChild(a)
       a.click()
       a.remove()

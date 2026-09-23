@@ -40,11 +40,11 @@ async function seedCommunityIfEmpty(): Promise<{ personas: number; posts: number
       const existingPosts = await db.communityPost.count()
       if (existingPosts === 0) {
         const personaSpecs = [
-          { email: 'meera.iyer@demo.chandracycle.app', name: 'Meera Iyer' },
-          { email: 'ananya.rao@demo.chandracycle.app', name: 'Ananya Rao' },
-          { email: 'fatima.sheikh@demo.chandracycle.app', name: 'Fatima Sheikh' },
-          { email: 'sara.thomas@demo.chandracycle.app', name: 'Sara Thomas' },
-          { email: 'kavya.nair@demo.chandracycle.app', name: 'Kavya Nair' },
+          { email: 'meera.iyer@demo.nuvia.app', name: 'Meera Iyer' },
+          { email: 'ananya.rao@demo.nuvia.app', name: 'Ananya Rao' },
+          { email: 'fatima.sheikh@demo.nuvia.app', name: 'Fatima Sheikh' },
+          { email: 'sara.thomas@demo.nuvia.app', name: 'Sara Thomas' },
+          { email: 'kavya.nair@demo.nuvia.app', name: 'Kavya Nair' },
         ]
         const personas = []
         for (const spec of personaSpecs) {

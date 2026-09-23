@@ -16,7 +16,7 @@ export const LANGUAGES: { code: Lang; native: string; english: string; short: st
   { code: 'ta', native: 'தமிழ்', english: 'Tamil', short: 'தமி' },
 ]
 
-export const LANG_STORAGE_KEY = 'chandracycle_lang'
+export const LANG_STORAGE_KEY = 'nuvia_lang'
 
 // Keys are stable identifiers. Every language must define every key —
 // the LanguageProvider falls back to English for anything missing.

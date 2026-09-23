@@ -9,7 +9,7 @@ import { verifyPassword } from '@/lib/auth'
 // (24h TTL) that moderation endpoints require as a Bearer token.
 //
 // First-run bootstrap: if the AdminUser table is empty, a default operator is
-// provisioned (admin@chandracycle.app / chandra-admin) so the moderation
+// provisioned (admin@nuvia.app / nuvia-admin) so the moderation
 // console is usable out of the box in this sandbox deployment.
 export async function POST(request: NextRequest) {
   try {
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       const { hashPassword } = await import('@/lib/auth')
       await db.adminUser.create({
         data: {
-          email: 'admin@chandracycle.app',
+          email: 'admin@nuvia.app',
           name: 'Nuvia Admin',
-          passwordHash: await hashPassword('chandra-admin'),
+          passwordHash: await hashPassword('nuvia-admin'),
           role: 'super_admin',
         },
       })

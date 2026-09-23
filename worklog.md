@@ -1847,3 +1847,23 @@ Stage Summary:
 - Moderation console is usable out of the box: operator email pre-fills correctly now and the first-run hint removes the credentials guesswork.
 - Confirmed Task 28 (profile avatar upload + Google card hide) is live in code: compressAvatarToDataUrl/handleAvatarFile present, GoogleSignInSection 0 hits, User.avatar in schema.
 - Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
+---
+Task ID: 30
+Agent: Z.ai Code (main)
+Task: Full rebrand sweep — "chandracycle se related jo bhi h usse nuvia se replace kr do" (133 occurrences across 32 files)
+
+Work Log:
+- Global sed sweep over src/ + mini-services/ + scripts/: ChandraCycle→Nuvia, chandracycle→nuvia, CHANDRACYCLE→NUVIA, chandra-admin→nuvia-admin. Covered: storage keys (token/sidebar/lang/tour/admin-token), SESSION_COOKIE (auth.ts single constant → all 20+ routes), CSS class chandracycle-scroll→nuvia-scroll (globals.css + 8 components), CustomEvents (installable/installed/install-request), push tags, ICS UIDs + export filenames, VAPID mailto, legal support emails (support@nuvia.health), admin-sync defaults, OTP/store global symbols, demo-seed emails, PayPal customId, comments.
+- Session continuity (no forced logouts):
+  * src/middleware.ts (NEW): request with legacy chandracycle_session cookie & no nuvia_session → merges legacy value into forwarded cookie header (same request authenticates) + sets migrated nuvia_session cookie on response (mirrors SESSION_COOKIE_OPTIONS).
+  * src/lib/legacy-keys.ts (NEW): idempotent localStorage+sessionStorage sweep chandracycle_*→nuvia_* (no clobber, removes old). Wired at store.ts module top (runs before any reader) — sidebar pref, auth token, lang, tour flags, admin token all covered.
+  * logout route now clears the legacy cookie too (middleware must not resurrect signed-out sessions).
+- DB migration (Neon): AdminUser email admin@chandracycle.app→admin@nuvia.app + passwordHash re-issued for the renamed operator password (nuvia-admin); 0 user rows had old-brand emails. Bootstrap in /api/admin/login + settings UI prefill/hint now say admin@nuvia.app / nuvia-admin.
+- Verification (agent-browser + curl): legacy chandracycle_session cookie → middleware returns set-cookie nuvia_session AND authenticates same request ✓; legacy localStorage token seeded → after reload user authed (onboarding/dashboard "Good Afternoon, QA Rebrand") with nuvia_token present + legacy key gone ✓; sessionStorage admin token migrated → console session auto-restored ✓; fresh moderation login admin@nuvia.app/nuvia-admin → "Nuvia Admin signed in" ✓; lint clean ✓. QA user deleted afterwards.
+- Remaining "chandra" strings (10) exist ONLY inside the migration files themselves (legacy-keys.ts, middleware.ts, logout route, store.ts comment) — intentional; migration must reference the old names.
+
+Stage Summary:
+- App is fully Nuvia-branded; no user-facing or code surface says ChandraCycle anymore.
+- Existing sessions survive: cookie via middleware, storage via the sweep.
+- Operator credentials changed with the rebrand: admin@nuvia.app / nuvia-admin (shown in the Settings first-run hint).
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.

@@ -147,10 +147,10 @@ export default function SupportPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <a
-              href="mailto:support@chandracycle.health"
+              href="mailto:support@nuvia.health"
               className="inline-flex items-center gap-2 font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
             >
-              support@chandracycle.health
+              support@nuvia.health
               <ArrowRight className="h-3.5 w-3.5" />
             </a>
             <p className="flex items-center gap-2 text-muted-foreground">
@@ -313,10 +313,10 @@ export default function SupportPage() {
       <p className="text-xs text-muted-foreground">
         Couldn&apos;t find what you needed? Email{" "}
         <a
-          href="mailto:support@chandracycle.health"
+          href="mailto:support@nuvia.health"
           className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
         >
-          support@chandracycle.health
+          support@nuvia.health
         </a>{" "}
         — we usually reply within 24–48 hours on business days.
       </p>

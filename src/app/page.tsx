@@ -91,7 +91,7 @@ export default function Home() {
             const me = await fetch('/api/auth/me', { credentials: 'include' })
             const meData = await me.json()
             if (meData?.user) {
-              if (meData.token) localStorage.setItem('chandracycle_token', meData.token)
+              if (meData.token) localStorage.setItem('nuvia_token', meData.token)
               if (!cancelled) {
                 setAuthUser(meData.user)
                 setAuthChecking(false)
@@ -105,7 +105,7 @@ export default function Home() {
         }
       }
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('chandracycle_token') : null
+      const token = typeof window !== 'undefined' ? localStorage.getItem('nuvia_token') : null
       if (!token) {
         if (!cancelled) setAuthChecking(false)
         return
@@ -125,7 +125,7 @@ export default function Home() {
               const refreshData = await refreshRes.json()
               if (refreshData.token) {
                 activeToken = refreshData.token
-                localStorage.setItem('chandracycle_token', activeToken)
+                localStorage.setItem('nuvia_token', activeToken)
               }
             }
           } catch {
@@ -140,7 +140,7 @@ export default function Home() {
           if (data.user) {
             setAuthUser(data.user)
           } else {
-            localStorage.removeItem('chandracycle_token')
+            localStorage.removeItem('nuvia_token')
           }
           setAuthChecking(false)
         }
@@ -174,7 +174,7 @@ export default function Home() {
     } catch {
       // ignore
     }
-    localStorage.removeItem('chandracycle_token')
+    localStorage.removeItem('nuvia_token')
     setAuthUser(null)
     setActiveModule('dashboard')
     toast.success('Signed out successfully')
@@ -184,7 +184,7 @@ export default function Home() {
   // (lastPeriodStart, onboardingComplete) is fresh, then show the app.
   const handleOnboardingComplete = useCallback(async () => {
     const token = typeof window !== 'undefined'
-      ? localStorage.getItem('chandracycle_token')
+      ? localStorage.getItem('nuvia_token')
       : null
     try {
       const res = await fetch('/api/auth/me', {

@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     }
 
     const payload = {
-      $schema: 'chandracycle-data-export',
+      $schema: 'nuvia-data-export',
       $version: 1,
       exportedAt: new Date().toISOString(),
       profile,
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    const filename = `chandracycle-export-${new Date().toISOString().split('T')[0]}.json`;
+    const filename = `nuvia-export-${new Date().toISOString().split('T')[0]}.json`;
     return new NextResponse(JSON.stringify(payload, null, 2), {
       status: 200,
       headers: {

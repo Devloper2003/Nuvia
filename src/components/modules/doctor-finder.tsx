@@ -840,7 +840,7 @@ export default function DoctorFinderModule() {
                       <div className="flex items-center gap-1 border-b border-medical/20 bg-medical-soft/60 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-medical">
                         <MapPinned className="h-3 w-3" /> Powered by Google Places
                       </div>
-                      <ul className="max-h-64 overflow-y-auto chandracycle-scroll">
+                      <ul className="max-h-64 overflow-y-auto nuvia-scroll">
                         {suggestions.map((s, i) => (
                           <li key={i}>
                             <button

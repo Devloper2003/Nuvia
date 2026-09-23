@@ -414,10 +414,10 @@ export default function TermsOfServicePage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Email:{" "}
               <a
-                href="mailto:support@chandracycle.health"
+                href="mailto:support@nuvia.health"
                 className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
               >
-                support@chandracycle.health
+                support@nuvia.health
               </a>
             </p>
             <p className="text-sm text-muted-foreground">

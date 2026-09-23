@@ -135,10 +135,10 @@ export function LegalLayout({
             <p className="mt-1">
               For questions about this page, email{" "}
               <a
-                href="mailto:support@chandracycle.health"
+                href="mailto:support@nuvia.health"
                 className="font-medium text-rose-700 underline-offset-2 hover:underline dark:text-rose-300"
               >
-                support@chandracycle.health
+                support@nuvia.health
               </a>
               . In a medical emergency in India, call{" "}
               <span className="font-semibold">112</span>.

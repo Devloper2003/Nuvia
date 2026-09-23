@@ -344,7 +344,7 @@ export default function SettingsModule() {
   // 'nuvia:auth-user') so the sidebar/topbar avatars update instantly.
   const saveProfile = async (patch: Record<string, unknown>) => {
     const token = typeof window !== 'undefined'
-      ? localStorage.getItem('chandracycle_token')
+      ? localStorage.getItem('nuvia_token')
       : null
     const res = await fetch('/api/user', {
       method: 'POST',
@@ -378,7 +378,7 @@ export default function SettingsModule() {
       lastPeriodStart: u.lastPeriodStart ?? null,
       provider: (u.provider as 'email' | 'google' | 'apple') ?? userProfile?.provider,
     })
-    if (data.token) localStorage.setItem('chandracycle_token', data.token)
+    if (data.token) localStorage.setItem('nuvia_token', data.token)
     window.dispatchEvent(new CustomEvent('nuvia:auth-user', { detail: data.user }))
     return data.user
   }
@@ -460,7 +460,7 @@ export default function SettingsModule() {
     setExporting(true)
     try {
       const token = typeof window !== 'undefined'
-        ? localStorage.getItem('chandracycle_token')
+        ? localStorage.getItem('nuvia_token')
         : null
       const res = await fetch('/api/user/export', {
         headers: token ? { authorization: `Bearer ${token}` } : {},
@@ -477,7 +477,7 @@ export default function SettingsModule() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `chandracycle-export-${new Date().toISOString().split('T')[0]}.json`
+      a.download = `nuvia-export-${new Date().toISOString().split('T')[0]}.json`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -619,7 +619,7 @@ export default function SettingsModule() {
     new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
 
   // ─── Admin moderation console (operator session via /api/admin/*) ─────────
-  const ADMIN_STORAGE_KEY = 'chandracycle_admin_token'
+  const ADMIN_STORAGE_KEY = 'nuvia_admin_token'
   interface ModPost {
     id: string
     title: string
@@ -658,7 +658,7 @@ export default function SettingsModule() {
   }
   const [adminToken, setAdminToken] = useState<string | null>(null)
   const [adminName, setAdminName] = useState<string | null>(null)
-  const [adminEmail, setAdminEmail] = useState('admin@chandracycle.app')
+  const [adminEmail, setAdminEmail] = useState('admin@nuvia.app')
   const [adminPassword, setAdminPassword] = useState('')
   const [adminLoggingIn, setAdminLoggingIn] = useState(false)
   const [modQueue, setModQueue] = useState<ModPost[]>([])
@@ -1333,7 +1333,7 @@ export default function SettingsModule() {
                   type="email"
                   value={adminEmail}
                   onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="admin@chandracycle.app"
+                  placeholder="admin@nuvia.app"
                   autoComplete="off"
                 />
               </div>
@@ -1361,8 +1361,8 @@ export default function SettingsModule() {
             </Button>
             <p className="text-[11px] leading-relaxed text-muted-foreground/80">
               First run? The default operator is provisioned automatically on the first sign-in —{' '}
-              <span className="font-medium text-foreground">admin@chandracycle.app</span>
-              {' '}/{' '}<span className="font-medium text-foreground">chandra-admin</span>.
+              <span className="font-medium text-foreground">admin@nuvia.app</span>
+              {' '}/{' '}<span className="font-medium text-foreground">nuvia-admin</span>.
               Keep these credentials private — anyone with them can moderate the community feed.
             </p>
           </div>
@@ -1472,7 +1472,7 @@ export default function SettingsModule() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto pr-1 chandracycle-scroll">
+              <div className="space-y-3 max-h-96 overflow-y-auto pr-1 nuvia-scroll">
                 {modQueue.map((post) => (
                   <div
                     key={post.id}
@@ -2128,8 +2128,8 @@ export default function SettingsModule() {
                   // on the next dashboard load. Also clear the legacy global
                   // flag for back-compat with older sessions.
                   const uid = userProfile?.id
-                  if (uid) localStorage.removeItem(`chandracycle_tour_seen_${uid}`)
-                  localStorage.removeItem('chandracycle_tour_seen')
+                  if (uid) localStorage.removeItem(`nuvia_tour_seen_${uid}`)
+                  localStorage.removeItem('nuvia_tour_seen')
                 } catch {
                   // ignore — best-effort
                 }

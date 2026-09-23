@@ -4,8 +4,8 @@
  * This helper additionally notifies the admin panel of key events for audit logging.
  */
 
-const ADMIN_SYNC_URL = process.env.ADMIN_SYNC_URL || "https://admin.chandracycle.app/api/admin/sync"
-const SYNC_API_KEY = process.env.SYNC_API_KEY || "chandracycle_sync_secret_2026"
+const ADMIN_SYNC_URL = process.env.ADMIN_SYNC_URL || "https://admin.nuvia.app/api/admin/sync"
+const SYNC_API_KEY = process.env.SYNC_API_KEY || "nuvia_sync_secret_2026"
 
 type SyncEvent =
   | { event: "user.registered"; data: { email: string; name?: string; userId: string } }
