@@ -7,7 +7,7 @@ function keyify(name: string): string {
 }
 
 // ─── GET /api/admin/departments ──────────────────────────────────────────────
-// Org structure with live task + member counts.
+// Org structure with live task + member counts + member roster per dept.
 export async function GET(request: NextRequest) {
   const admin = await requireSuperAdmin(request)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -16,13 +16,35 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: 'asc' },
     include: { _count: { select: { tasks: true } } },
   })
-  const members = await db.adminUser.groupBy({ by: ['department'], _count: { _all: true } })
-  const memberMap = new Map(members.filter((m) => m.department).map((m) => [m.department as string, m._count._all]))
+  const memberRows = await db.adminUser.findMany({
+    select: { id: true, name: true, role: true, department: true, active: true },
+  })
+
+  const roster = new Map<string, { id: string; name: string; role: string; active: boolean }[]>()
+  for (const m of memberRows) {
+    if (!m.department) continue
+    const list = roster.get(m.department) ?? []
+    list.push({ id: m.id, name: m.name, role: m.role, active: m.active })
+    roster.set(m.department, list)
+  }
+
+  const openCounts = await db.teamTask.groupBy({
+    by: ['departmentId', 'status'],
+    where: { departmentId: { not: null }, status: { not: 'done' } },
+    _count: { _all: true },
+  })
+  const openMap = new Map<string, number>()
+  for (const row of openCounts) {
+    if (!row.departmentId) continue
+    openMap.set(row.departmentId, (openMap.get(row.departmentId) ?? 0) + row._count._all)
+  }
 
   return NextResponse.json({
     departments: departments.map((d) => ({
       id: d.id, name: d.name, key: d.key, description: d.description, color: d.color,
-      createdAt: d.createdAt, taskCount: d._count.tasks, memberCount: memberMap.get(d.key) ?? 0,
+      createdAt: d.createdAt, taskCount: d._count.tasks, openTaskCount: openMap.get(d.id) ?? 0,
+      memberCount: roster.get(d.key)?.length ?? 0,
+      members: roster.get(d.key) ?? [],
     })),
   })
 }

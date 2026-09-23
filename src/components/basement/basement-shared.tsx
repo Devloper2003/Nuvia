@@ -38,7 +38,12 @@ export function makeAdminFetch(token: string, onExpired: () => void) {
       onExpired()
       throw new Error('Session expired')
     }
-    const data = await res.json().catch(() => ({}))
+    const data = await res.json().catch(() => null)
+    if (data === null) {
+      // A 200 with an unparseable body (e.g. dropped pooler stream) must not
+      // silently become {} and poison component state with undefined.
+      throw new Error('Malformed response from server — try again')
+    }
     if (!res.ok) throw new Error((data as { error?: string }).error ?? `Request failed (${res.status})`)
     return data as T
   }
@@ -109,6 +114,8 @@ export function DarkBadge({ children, tone = 'zinc' }: { children: ReactNode; to
     rose: 'bg-rose-400/10 text-rose-300 border-rose-400/30',
     emerald: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30',
     danger: 'bg-red-500/10 text-red-400 border-red-500/30',
+    violet: 'bg-violet-400/10 text-violet-300 border-violet-400/30',
+    sky: 'bg-sky-400/10 text-sky-300 border-sky-400/30',
   }
   return (
     <span className={cn('inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider', tones[tone] ?? tones.zinc)}>

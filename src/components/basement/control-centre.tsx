@@ -22,7 +22,7 @@ import { BasementUsers } from './basement-users'
 import { BasementModeration, BasementAudit, BasementBroadcast } from './basement-ops'
 import { BasementRevenue } from './basement-revenue'
 import { BasementContent } from './basement-content'
-import { BasementTeam } from './basement-team'
+import { BasementTeam } from './team-hq'
 import { BasementConfig } from './basement-config'
 
 type TabKey = 'overview' | 'users' | 'moderation' | 'revenue' | 'content' | 'team' | 'config' | 'audit' | 'broadcast'

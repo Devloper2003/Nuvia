@@ -8,9 +8,39 @@ const ROLES = ['super_admin', 'admin', 'moderator']
 
 // ─── GET /api/admin/team ─────────────────────────────────────────────────────
 // Internal team roster: every operator with live-session + task counts.
+// ?detail=<id> → operator dossier: member + assigned tasks + their recent
+// audit actions (powers the HQ member drawer).
 export async function GET(request: NextRequest) {
   const admin = await requireSuperAdmin(request)
   if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const detailId = new URL(request.url).searchParams.get('detail')
+  if (detailId) {
+    const member = await db.adminUser.findUnique({
+      where: { id: detailId },
+      select: {
+        id: true, email: true, name: true, role: true, department: true,
+        active: true, lastLoginAt: true, createdAt: true,
+      },
+    })
+    if (!member) return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+
+    const [tasks, audit, liveSessions] = await Promise.all([
+      db.teamTask.findMany({
+        where: { assigneeId: detailId },
+        orderBy: [{ status: 'asc' }, { priority: 'desc' }, { updatedAt: 'desc' }],
+        include: { department: { select: { name: true, key: true, color: true } } },
+      }),
+      db.auditLog.findMany({
+        where: { adminId: detailId },
+        orderBy: { createdAt: 'desc' },
+        take: 12,
+      }),
+      db.adminSession.count({ where: { adminId: detailId, revoked: false, expiresAt: { gt: new Date() } } }),
+    ])
+
+    return NextResponse.json({ member, tasks, audit, liveSessions })
+  }
 
   const members = await db.adminUser.findMany({
     orderBy: { createdAt: 'asc' },
@@ -143,6 +173,13 @@ export async function PATCH(request: NextRequest) {
         details = `${member.email} department → ${department ?? 'none'}`
         break
       }
+      case 'rename': {
+        const name = String(body.value ?? '').trim()
+        if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+        await db.adminUser.update({ where: { id }, data: { name: name.slice(0, 80) } })
+        details = `${member.email} renamed → ${name.slice(0, 80)}`
+        break
+      }
       case 'reset_password': {
         const password = typeof body.value === 'string' && body.value.length >= 8
           ? body.value
@@ -175,4 +212,35 @@ export async function PATCH(request: NextRequest) {
     console.error('Team patch error:', error)
     return NextResponse.json({ error: 'Failed to update member' }, { status: 500 })
   }
+}
+
+// ─── DELETE /api/admin/team?id=... ───────────────────────────────────────────
+// Permanently remove an operator. Sessions cascade away, audit entries keep
+// history (adminId set null), their open tasks become unassigned.
+export async function DELETE(request: NextRequest) {
+  const admin = await requireSuperAdmin(request)
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const id = new URL(request.url).searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+  if (id === admin.id) return NextResponse.json({ error: 'You cannot remove your own account' }, { status: 400 })
+
+  const member = await db.adminUser.findUnique({ where: { id } })
+  if (!member) return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+
+  const openTasks = await db.teamTask.count({ where: { assigneeId: id, status: { not: 'done' } } })
+
+  await db.adminUser.delete({ where: { id } })
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? null
+  await db.auditLog.create({
+    data: {
+      adminId: admin.id, adminName: admin.name, action: 'team:remove',
+      targetType: 'operator', targetId: id, targetLabel: member.email,
+      details: `removed · role=${member.role}${openTasks > 0 ? ` · ${openTasks} open task(s) unassigned` : ''}`,
+      ipAddress: ip,
+    },
+  }).catch(() => {})
+
+  return NextResponse.json({ success: true, message: `${member.email} removed from the team` })
 }

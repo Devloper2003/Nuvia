@@ -1933,3 +1933,27 @@ Stage Summary:
 - Founder = admin@nuvia.app (super_admin) — login via the normal sign-in form drops straight into HQ. Team members log in the same way and get the same basement but role-guarded server-side (moderator/admin vs super_admin).
 - To go live with payments: Revenue → Payments & Gateway → paste real Razorpay key/secret → "Sync / test handshake" → expect green OK.
 - Backlog: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
+---
+Task ID: 33
+Agent: Z.ai Code (main)
+Task: User screenshot of Team HQ Members view + "isko better aur best kro" — upgrade the Team HQ tab into a full ops-grade org command centre.
+
+Work Log:
+- Backend upgrades (all SUPER_ADMIN-bearer, audit-logged):
+  * /api/admin/team GET ?detail=<id> → operator dossier (member + assigned tasks w/ dept + last 12 audit entries + live-session count) powering the new drawer.
+  * /api/admin/team PATCH action=rename (display-name edit).
+  * /api/admin/team DELETE ?id= — permanent operator removal (self-delete blocked; sessions cascade, audit history SetNull, open tasks unassigned; warns open-task count in audit details).
+  * /api/admin/departments GET now returns per-dept member roster (id/name/role/active) + openTaskCount (group by departmentId where status != done).
+- Frontend: basement-team.tsx fully rewritten AND renamed → team-hq.tsx (renamed to bust a stuck Turbopack chunk hash during debugging); control-centre.tsx import updated.
+  * Shared parent data layer: team + departments + tasks fetched once, reload() shared; 5-KPI stats strip (Operators / Live now / Open tasks / Urgent / Overdue) always visible; view switcher shows live counts.
+  * Members: invite form now uses department DROPDOWN (was free-text dept key) + optional custom password toggle; new one-time credentials card with per-field copy, "Copy all" and Done-hide; roster search (name/email/dept) + status chips (all/active/offline) + role chips; rows show role-tinted avatars, pulsing green dot when operator has live sessions, dept chip with dept color, founder star, activity line (live · tasks · actions · last login); row actions: activate/deactivate, role select, DEPARTMENT select (previously missing), reset password; click row → full dossier drawer (spring sheet): stats grid, assigned tasks w/ status dots + overdue badges, recent audit activity, inline rename, quick controls incl. 2-step "Remove from team"; founder account shows protection notice and hides self-modify controls.
+  * Departments: create panel with 8-color swatch picker; cards show top color border, key, description, member avatar stack (+N overflow), members/open/total badges, unassigned-of-total counter in heading; edit modal (name/description/color via PATCH); delete stays task-guarded.
+  * Workflow board: new-task panel gains description + due-date (color-scheme dark) fields; filter bar (dept/assignee/priority + clear, "X of Y shown"); native HTML5 drag & drop between columns (mobile keeps move buttons), drop-target ring highlight; task cards: priority stripe, description line-clamp, dept color chip, assignee mini-avatar, due chip with OVERDUE red state (past due + not done), hover edit pencil → full edit modal (title/description/status/priority/dept/assignee/due) with PATCH; optimistic moves wired through parent state.
+- ROOT-CAUSE BUG FIXED (crash "Cannot read properties of undefined (reading 'filter')"): reload() destructured `const [t, d, m] = Promise.all([team, departments, tasks])` but called setTasks(t.tasks) — team response has no tasks key → setTasks(undefined) → stats useMemo crashed. Fixed to m.tasks + Array.isArray guards on all three setStates. Defense-in-depth: makeAdminFetch now THROWS "Malformed response" on 200-with-unparseable-body instead of returning {} (Neon pooler mid-stream drops previously poisoned state silently), and MemberDrawer detail lists are array-guarded.
+- E2E (agent-browser, founder login): stats strip live (Operators 3 / Live now 1 / Open tasks 2); search "priya" → 1/3 filtered; Priya drawer: stats, 1 assigned task, rename → "Priya Sharma (Support)" persisted; Shivam dept set → content via row select (DB verified); departments: 8 swatches, Support card shows member avatar, "2 unassigned of 3", color edit toast; board: created "Ship September wellness digest" (desc + due 30 Sep), edit modal saved description+priority, filter Engineering → 0 of 2 + empty state → clear restored, move backlog→in_progress optimistic + DB verified; invite "QA Throwaway" → one-time creds card (nv-… regex verified) → drawer 2-step Remove → DB verified gone; roster back to 3/3. lint exit 0.
+
+Stage Summary:
+- Team HQ is now ops-grade: live roster with dossiers, proper invite handoff, dept org chart with editors, drag-drop workflow board with due-date radar — everything audit-logged and super_admin-gated.
+- Stability fix benefits the whole basement: adminFetch no longer converts dropped responses into silent undefined state.
+- Debugging note for future: Bash-tool text output can eat the literal sequence `[m` (ANSI-escape collision) — verify source/chunk bytes via grep -c booleans, od, or base64, not pasted text. Turbopack dev can also serve a stale module after a partial-write compile; renaming the module (basement-team → team-hq) forced a fresh chunk hash.
+- Backlog unchanged: userId-in-query zero-auth sweep (P1), connected-devices realtime, top-nav gap, wearable OAuth keys, i18n, reminder quiet-hours, /api/user DELETE.
